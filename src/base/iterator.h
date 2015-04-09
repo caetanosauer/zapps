@@ -1,6 +1,8 @@
 #ifndef ITERATOR_H
 #define ITERATOR_H
 
+#include "zapps-config.h"
+
 #define SM_SOURCE
 #include <sm_int_4.h>
 
@@ -8,7 +10,7 @@
 
 #include "ringbuffer.h"
 
-#ifdef CFG_SHORE
+#ifdef USE_SHORE
 typedef page_p PageType;
 #else
 typedef generic_page PageType;

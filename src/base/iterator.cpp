@@ -111,7 +111,11 @@ PageType* PageIterator::next()
     assert(buf);
     assert(bpos < blockSize);
 
-    PageType* ps = (PageType*) (buf + bpos);    
+#ifdef USE_SHORE
+    page_s* ps = (page_s*) (buf + bpos);    
+#else
+    PageType* ps = (PageType*) (buf + bpos);
+#endif
     prevPageNo = ps->pid.page;
 
     bpos += PAGE_SIZE;
@@ -128,7 +132,7 @@ PageType* PageIterator::next()
     }
 
     count++;
-#ifdef CFG_SHORE
+#ifdef USE_SHORE
     currentPage = page_p(ps, smlevel_0::st_regular);
 #else
     currentPage = *ps;

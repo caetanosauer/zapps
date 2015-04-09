@@ -1,9 +1,14 @@
 #ifndef BASETHREAD_H
 #define BASETHREAD_H
 
+#include "zapps-config.h"
+
 #define SM_SOURCE
 #include <sm_int_4.h>
+
+#ifndef USE_SHORE
 #include <sm_options.h>
+#endif
 
 #include <stdexcept>
 #include <queue>
@@ -45,7 +50,7 @@ private:
     pthread_mutex_t running_mutex;
     xct_t* current_xct;
 
-#ifndef CFG_SHORE
+#ifndef USE_SHORE
     static sm_options _options;
 #endif
 };

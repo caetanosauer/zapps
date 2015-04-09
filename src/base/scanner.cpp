@@ -6,6 +6,15 @@
 #include <restart.h>
 #include <vol.h>
 
+#ifdef USE_SHORE
+#define PARSE_LSN(a,b) \
+    LogArchiver::parseLSN(a, b);
+#else
+#define PARSE_LSN(a,b) \
+    LogArchiver::ArchiveDirectory::parseLSN(a, b);
+#endif
+
+
 void BaseScanner::handle(logrec_t* lr)
 {
     logrec_t& r = *lr;
@@ -80,11 +89,9 @@ void BlockScanner::findFirstFile()
         const char* fname = entry->d_name;
         if (strncmp(PREFIX, fname, strlen(PREFIX)) == 0) {
             if (archive) {
-                lsn_t lsn =
-                    LogArchiver::ArchiveDirectory::parseLSN(fname, false);
+                lsn_t lsn = PARSE_LSN(fname, false);
                 if (minLSN == lsn_t::null || lsn < minLSN) {
-                    runEnd =
-                        LogArchiver::ArchiveDirectory::parseLSN(fname, true);
+                    runEnd = PARSE_LSN(fname, true);
                     minLSN = lsn;
                 }
                 runCount++;
@@ -123,12 +130,10 @@ string BlockScanner::getNextFile()
             while (entry != NULL) {
                 const char* fname = entry->d_name;
                 if (strncmp(PREFIX, fname, strlen(PREFIX)) == 0) {
-                    lsn_t lsn =
-                        LogArchiver::ArchiveDirectory::parseLSN(fname, false);
+                    lsn_t lsn = PARSE_LSN(fname, false);
                     if (lsn == runEnd) {
                         runBegin = runEnd;
-                        runEnd = LogArchiver::ArchiveDirectory::
-                            parseLSN(fname, false);
+                        runEnd = PARSE_LSN(fname, true);
                         break;
                     }
                 }
@@ -282,7 +287,7 @@ void PageScanner::run()
     vid_t vid = io->get_vid(lvid);
 
     if (scanStores) {
-#ifdef CFG_SHORE
+#ifdef USE_SHORE
         // Store management was redesigned on Zero. In Shore, the obsolete
         // directory manager (dir_m) was used. In Zero, it was replaced by
         // the simpler stnode_cache_t

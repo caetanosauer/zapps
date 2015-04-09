@@ -1,0 +1,7 @@
+#ifndef ZAPPS_CONFIG_H
+#define ZAPPS_CONFIG_H
+
+#cmakedefine USE_SHORE
+#cmakedefine ARCH_LP64
+
+#endif
