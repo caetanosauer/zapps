@@ -153,18 +153,19 @@ void basethread_t::start_io()
     }
 }
 
-void basethread_t::start_log(char* logdir, long max_logsz)
+void basethread_t::start_log(string logdir, long max_logsz)
 {
     if (!smlevel_0::log) {
         // instantiate log manager
         log_m* log;
         cerr << "Initializing log manager ... " << flush;
+        smlevel_0::max_logsz = max_logsz;
 #ifdef USE_SHORE
         const int logbufsize = 81920 * 1024; // 80 MB
-        smlevel_0::max_logsz = max_logsz;
-
         W_COERCE(log_m::new_log_m(log, logdir, logbufsize, false));
 #else
+        // TODO: initialize all components (incl. log_core) by passing
+        // const sm_options& as parameter
         ErrLog* errlog = smlevel_0::errlog;
         (void) max_logsz;
 
@@ -195,7 +196,7 @@ void basethread_t::start_log(char* logdir, long max_logsz)
             W_FATAL(eCRASH);
         }
         log = new log_core(
-                logdir,
+                logdir.c_str(),
                 logbufsize,      // logbuf_segsize
                 _options.get_bool_option("sm_reformat_log", false),
                 _options.get_int_option("sm_carray_slots",
@@ -207,7 +208,7 @@ void basethread_t::start_log(char* logdir, long max_logsz)
     }
 }
 
-void basethread_t::start_archiver(char* archdir, size_t wsize)
+void basethread_t::start_archiver(string archdir, size_t wsize, size_t bsize)
 {
     LogArchiver* logArchiver;
 
@@ -218,6 +219,7 @@ void basethread_t::start_archiver(char* archdir, size_t wsize)
 #else
     _options.set_string_option("sm_archdir", archdir);
     _options.set_int_option("sm_archiver_workspace_size", wsize);
+    _options.set_int_option("sm_archiver_block_size", bsize);
     logArchiver = new LogArchiver(_options);
 #endif
     cerr << "OK" << endl;
@@ -225,7 +227,7 @@ void basethread_t::start_archiver(char* archdir, size_t wsize)
     smlevel_0::logArchiver = logArchiver;
 }
 
-void basethread_t::start_merger(char* /*archdir*/)
+void basethread_t::start_merger(string /*archdir*/)
 {
     //ArchiveMerger* archiveMerger;
 
@@ -290,7 +292,7 @@ void basethread_t::start_other()
     cout << stats << flushl;
 }
 
- void basethread_t::mount_device(const char* path)
+ void basethread_t::mount_device(string path)
 {
     io_m* io = smlevel_0::io;
 #ifdef USE_SHORE
@@ -303,12 +305,12 @@ void basethread_t::start_other()
     vid_t vid;
     u_int vol_cnt;
     // inform device_m about the device
-    W_COERCE(io->mount_dev(path, vol_cnt));
+    W_COERCE(io->mount_dev(path.c_str(), vol_cnt));
     if (vol_cnt == 0) return;
 
     // make sure volumes on the dev are not already mounted
     lvid_t lvid;
-    W_COERCE(io->get_lvid(path, lvid));
+    W_COERCE(io->get_lvid(path.c_str(), lvid));
     vid = io->get_vid(lvid);
     if (vid != vid_t::null) {
         // already mounted

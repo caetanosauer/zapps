@@ -13,9 +13,6 @@
 #include <stdexcept>
 #include <queue>
 
-// to allow log size > 2GB
-#define ARCH_LP64
-
 using namespace std;
 
 class basethread_t : public smthread_t {
@@ -28,10 +25,10 @@ public:
 
     static void start_base();
     static void start_buffer(int npages);
-    static void start_log(char* logdir, long max_logsz);
+    static void start_log(string logdir, long max_logsz);
     // default archiver workspace size = 800MB
-    static void start_archiver(char* archdir, size_t wsize = 8192 * 1024 *10);
-    static void start_merger(char* archdir);
+    static void start_archiver(string archdir, size_t wsize, size_t bsize);
+    static void start_merger(string archdir);
     static void start_other();
     static void start_io();
     static void print_stats();
@@ -39,7 +36,7 @@ public:
     void queue_for_mount(string path);
     
 protected:
-    static void mount_device(const char* path);
+    static void mount_device(string path);
     void begin_xct();
     void commit_xct();
     virtual void before_run();

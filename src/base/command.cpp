@@ -1,7 +1,6 @@
 #include "command.h"
 
 //#include "commands/logreplay.h"
-//#include "commands/genarchive.h"
 //#include "commands/verifylog.h"
 //#include "commands/dbstats.h"
 //#include "commands/agglog.h"
@@ -10,6 +9,8 @@
 //#include "commands/skew.h"
 //#include "commands/dirtypagestats.h"
 //#include "commands/trace.h"
+
+#include "genarchive.h"
 
 /*
  * Adapted from
@@ -38,7 +39,7 @@ void Command::init()
     //REGISTER_COMMAND("trace", trace);
     //REGISTER_COMMAND("dirtypagestats", dirtypagestats);
     //REGISTER_COMMAND("logreplay", LogReplay);
-    //REGISTER_COMMAND("genarchive", GenArchive);
+    REGISTER_COMMAND("genarchive", GenArchive);
     //REGISTER_COMMAND("verifylog", VerifyLog);
     //REGISTER_COMMAND("dbstats", DBStats);
     //REGISTER_COMMAND("agglog", AggLog);
