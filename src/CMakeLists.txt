@@ -1,6 +1,7 @@
 INCLUDE_DIRECTORIES (
   ${CMAKE_SOURCE_DIR}/src/base
   ${CMAKE_SOURCE_DIR}/src/restore
+  ${CMAKE_SOURCE_DIR}/src/kits
   ${SM_SOURCE_DIR}/config
   ${SM_SOURCE_DIR}/src/sm
   ${SM_SOURCE_DIR}/src/common
@@ -24,6 +25,7 @@ endif()
 
 add_subdirectory(base)
 add_subdirectory(restore)
+add_subdirectory(kits)
 
 add_executable(zapps main.cpp)
 
@@ -31,6 +33,7 @@ set(zapps_LIBS
     # zapps components
     base
     restore
+    kits
     # Zero/Shore libraries
     libsm
     libsthread
