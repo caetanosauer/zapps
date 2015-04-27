@@ -1,9 +1,9 @@
 #include "basethread.h"
 
-#include <device.h>
 #include <chkpt.h>
 #include <sm.h>
 #include <restart.h>
+#include <vol.h>
 
 #ifndef USE_SHORE
 #include <log_lsn_tracker.h>
@@ -63,7 +63,7 @@ void basethread_t::start_base()
     smlevel_0::errlog = new ErrLog("loginspect", log_to_stderr, "-");
 }
 
-void basethread_t::start_buffer(int npages)
+void basethread_t::start_buffer()
 {
     if (!smlevel_0::bf) {
 #ifdef USE_SHORE
@@ -84,48 +84,7 @@ void basethread_t::start_buffer(int npages)
         shmbase +=  bf_m::mem_needed(npages);
         cerr << "OK" << endl;
 #else
-        ErrLog* errlog = smlevel_0::errlog;
-
-        int32_t npgwriters = _options.get_int_option("sm_num_page_writers", 1);
-        if(npgwriters < 0) {
-            errlog->clog << fatal_prio << "ERROR: num page writers must be positive : "
-                << npgwriters
-                << flushl;
-            W_FATAL(eCRASH);
-        }
-        if (npgwriters == 0) {
-            npgwriters = 1;
-        }
-
-        int64_t cleaner_interval_millisec_min = 
-            _options.get_int_option("sm_cleaner_interval_millisec_min", 1000);
-        if (cleaner_interval_millisec_min <= 0) {
-            cleaner_interval_millisec_min = 1000;
-        }
-
-        int64_t cleaner_interval_millisec_max =
-            _options.get_int_option("sm_cleaner_interval_millisec_max", 256000);
-        if (cleaner_interval_millisec_max <= 0) {
-            cleaner_interval_millisec_max = 256000;
-        }
-        bool initially_enable_cleaners =
-            _options.get_bool_option("sm_backgroundflush", true);
-        bool bufferpool_swizzle =
-            _options.get_bool_option("sm_bufferpool_swizzle", false);
-        std::string bufferpool_replacement_policy = 
-            _options.get_string_option("sm_bufferpool_replacement_policy", "clock");
-        uint32_t cleaner_write_buffer_pages = (uint32_t) 
-            _options.get_int_option("sm_cleaner_write_buffer_pages", 64);
-
-        smlevel_0::bf = new bf_tree_m(npages,
-                npgwriters,
-                cleaner_interval_millisec_min,
-                cleaner_interval_millisec_max,
-                cleaner_write_buffer_pages,
-                bufferpool_replacement_policy.c_str(),
-                initially_enable_cleaners,
-                bufferpool_swizzle
-                );
+        smlevel_0::bf = new bf_tree_m(_options);
 
         assert(smlevel_0::bf);
 #endif
@@ -147,61 +106,21 @@ void basethread_t::start_io()
         assert(smlevel_3::dir);
 #endif
 
-        smlevel_0::dev = new device_m;
-        assert(smlevel_0::dev);
-        cerr << "OK" << endl;
     }
 }
 
-void basethread_t::start_log(string logdir, long max_logsz)
+void basethread_t::start_log(string logdir)
 {
     if (!smlevel_0::log) {
         // instantiate log manager
         log_m* log;
         cerr << "Initializing log manager ... " << flush;
-        smlevel_0::max_logsz = max_logsz;
 #ifdef USE_SHORE
         const int logbufsize = 81920 * 1024; // 80 MB
         W_COERCE(log_m::new_log_m(log, logdir, logbufsize, false));
 #else
-        // TODO: initialize all components (incl. log_core) by passing
-        // const sm_options& as parameter
-        ErrLog* errlog = smlevel_0::errlog;
-        (void) max_logsz;
-
-        std::string logimpl = _options.
-        get_string_option("sm_log_impl", log_core::IMPL_NAME);
-        uint64_t logbufsize = _options.get_int_option("sm_logbufsize",
-                128 << 10); // at least 1024KB
-
-        // pretty big limit -- really, the limit is imposed by the OS's
-        // ability to read/write
-        if (uint64_t(logbufsize) < (uint64_t) 4 * ss_m::page_sz) {
-            errlog->clog << fatal_prio
-                << "Log buf size (sm_logbufsize = " << (int)logbufsize
-                << " ) is too small for pages of size "
-                << unsigned(ss_m::page_sz) << " bytes."
-                << flushl;
-            errlog->clog << fatal_prio
-                << "Need to hold at least 4 pages ( " << 4 * ss_m::page_sz
-                << ")"
-                << flushl;
-            W_FATAL(eCRASH);
-        }
-        if (uint64_t(logbufsize) > uint64_t(max_int4)) {
-            errlog->clog << fatal_prio
-                << "Log buf size (sm_logbufsize = " << (int)logbufsize
-                << " ) is too big: individual log files can't be large files yet."
-                << flushl;
-            W_FATAL(eCRASH);
-        }
-        log = new log_core(
-                logdir.c_str(),
-                logbufsize,      // logbuf_segsize
-                _options.get_bool_option("sm_reformat_log", false),
-                _options.get_int_option("sm_carray_slots",
-                    ConsolidationArray::DEFAULT_ACTIVE_SLOT_COUNT)
-                );
+        _options.set_string_option("sm_logidr", logdir);
+        log = new log_core(_options);
 #endif
         smlevel_0::log = log;
         cerr << "OK" << endl;
@@ -269,16 +188,11 @@ void basethread_t::start_other()
         smlevel_2::rt = new rtree_m;
         smlevel_2::ra = new ranges_m;
 #endif
-        smlevel_4::lid = new lid_m();
 
         assert(
                 smlevel_0::lm &&
                 smlevel_1::chkpt &&
-                smlevel_2::bt &&
-                smlevel_2::fi &&
-                smlevel_2::rt &&
-                smlevel_2::ra &&
-                smlevel_4::lid
+                smlevel_2::bt
               );
 
         cerr << "OK" << endl;
@@ -302,22 +216,21 @@ void basethread_t::start_other()
     assert(io);
 #endif
 
-    vid_t vid;
-    u_int vol_cnt;
-    // inform device_m about the device
-    W_COERCE(io->mount_dev(path.c_str(), vol_cnt));
-    if (vol_cnt == 0) return;
-
-    // make sure volumes on the dev are not already mounted
+    size_t npages = 1024;
+    
+    W_COERCE(vol_t::format_dev(path.c_str(), npages, false));
     lvid_t lvid;
-    W_COERCE(io->get_lvid(path.c_str(), lvid));
-    vid = io->get_vid(lvid);
-    if (vid != vid_t::null) {
-        // already mounted
-        return;
-    }
+    vid_t tmp_vid;
+    W_COERCE(io->get_new_vid(tmp_vid));
+    W_COERCE(vol_t::format_vol(path.c_str(), lvid, tmp_vid, npages, true));
+    W_COERCE(io->mount(path.c_str(), tmp_vid));
 
-    W_COERCE(io->get_new_vid(vid));
+    // TODO: handle vid and multiple devices
+
+    // CS: checkpoint must be taken to record the volume mount, otherwise
+    // recovery will fail (TODO this general problem should be fixed)
+    smlevel_4::chkpt->synch_take();
+
 #ifdef USE_SHORE
     W_COERCE(dir->mount(path, vid));
 #endif

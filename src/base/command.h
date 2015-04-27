@@ -47,9 +47,10 @@ protected:
     BaseScanner* getScanner(bool archive = false);
     BaseScanner* getMergeScanner();
 
-    string logdir; // TODO make private once scan_thread_t is gone
 private:
     BaseScanner* scanner;
+    string logdir;
+    size_t limit;
 };
 
 #endif

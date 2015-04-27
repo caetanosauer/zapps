@@ -104,7 +104,8 @@ w_rc_t file_desc_t::find_root_iid(ss_m* /* db */)
 
 #endif
 
-    W_DO(ss_m::vol_root_index(_vid, _root_iid));
+    // CS: TODO fix this for Zero API
+    // W_DO(ss_m::vol_root_index(_vid, _root_iid));
     return RCOK;
 }
 

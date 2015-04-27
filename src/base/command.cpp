@@ -11,6 +11,7 @@
 //#include "commands/trace.h"
 
 #include "genarchive.h"
+#include "logcat.h"
 
 /*
  * Adapted from
@@ -33,8 +34,7 @@ void Command::init()
     /*
      * COMMANDS MUST BE REGISTERED HERE AND ONLY HERE
      */
-    //REGISTER_COMMAND("head", cat);
-    //REGISTER_COMMAND("tail", cat);
+    REGISTER_COMMAND("logcat", LogCat);
     //REGISTER_COMMAND("skew", skew);
     //REGISTER_COMMAND("trace", trace);
     //REGISTER_COMMAND("dirtypagestats", dirtypagestats);
@@ -98,6 +98,8 @@ void LogScannerCommand::setupOptions()
     options.add_options()
         ("logdir,l", po::value<string>(&logdir)->required(),
             "Directory containing log to be scanned")
+        ("n", po::value<size_t>(&limit)->default_value(0),
+            "Number of log records to scan")
     ;
 }
 

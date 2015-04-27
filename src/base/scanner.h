@@ -19,10 +19,10 @@ protected:
     virtual void handle(logrec_t* lr);
     virtual void finalize();
 public: // TODO make protected and add register methods
-    std::vector<handler*> any_handlers;
-    std::vector<handler*> pid_handlers;
-    std::vector<handler*> transaction_handlers;
-    std::vector<std::vector<handler*>> type_handlers;
+    std::vector<Handler*> any_handlers;
+    std::vector<Handler*> pid_handlers;
+    std::vector<Handler*> transaction_handlers;
+    std::vector<std::vector<Handler*>> type_handlers;
     std::function<void(const char*)> openFileCallback;
 };
 

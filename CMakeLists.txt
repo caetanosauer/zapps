@@ -88,7 +88,7 @@ CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/config/zapps-config.h.in
 
 IF(NOT USE_SHORE)
     IF(NOT SM_BINARY_DIR)
-        SET(SM_BINARY_DIR ${CMAKE_BINARY_DIR}/../zero CACHE PATH
+        SET(SM_BINARY_DIR ${CMAKE_BINARY_DIR}/../../zero/build CACHE PATH
             "Path to Zero binary folder, where static libraries are found")
         MESSAGE("SM_BINARY_DIR not found -- set to ${SM_BINARY_DIR}")
     ENDIF()

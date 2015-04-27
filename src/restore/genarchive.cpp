@@ -39,7 +39,7 @@ void GenArchive::run()
 
     start_base();
     start_io();
-    start_log(logdir, maxLogSize);
+    start_log(logdir);
     start_archiver(archdir, workspaceSize, blockSize);
 
     lsn_t durableLSN = smlevel_0::log->durable_lsn();

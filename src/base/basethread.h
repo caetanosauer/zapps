@@ -24,8 +24,8 @@ public:
     bool finished;
 
     static void start_base();
-    static void start_buffer(int npages);
-    static void start_log(string logdir, long max_logsz);
+    static void start_buffer();
+    static void start_log(string logdir);
     // default archiver workspace size = 800MB
     static void start_archiver(string archdir, size_t wsize, size_t bsize);
     static void start_merger(string archdir);

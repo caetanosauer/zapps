@@ -1,6 +1,5 @@
 #include "scanner.h"
 
-#include <device.h>
 #include <chkpt.h>
 #include <sm.h>
 #include <restart.h>
@@ -274,8 +273,7 @@ void PageScanner::run()
 {
     start_base();
     start_io();
-    // default to 10k pages = 80MB
-    start_buffer(10000);
+    start_buffer();
     mount_device(devicePath.c_str());
     io_m* io = smlevel_0::io;
     start_other();

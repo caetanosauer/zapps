@@ -8,13 +8,15 @@
 #include <unordered_set>
 #include <algorithm> 
 
-class handler {
+class Handler {
 public:
     //invoke performs handler activity
     virtual void invoke(logrec_t &r) = 0;
     virtual void finalize() = 0;
 
     virtual void newFile(const char* /* fname */) {};
+
+    virtual ~Handler() {};
 };
 
 class PageHandler {
