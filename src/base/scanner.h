@@ -3,8 +3,9 @@
 
 #include "zapps-config.h"
 
-#define SM_SOURCE
-#include <sm_int_4.h>
+#include "sm_base.h"
+#include "lsn.h"
+#include "logarchiver.h"
 
 #include "basethread.h"
 #include "handler.h"
@@ -68,7 +69,7 @@ private:
 class PageScanner : public basethread_t {
 public:
     PageScanner(string devicePath, bool inclSys = true, bool scanStores = true)
-        : devicePath(devicePath), includeSystemPages(inclSys), 
+        : devicePath(devicePath), includeSystemPages(inclSys),
         scanStores(scanStores) {}
     virtual ~PageScanner() {};
 

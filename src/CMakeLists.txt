@@ -18,12 +18,6 @@ INCLUDE_DIRECTORIES (
   ${SM_BINARY_DIR}/src/sthread
 )
 
-if(USE_SHORE)
-    include_directories(
-        ${SM_BINARY_DIR}/src/atomic_ops
-    )
-endif()
-
 add_subdirectory(base)
 add_subdirectory(restore)
 add_subdirectory(kits)
@@ -46,10 +40,5 @@ set(zapps_LIBS
     pthread
     boost_program_options
 )
-
-if(USE_SHORE)
-    # Additional libs required by Shore-MT
-    set (zapps_LIBS ${zapps_LIBS} libatomic_ops)
-endif()
 
 target_link_libraries(zapps ${zapps_LIBS})

@@ -3,12 +3,10 @@
 
 #include "zapps-config.h"
 
-#define SM_SOURCE
-#include <sm_int_4.h>
-
-#ifndef USE_SHORE
-#include <sm_options.h>
-#endif
+#include "sm_base.h"
+#include "vol.h"
+#include "logarchiver.h"
+#include "xct.h"
 
 #include <stdexcept>
 #include <queue>
@@ -34,7 +32,7 @@ public:
     static void print_stats();
 
     void queue_for_mount(string path);
-    
+
 protected:
     static void mount_device(string path);
     void begin_xct();
@@ -47,9 +45,7 @@ private:
     pthread_mutex_t running_mutex;
     xct_t* current_xct;
 
-#ifndef USE_SHORE
     static sm_options _options;
-#endif
 };
 
 #endif

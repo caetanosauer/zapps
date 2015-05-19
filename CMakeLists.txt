@@ -17,8 +17,6 @@ MESSAGE (STATUS)
 # Require 64-bit CPU
 IF(${CMAKE_SYSTEM_PROCESSOR} MATCHES ".*64.*")
     MESSAGE (STATUS "Yes, you are on 64bit OS/CPU!")
-    # Used in some checks in Shore-MT headers
-    SET (ARCH_LP64  "true") # so far, always assume 64 bits
 ELSE()
     MESSAGE (FATAL_ERROR
         "Zapps can only be built on 64bit OS/CPU. Your system seems 
@@ -75,49 +73,23 @@ ADD_DEFINITIONS(${ALL_FLAGS})
 #############################################################
 
 # options and configurations
-option (USE_SHORE 
-    "Compile with Shore-MT instead of Zero" OFF) 
-
 CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/config/zapps-config.h.in
     ${CMAKE_BINARY_DIR}/config/zapps-config.h )
 
 
 #############################################################
-# Library dependencies of Zero/Shore-MT
+# Library dependencies of Zero
 #############################################################
 
-IF(NOT USE_SHORE)
-    IF(NOT SM_BINARY_DIR)
-        SET(SM_BINARY_DIR ${CMAKE_BINARY_DIR}/../../zero/build CACHE PATH
-            "Path to Zero binary folder, where static libraries are found")
-        MESSAGE("SM_BINARY_DIR not found -- set to ${SM_BINARY_DIR}")
-    ENDIF()
-    IF(NOT SM_SOURCE_DIR)
-        SET(SM_SOURCE_DIR ${CMAKE_SOURCE_DIR}/../zero CACHE PATH
-            "Path to Zero source folder, where headers are found")
-        MESSAGE("SM_SOURCE_DIR not found -- set to ${SM_SOURCE_DIR}")
-    ENDIF()
-ELSE()
-    # In Shore-MT, binaries and source are on the same path
-    # Make checks for consistency of paramters given, if any
-    IF(SM_SOURCE_DIR AND SM_BINARY_DIR)
-        IF(NOT (SM_SOURCE_DIR STREQUAL SM_BINARY_DIR))
-            MESSAGE(FATAL_ERROR 
-                "SM_BINARY_DIR and SM_SOURCE_DIR must be equal with USE_SHORE!")
-            MESSAGE(FATAL_ERROR 
-                "Only one of the options is required though.")
-            RETURN()
-        ENDIF()
-    ELSEIF (SM_SOURCE_DIR AND (NOT SM_BINARY_DIR))
-        SET(SM_BINARY_DIR ${SM_SOURCE_DIR})
-    ELSEIF ((NOT SM_SOURCE_DIR) AND SM_BINARY_DIR)
-        SET(SM_SOURCE_DIR ${SM_BINARY_DIR})
-    ELSE()
-        SET(SM_SOURCE_DIR ${CMAKE_SOURCE_DIR}/../shore-mt CACHE PATH
-            "Path to Shore-MT source folder, where headers and libraries are found")
-        MESSAGE("SM_SOURCE_DIR not found -- set to ${SM_SOURCE_DIR}")
-        SET(SM_BINARY_DIR ${SM_SOURCE_DIR})
-    ENDIF()
+IF(NOT SM_BINARY_DIR)
+    SET(SM_BINARY_DIR ${CMAKE_BINARY_DIR}/../../zero/build CACHE PATH
+        "Path to Zero binary folder, where static libraries are found")
+    MESSAGE("SM_BINARY_DIR not found -- set to ${SM_BINARY_DIR}")
+ENDIF()
+IF(NOT SM_SOURCE_DIR)
+    SET(SM_SOURCE_DIR ${CMAKE_SOURCE_DIR}/../zero CACHE PATH
+        "Path to Zero source folder, where headers are found")
+    MESSAGE("SM_SOURCE_DIR not found -- set to ${SM_SOURCE_DIR}")
 ENDIF()
 
 add_library(libsm STATIC IMPORTED)
@@ -135,13 +107,6 @@ set_target_properties(libfc PROPERTIES
 add_library(libsthread STATIC IMPORTED)
 set_target_properties(libsthread PROPERTIES
     IMPORTED_LOCATION ${SM_BINARY_DIR}/src/sthread/libsthread.a)
-
-# libatomic_ops was removed in Zero
-IF(USE_SHORE)
-    add_library(libatomic_ops STATIC IMPORTED)
-    set_target_properties(libatomic_ops PROPERTIES
-        IMPORTED_LOCATION ${SM_BINARY_DIR}/src/atomic_ops/libatomic_ops.a)
-ENDIF()
 
 #############################################################
 # Sub-directories

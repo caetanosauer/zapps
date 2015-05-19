@@ -48,21 +48,11 @@ void GenArchive::run()
     smlevel_0::logArchiver->fork();
 
     // wait for all log to be archived
-#ifdef USE_SHORE
-    while (true) {
-        if (smlevel_0::logArchiver->getLastArchivedLSN() >= durableLSN) {
-            break;
-        }
-        smlevel_0::logArchiver->activate(durableLSN);
-        sleep(1);
-    }
-#else
     smlevel_0::logArchiver->activate(durableLSN, true /* wait */);
-    
+
     // by sending another activation signal with blocking,
     // we wait for logarchiver to consume up to durableLSN
     smlevel_0::logArchiver->activate(durableLSN, true);
-#endif
 
     smlevel_0::logArchiver->start_shutdown();
     smlevel_0::logArchiver->join();

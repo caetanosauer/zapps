@@ -5,9 +5,7 @@
 #ifndef ZERO_PROXY_H
 #define ZERO_PROXY_H
 
-#ifndef USE_SHORE
-
-#include "sm_int_4.h"
+#include "sm_base.h"
 #include "w_okvl_inl.h"
 
 #ifndef XCT_DEPENDENT_H
@@ -24,7 +22,7 @@ okvl_mode NL = ALL_N_GAP_N;
 /**\brief Iterator over an index.
  * \details
  * \ingroup SSMSCANI
- * To iterate over the {key,value} pairs in an index, 
+ * To iterate over the {key,value} pairs in an index,
  * construct an instance of this class,
  * and use its next() method to advance the cursor and the curr() method
  * to copy out keys and values into server-space.
@@ -34,7 +32,7 @@ okvl_mode NL = ALL_N_GAP_N;
  * Example code:
  * \code
  * stid_t fid(1,7);
- * scan_index_i scan(fid,             
+ * scan_index_i scan(fid,
                 scan_index_i::ge, vec_t::neg_inf,
                 scan_index_i::le, vec_t::pos_inf, false,
                 ss_m::t_cc_kvl);
@@ -82,7 +80,7 @@ public:
     NORET            scan_index_i(
         const stid_t&             stid,
         cmp_t                     c1,
-        const cvec_t&             bound1, 
+        const cvec_t&             bound1,
         cmp_t                     c2,
         const cvec_t&             bound2,
         bool                      include_nulls = false,
@@ -104,7 +102,7 @@ public:
      * @param[out] elen   Pointer to sm_size_t variable.  Length of value is written here.
      */
     rc_t            curr(
-        vec_t*           key, 
+        vec_t*           key,
         smsize_t&        klen,
         vec_t*           el,
         smsize_t&        elen)  {
@@ -126,7 +124,7 @@ public:
     /// Free the resources used by this iterator. Called by desctructor if
     /// necessary.
     void             finish();
-    
+
     /// If false, curr() may be called.
     bool             eof()    { return _eof; }
 
@@ -146,9 +144,9 @@ private:
     bool                 _skip_nulls;
 
     rc_t            _fetch(
-        vec_t*                key, 
-        smsize_t*             klen, 
-        vec_t*                el, 
+        vec_t*                key,
+        smsize_t*             klen,
+        vec_t*                el,
         smsize_t*             elen,
         bool                  skip);
 
@@ -198,12 +196,12 @@ private:
 
 public:
 
-    table_scan_iter_impl(ss_m* db, 
+    table_scan_iter_impl(ss_m* db,
                          TableDesc* ptable,
                          table_manager* pmanager,
-                         lock_mode_t alm) 
+                         lock_mode_t alm)
         : table_iter(db, ptable, alm, true), _pmanager(pmanager)
-    { 
+    {
         assert (_pmanager);
         W_COERCE(open_scan(db));
         assert(neg_inf.construct_neginfkey());
@@ -213,16 +211,16 @@ public:
         fake_pid = lsn_t(table_iter::_file->fid(), fake_shpid);
         fake_slot = 0;
     }
-        
-    ~table_scan_iter_impl() { 
-        tuple_iter_t<TableDesc, scan_file_i, table_row_t >::close_scan(); 
+
+    ~table_scan_iter_impl() {
+        tuple_iter_t<TableDesc, scan_file_i, table_row_t >::close_scan();
     }
 
 
     w_rc_t open_scan(ss_m* db) {
         if (!table_iter::_opened) {
             assert (db);
-            table_iter::_scan = new scan_index_i(table_iter::_file->fid(), 
+            table_iter::_scan = new scan_index_i(table_iter::_file->fid(),
                     cmp_t::ge, // open index on negative infinity for full scan
                     neg_inf,
                     cmt_t::le, // .. and close on positive infinity
@@ -269,8 +267,5 @@ public:
 
 };
 #endif // 0
-
-#endif
-
 
 #endif

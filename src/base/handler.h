@@ -3,10 +3,12 @@
 
 #include "zapps-config.h"
 
+#include "logrec.h"
+
 #include <iostream>
 #include <sstream>
 #include <unordered_set>
-#include <algorithm> 
+#include <algorithm>
 
 class Handler {
 public:

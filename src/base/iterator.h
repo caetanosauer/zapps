@@ -3,18 +3,12 @@
 
 #include "zapps-config.h"
 
-#define SM_SOURCE
-#include <sm_int_4.h>
+#include "sm_base.h"
+#include "generic_page.h"
 
 #include<fstream>
 
 #include "ringbuffer.h"
-
-#ifdef USE_SHORE
-typedef page_p PageType;
-#else
-typedef generic_page PageType;
-#endif
 
 class PageIterator : public smthread_t
 {
@@ -26,7 +20,7 @@ public:
             unsigned ioSizeInPages = 128);
     virtual ~PageIterator();
 
-    PageType* next();
+    generic_page* next();
     bool hasNext();
     long getCount() { return count; }
     void writePage(char* buf, size_t index);
@@ -46,7 +40,7 @@ private:
     size_t bytesRead;
     int blocksRead;
     char* buf;
-    PageType currentPage;
+    generic_page currentPage;
     shpid_t prevPageNo;
     AsyncRingBuffer* asyncBuf;
 

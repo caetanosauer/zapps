@@ -5,13 +5,8 @@
 #include <restart.h>
 #include <vol.h>
 
-#ifdef USE_SHORE
-#define PARSE_LSN(a,b) \
-    LogArchiver::parseLSN(a, b);
-#else
 #define PARSE_LSN(a,b) \
     LogArchiver::ArchiveDirectory::parseLSN(a, b);
-#endif
 
 
 void BaseScanner::handle(logrec_t* lr)
@@ -172,7 +167,7 @@ void BlockScanner::run()
     //long count = 0;
     int firstPartition = pnum;
     logrec_t* lr = NULL;
-    
+
     while (true) {
         // open partition number pnum
         string fname = getNextFile();
@@ -182,7 +177,7 @@ void BlockScanner::run()
             // scan is over
             break;
         }
-        
+
         // does the file exist?
         if (!in.good()) {
             in.close();
@@ -224,7 +219,7 @@ void BlockScanner::run()
             }
         }
 
-        in.close();                
+        in.close();
     }
 
     if (!archive && pnum == firstPartition && bpos == 0) {
@@ -265,7 +260,7 @@ void MergeScanner::run()
 
     delete lrbuf;
     delete m;
-    
+
     BaseScanner::finalize();
 }
 
@@ -275,55 +270,14 @@ void PageScanner::run()
     start_io();
     start_buffer();
     mount_device(devicePath.c_str());
-    io_m* io = smlevel_0::io;
+    vol_m* volmgr = smlevel_0::vol;
     start_other();
 
     begin_xct();
 
-    lvid_t lvid;
-    W_COERCE(io->get_lvid(devicePath.c_str(), lvid));
-    vid_t vid = io->get_vid(lvid);
-
     if (scanStores) {
-#ifdef USE_SHORE
-        // Store management was redesigned on Zero. In Shore, the obsolete
-        // directory manager (dir_m) was used. In Zero, it was replaced by
-        // the simpler stnode_cache_t
-        snum_t snum = includeSystemPages ? 0 : 3;
-        snum_t lastSnum;
-        W_COERCE(io->max_store_id_in_use(vid, lastSnum));
-
-        lpid_t pid, lastPid;
-        while (snum <= lastSnum) {
-            stid_t stid = stid_t(vid, snum);
-            // CS: sdesc does nothing so far, so commented out
-            /*
-            sdesc_t* sdesc;
-            rc_t rc = smlevel_3::dir->access(stid, sdesc, EX);
-            if(rc.is_error()) {
-                if(rc.err_num() == smlevel_0::eBADSTID) {
-                    snum++;
-                    continue;
-                }
-                W_COERCE(rc);
-            }
-
-            handleStore(stid, sdesc);
-            */
-            handleStore(stid);
-
-            W_COERCE(io->first_page(stid, pid));
-            W_COERCE(io->last_page(stid, lastPid));
-
-            while (pid != lastPid) {
-                handlePage(pid);
-                W_COERCE(io->next_page(pid));
-            }
-            handlePage(lastPid);
-            snum++;
-        }
-#else
-        vol_t* vol = io->get_volume(vid);
+        vol_t* vol = volmgr->get(devicePath.c_str());
+        vid_t vid = vol->vid();
         stnode_cache_t* scache = vol->get_stnode_cache();
         const std::vector<snum_t>& snums = scache->get_all_used_store_ID();
 
@@ -350,7 +304,6 @@ void PageScanner::run()
             handlePage(lastPid);
             */
         }
-#endif
     }
     else {
         // TODO?

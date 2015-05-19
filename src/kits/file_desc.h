@@ -164,7 +164,7 @@ public:
     uint32_t       get_pd() const { return _pd; }
 
     bool          is_fid_valid() const { return (_fid != stid_t::null); }
-    bool          is_vid_valid() { return (_vid != vid_t::null); }
+    bool          is_vid_valid() { return (_vid != 0); }
     bool          is_root_valid() { return (_root_iid != stid_t::null); }
 
     w_rc_t        find_fid(ss_m* db);

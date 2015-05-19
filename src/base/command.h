@@ -3,8 +3,7 @@
 
 #include "zapps-config.h"
 
-#define SM_SOURCE
-#include <sm_int_4.h>
+#include "sm_base.h"
 
 #include "basethread.h"
 #include "handler.h"

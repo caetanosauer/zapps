@@ -87,7 +87,7 @@ bool PageIterator::hasNext()
     return bpos < bytesRead || !asyncBuf->isFinished();
 }
 
-PageType* PageIterator::next()
+generic_page* PageIterator::next()
 {
     assert(hasNext());
     if (bpos == 0) {
@@ -111,11 +111,7 @@ PageType* PageIterator::next()
     assert(buf);
     assert(bpos < blockSize);
 
-#ifdef USE_SHORE
-    page_s* ps = (page_s*) (buf + bpos);    
-#else
-    PageType* ps = (PageType*) (buf + bpos);
-#endif
+    generic_page* ps = (generic_page*) (buf + bpos);
     prevPageNo = ps->pid.page;
 
     bpos += PAGE_SIZE;
@@ -132,12 +128,8 @@ PageType* PageIterator::next()
     }
 
     count++;
-#ifdef USE_SHORE
-    currentPage = page_p(ps, smlevel_0::st_regular);
-#else
     currentPage = *ps;
-#endif
-    
+
     if (asyncBuf && !hasNext()) {
         asyncBuf->consumerRelease();
     }
