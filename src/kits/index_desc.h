@@ -1,19 +1,19 @@
 /* -*- mode:C++; c-basic-offset:4 -*-
      Shore-kits -- Benchmark implementations for Shore-MT
-   
+
                        Copyright (c) 2007-2009
       Data Intensive Applications and Systems Labaratory (DIAS)
                Ecole Polytechnique Federale de Lausanne
-   
+
                          All Rights Reserved.
-   
+
    Permission to use, copy, modify and distribute this software and
    its documentation is hereby granted, provided that both the
    copyright notice and this permission notice appear in all copies of
    the software, derivative works or modified versions, and any
    portions thereof, and that both notices appear in supporting
    documentation.
-   
+
    This code is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. THE AUTHORS
@@ -25,7 +25,7 @@
  *
  *  @brief:  Description of an index.
  *
- *  All the secondary indexes on the table are linked together.  
+ *  All the secondary indexes on the table are linked together.
  *  An index is described by an array of serial number of fields.
  *
  *  @author: Mengzhi Wang, April 2001
@@ -54,12 +54,12 @@ class table_desc_t;
  *
  *  @brief: Description of a Shore index.
  *
- *  @note:  Even the variable length fields are treated as fixed 
+ *  @note:  Even the variable length fields are treated as fixed
  *          length, with their maximum possible size.
  *
  ******************************************************************/
 
-class index_desc_t 
+class index_desc_t
 {
     friend class table_desc_t;
 
@@ -69,9 +69,8 @@ private:
     unsigned*           _key;                      /* index of fields in the base table */
     bool            _unique;                   /* whether allow duplicates or not */
     bool            _primary;                  /* is it primary or not */
-    bool            _nolock;                   /* is it using locking or not */ 
-    unsigned            _mr;                       /* is it multi-rooted */ 
-    bool            _latchless;                /* does it use any latches at all */ 
+    bool            _nolock;                   /* is it using locking or not */
+    bool            _latchless;                /* does it use any latches at all */
     bool            _rmapholder;               /* it is used only for the range mapping */
 
     index_desc_t*   _next;                     /* linked list of all indices */
@@ -82,11 +81,6 @@ private:
     // CS: removed volatile, which has nothing to do with thread safety!
     unsigned _maxkeysize;               /* maximum key size */
 
-    /* if _partition_count > 1, _partition_stids contains stids for
-       all N partitions, otherwise it's NULL
-     */
-    int		  _partition_count;
-    stid_t*	  _partition_stids;
 
 public:
 
@@ -94,9 +88,9 @@ public:
     /* --- constructor --- */
     /* ------------------- */
 
-    index_desc_t(const char* name, const int fieldcnt, 
-                 int partitions, const unsigned* fields,
-                 bool unique=true, bool primary=false, 
+    index_desc_t(const char* name, const int fieldcnt,
+                 const unsigned* fields,
+                 bool unique=true, bool primary=false,
                  const uint32_t& pd=PD_NORMAL,
                  bool rmapholder=false);
 
@@ -109,7 +103,7 @@ public:
 
     const char*  name() const { return _base.name(); }
     unsigned field_count() const { return _base.field_count(); }
-    
+
 
 
     /* -------------------------- */
@@ -117,32 +111,19 @@ public:
     /* -------------------------- */
 
     inline w_rc_t check_fid(ss_m* db) {
-	if(!is_partitioned())
 	    return _base.check_fid(db);
-	
-	// check all the partition fids...
-	for(int i=0; i < _partition_count; i++) {
-	    if (!is_fid_valid(i)) {
-		if (!_base.is_root_valid())
-		    W_DO(_base.find_root_iid(db));
-		W_DO(find_fid(db, i));
-	    }
-        }
-        return (RCOK);
     }
 
-    stid_t&	fid(int const pnum) {
-	assert(pnum >= 0 && pnum < _partition_count);
-	return is_partitioned()? _partition_stids[pnum] : _base.fid();
-    }	
-    w_rc_t	find_fid(ss_m* db, int pnum);
-    
-    bool is_fid_valid(int pnum) const {
-	assert(pnum >= 0 && pnum < _partition_count);
-	return is_partitioned()? _partition_stids[pnum] != stid_t::null : _base.is_fid_valid();
+    stid_t&	fid() {
+	return _base.fid();
     }
-    void set_fid(int const pnum, stid_t const &fid);	
-    
+    w_rc_t	find_fid(ss_m* db);
+
+    bool is_fid_valid() const {
+	return _base.is_fid_valid();
+    }
+    void set_fid(stid_t const &fid);
+
     /* ---------------------- */
     /* --- access methods --- */
     /* ---------------------- */
@@ -151,12 +132,9 @@ public:
     inline bool is_unique() const { return (_unique); }
     inline bool is_primary() const { return (_primary); }
     inline bool is_relaxed() const { return (_nolock); }
-    inline bool is_mr() const { return (_mr); }
     inline bool is_latchless() const { return (_latchless); }
     inline bool is_rmapholder() const { return (_rmapholder); }
-    inline bool is_partitioned() const { return _partition_count > 1; }
 
-    inline int  get_partition_count() const { return _partition_count; }
     inline int  get_keysize() { return (*&_maxkeysize); }
     inline void set_keysize(const unsigned sz)
     {

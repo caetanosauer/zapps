@@ -155,8 +155,6 @@ public:
 
     w_rc_t create_physical_index(ss_m* db, index_desc_t* index);
 
-    w_rc_t create_physical_empty_primary_idx();
-
 
     /* ----------------------------------------------------- */
     /* --- create the logical description of the indexes --- */
@@ -164,7 +162,6 @@ public:
 
     // create an index on the table
     bool   create_index_desc(const char* name,
-                             int partitions,
                              const unsigned* fields,
                              const unsigned num,
                              const bool unique=true,
@@ -172,7 +169,6 @@ public:
                              const uint32_t& pd=PD_NORMAL);
 
     bool   create_primary_idx_desc(const char* name,
-                                   int partitions,
                                    const unsigned* fields,
                                    const unsigned num,
                                    const uint32_t& pd=PD_NORMAL);

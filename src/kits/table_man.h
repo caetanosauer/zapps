@@ -93,7 +93,7 @@
 
 
 #include "sm_vas.h"
-#include "mcs_lock.h"
+#include "srwlock.h"
 
 //#include "shore_msg.h"
 #include "util/guard.h"
@@ -138,13 +138,11 @@ public:
 
     virtual ~table_man_t() {}
 
-    static mcs_lock register_table_lock;
+    static srwlock_t register_table_lock;
     void register_table_man();
     static std::map<stid_t, table_man_t*> stid_to_tableman;
 
     table_desc_t* table() { return (_ptable); }
-
-    int get_pnum(index_desc_t* pindex, table_row_t const* ptuple) const;
 
     // loads store id values in fid field for this table and its indexes
     w_rc_t load_and_register_fid(ss_m* db);
@@ -345,22 +343,6 @@ public:
 
     /* fetch the pages of the table and its indexes to buffer pool */
     virtual w_rc_t fetch_table(ss_m* db, lock_mode_t alm = SH);
-
-
-    /* ---------------------------------------------------------------
-     *
-     * @fn:    relocate_records
-     *
-     * @brief: The registered callback function, which is called when
-     *         PLP-Leaf or PLP-Part moves records
-     *
-     * --------------------------------------------------------------- */
-
-    static w_rc_t relocate_records(vector<rid_t>&    old_rids,
-				   vector<rid_t>&    new_rids);
-
-
-
 
 
 }; // EOF: table_man_t

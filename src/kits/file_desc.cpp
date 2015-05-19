@@ -98,7 +98,6 @@ w_rc_t file_desc_t::find_root_iid(ss_m* /* db */)
     _vid = vid;
 #else
 
-#warning IP: Still not multi-volume ready
     _vid = 1; /* explicitly set volume id = 1 */
 
 #endif
@@ -143,37 +142,9 @@ w_rc_t file_desc_t::find_fid(ss_m* db)
 }
 
 
-w_rc_t index_desc_t::find_fid(ss_m* db, int pnum)
+w_rc_t index_desc_t::find_fid(ss_m* db)
 {
-    assert(pnum >= 0 && pnum < _partition_count);
-    if(is_partitioned()) {
-	// if valid fid don't bother to lookup
-	if (is_fid_valid(pnum))
-	    return RCOK;
-
-	file_info_t   info;
-	bool          found = false;
-	smsize_t      infosize = sizeof(file_info_t);
-
-	if (!_base.is_root_valid()) W_DO(_base.find_root_iid(db));
-
-	char tmp[100];
-	sprintf(tmp, "%s_%d", _base._name, pnum);
-        w_keystr_t kstr;
-        kstr.construct_regularkey(tmp, strlen(tmp));
-	W_DO(ss_m::find_assoc(_base.root_iid(), kstr, &info, infosize, found));
-	_partition_stids[pnum] = info.fid();
-
-	if (!found) {
-	    cerr << "Problem finding index " << tmp << endl;
-	    return RC(se_TABLE_NOT_FOUND);
-	}
-
-	return RCOK;
-    }
-    else {
 	return _base.find_fid(db);
-    }
 }
 
 
@@ -201,7 +172,7 @@ file_info_t::file_info_t(const stid_t& fid,
 }
 
 file_info_t::file_info_t()
-    : _ftype(FT_HEAP),
+    : _ftype(FT_TABLE),
       _record_size(std::pair<int,int>(0,0)),
       _first_rid(0, shrid_t(0,0,0)),
       _cur_rid(0, shrid_t(0,0,0))

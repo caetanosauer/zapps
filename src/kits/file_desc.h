@@ -1,19 +1,19 @@
 /* -*- mode:C++; c-basic-offset:4 -*-
      Shore-kits -- Benchmark implementations for Shore-MT
-   
+
                        Copyright (c) 2007-2009
       Data Intensive Applications and Systems Labaratory (DIAS)
                Ecole Polytechnique Federale de Lausanne
-   
+
                          All Rights Reserved.
-   
+
    Permission to use, copy, modify and distribute this software and
    its documentation is hereby granted, provided that both the
    copyright notice and this permission notice appear in all copies of
    the software, derivative works or modified versions, and any
    portions thereof, and that both notices appear in supporting
    documentation.
-   
+
    This code is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. THE AUTHORS
@@ -54,7 +54,7 @@ const unsigned int MAX_BODY_SIZE     = 1024;
 #define  DELIM_CHAR            '|'
 #define  ROWEND_CHAR            '\r'
 
-const unsigned int COMMIT_ACTION_COUNT           = 2000;  
+const unsigned int COMMIT_ACTION_COUNT           = 2000;
 const unsigned int COMMIT_ACTION_COUNT_WITH_ITER = 500000;
 
 #define  MIN_SMALLINT     0
@@ -70,12 +70,12 @@ const unsigned int COMMIT_ACTION_COUNT_WITH_ITER = 500000;
  *
  *  @enum:  file_type_t
  *
- *  @brief: A file can be either a regular heap file, an index,
- *          a (secondary) index, etc... 
+ *  @brief: A file can be either a table, an index,
+ *          a (secondary) index, etc...
  *
  * --------------------------------------------------------------- */
 
-enum file_type_t  { FT_HEAP         = 0x1,
+enum file_type_t  { FT_TABLE        = 0x1,
                     FT_PRIMARY_IDX  = 0x2,
                     FT_IDX          = 0x4,
                     FT_NONE         = 0x8
@@ -93,7 +93,7 @@ enum file_type_t  { FT_HEAP         = 0x1,
  *         PD_PADDED      - use padding to reduce contention
  *         PD_MRBT_NORMAL - use MRBTrees with normal heap files
  *         PD_MRBT_PART   - use MRBTrees with partitioned heap files
- *         PD_MRBT_LEAF   - use MRBTrees with each heap page corresponding 
+ *         PD_MRBT_LEAF   - use MRBTrees with each heap page corresponding
  *                          to one leaf MRBTree index page
  *         PD_NOLOCK      - have indexes without CC
  *         PD_NOLATCH     - have indexes without even latching
@@ -102,11 +102,8 @@ enum file_type_t  { FT_HEAP         = 0x1,
 
 enum physical_design_t { PD_NORMAL      = 0x1,
                          PD_PADDED      = 0x2,
-                         PD_MRBT_NORMAL = 0x4,
-                         PD_MRBT_PART   = 0x8,
-                         PD_MRBT_LEAF   = 0x10,
-                         PD_NOLOCK      = 0x20,
-                         PD_NOLATCH     = 0x40
+                         PD_NOLOCK      = 0x4,
+                         PD_NOLATCH     = 0x8
 };
 
 
@@ -120,7 +117,7 @@ enum physical_design_t { PD_NORMAL      = 0x1,
  *
  *  --------------------------------------------------------------- */
 
-class file_desc_t 
+class file_desc_t
 {
     friend class index_desc_t;
 protected:
@@ -144,8 +141,8 @@ public:
     /* --- construction --- */
     /* -------------------- */
 
-    file_desc_t(const char* name, 
-                const unsigned fcnt, 
+    file_desc_t(const char* name,
+                const unsigned fcnt,
                 const uint32_t& apd = PD_NORMAL);
     virtual ~file_desc_t();
 
@@ -157,9 +154,9 @@ public:
     const char*   name() const { return _name; }
     inline stid_t& fid() { return (_fid); }
     void          set_fid(stid_t fid) { _fid = fid; }
-    vid_t         vid() { return _vid; }   
+    vid_t         vid() { return _vid; }
     stid_t        root_iid() { return _root_iid; }
-    unsigned        field_count() const { return _field_count; } 
+    unsigned        field_count() const { return _field_count; }
 
     uint32_t       get_pd() const { return _pd; }
 
@@ -178,7 +175,7 @@ public:
         }
         return (RCOK);
     }
-    
+
 }; // EOF: file_desc_t
 
 
@@ -188,12 +185,12 @@ public:
  *
  *  @struct file_info_t
  *
- *  @brief Structure that represents a Shore file in a volume. 
+ *  @brief Structure that represents a Shore file in a volume.
  *  This is the  Key information for files goes to the root btree index.
- * 
+ *
  *  --------------------------------------------------------------- */
 
-class file_info_t 
+class file_info_t
 {
 private:
     char               _fname[MAX_FNAME_LEN]; // file name
@@ -201,7 +198,7 @@ private:
     std::pair<int,int> _record_size;         // size of each column of the file record
 
     rid_t        _first_rid;   // first record
-    rid_t        _cur_rid;     // current tuple id 
+    rid_t        _cur_rid;     // current tuple id
 
 public:
 
@@ -209,8 +206,8 @@ public:
 
     // Constructor
     file_info_t(const stid_t& fid,
-                const char* fname, 
-                const file_type_t ftype = FT_HEAP);
+                const char* fname,
+                const file_type_t ftype = FT_TABLE);
     file_info_t();
     ~file_info_t() { }
 
