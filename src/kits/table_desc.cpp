@@ -34,15 +34,22 @@
 
 #include "w_key.h"
 
-table_desc_t::table_desc_t(const char* name, int fieldcnt, uint32_t pd)
-    : file_desc_t(name, fieldcnt, pd), _db(NULL),
-      _indexes(NULL), _primary_idx(NULL),
-      _maxsize(0)
+table_desc_t::table_desc_t(const char* name, int fieldcnt, uint32_t pd,
+        vid_t vid)
+    : _field_count(fieldcnt), _pd(pd), _db(NULL), _primary_idx(NULL),
+    _maxsize(0), _vid(vid)
 {
+    assert (fieldcnt>0);
+
+    pthread_mutex_init(&_fschema_mutex, NULL);
+
+    // Copy name
+    memset(_name,0,MAX_FNAME_LEN);
+    std::string str(name);
+    strncpy(_name, str.c_str(), str.length());
     // Create placeholders for the field descriptors
     _desc = new field_desc_t[fieldcnt];
 }
-
 
 table_desc_t::~table_desc_t()
 {
@@ -51,10 +58,16 @@ table_desc_t::~table_desc_t()
         _desc = NULL;
     }
 
-    if (_indexes) {
-        delete _indexes;
-        _indexes = NULL;
+    pthread_mutex_destroy(&_fschema_mutex);
+
+    if (_primary_idx) {
+        delete _primary_idx;
     }
+
+    for (size_t i = 0; i < _indexes.size(); i++) {
+        delete _indexes[i];
+    }
+    _indexes.clear();
 }
 
 
@@ -77,37 +90,10 @@ w_rc_t table_desc_t::create_physical_table(ss_m* db)
     assert (db);
     _db = db;
 
-    if (!is_vid_valid() || !is_root_valid()) {
-	W_DO(find_root_iid(db));
-    }
+    W_DO(create_physical_index(db, _primary_idx));
 
-
-    // Create the table
-    index_desc_t* index = _indexes;
-
-#warning TODO CS -- implement this
-
-    TRACE( TRACE_STATISTICS, "%s %d\n", name(), fid().store);
-
-    // Add table entry to the metadata tree
-    file_info_t file;
-    file.set_ftype(FT_TABLE);
-    file.set_fid(_fid);
-    w_keystr_t kstr;
-    kstr.construct_regularkey(name(), strlen(name()));
-    W_DO(ss_m::create_assoc(root_iid(),
-			    kstr,
-			    vec_t(&file, sizeof(file_info_t))));
-
-
-    // Create all the indexes of the table
-    while (index) {
-
-        // Create physically this index
-        W_DO(create_physical_index(db,index));
-
-        // Move to the next index of the table
-	index = index->next();
+    for (size_t i = 0; i < _indexes.size(); i++) {
+        W_DO(create_physical_index(db, _indexes[i]));
     }
 
     return (RCOK);
@@ -125,40 +111,15 @@ w_rc_t table_desc_t::create_physical_table(ss_m* db)
 
 w_rc_t table_desc_t::create_physical_index(ss_m* db, index_desc_t* index)
 {
-    // Store info
-    file_info_t file;
-
     // Create all the indexes of the table
-    stid_t iid = stid_t::null;
+    stid_t stid = stid_t::null;
 
-    // if it is the primary, update file flag
-    if (index->is_primary()) {
-        file.set_ftype(FT_PRIMARY_IDX);
-    }
-    else {
-        file.set_ftype(FT_IDX);
-    }
-
-    if (index->is_rmapholder()) {
-        file.set_ftype(FT_NONE);
-    }
-
-
-    // create one index or multiple, if the index is partitioned
-            W_DO(db->create_index(_vid, iid));
-        index->set_fid(iid);
-
-        // Add index entry to the metadata tree
-        file.set_fid(iid);
-        w_keystr_t kstr;
-        kstr.construct_regularkey(index->name(), strlen(index->name()));
-        W_DO(db->create_assoc(root_iid(),
-                              kstr,
-                              vec_t(&file, sizeof(file_info_t))));
+    W_DO(db->create_index(_vid, stid));
+    index->set_stid(stid);
 
     // Print info
     TRACE( TRACE_STATISTICS, "%s %d (%s) (%s) (%s) (%s) (%s)\n",
-           index->name(), iid.store,
+           index->name(), stid.store,
            (index->is_latchless() ? "no latch" : "latch"),
            (index->is_relaxed() ? "relaxed" : "no relaxed"),
            (index->is_unique() ? "unique" : "no unique"));
@@ -176,9 +137,9 @@ w_rc_t table_desc_t::create_physical_index(ss_m* db, index_desc_t* index)
  *
  ******************************************************************/
 
-#warning Cannot update fields included at indexes - delete and insert again
+// Cannot update fields included at indexes - delete and insert again
 
-#warning Only the last field of an index can be of variable length
+// Only the last field of an index can be of variable length
 
 bool table_desc_t::create_index_desc(const char* name,
                                      const unsigned* fields,
@@ -195,20 +156,20 @@ bool table_desc_t::create_index_desc(const char* name,
         assert(fields[i] < _field_count);
 
         // only the last field in the index can be variable lengthed
-#warning IP: I am not sure if still only the last field in the index can be variable lengthed
+        // IP: I am not sure if still only the last field in the index can be variable lengthed
 
         if (_desc[fields[i]].is_variable_length() && i != num-1) {
             assert(false);
         }
     }
 
-    // link it to the list
-    if (_indexes == NULL) _indexes = p_index;
-    else _indexes->insert(p_index);
-
     // add as primary
-    if (p_index->is_unique() && p_index->is_primary())
+    if (p_index->is_unique() && p_index->is_primary()) {
         _primary_idx = p_index;
+    }
+    else {
+        _indexes.push_back(p_index);
+    }
 
     return true;
 }
@@ -232,10 +193,6 @@ bool table_desc_t::create_primary_idx_desc(const char* name,
         }
     }
 
-    // link it to the list of indexes
-    if (_indexes == NULL) _indexes = p_index;
-    else _indexes->insert(p_index);
-
     // make it the primary index
     _primary_idx = p_index;
 
@@ -247,8 +204,8 @@ bool table_desc_t::create_primary_idx_desc(const char* name,
 // returns the stid of the table
 stid_t table_desc_t::get_primary_stid()
 {
-    stid_t stid = ( _primary_idx ? _primary_idx->fid() : fid() );
-    return (stid);
+    w_assert0(_primary_idx);
+    return _primary_idx->stid();
 }
 
 

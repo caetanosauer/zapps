@@ -62,18 +62,17 @@ class table_desc_t;
 class index_desc_t
 {
     friend class table_desc_t;
-
 private:
-    file_desc_t _base;
+    stid_t _stid;
+    string _name;
 
     unsigned*           _key;                      /* index of fields in the base table */
+    unsigned             _field_count;
     bool            _unique;                   /* whether allow duplicates or not */
     bool            _primary;                  /* is it primary or not */
     bool            _nolock;                   /* is it using locking or not */
     bool            _latchless;                /* does it use any latches at all */
     bool            _rmapholder;               /* it is used only for the range mapping */
-
-    index_desc_t*   _next;                     /* linked list of all indices */
 
     char            _keydesc[MAX_KEYDESC_LEN]; /* buffer for the index key description */
     tatas_lock      _keydesc_lock;             /* lock for the key desc */
@@ -96,39 +95,19 @@ public:
 
     ~index_desc_t();
 
-
-    /* --------------------------------- */
-    /* --- exposed inherited methods --- */
-    /* --------------------------------- */
-
-    const char*  name() const { return _base.name(); }
-    unsigned field_count() const { return _base.field_count(); }
+    const char*  name() const { return _name.c_str(); }
+    unsigned field_count() const { return _field_count; }
 
 
+    bool          is_fid_valid() const { return (_stid != stid_t::null); }
 
-    /* -------------------------- */
-    /* --- overridden methods --- */
-    /* -------------------------- */
-
-    inline w_rc_t check_fid(ss_m* db) {
-	    return _base.check_fid(db);
-    }
-
-    stid_t&	fid() {
-	return _base.fid();
-    }
-    w_rc_t	find_fid(ss_m* db);
-
-    bool is_fid_valid() const {
-	return _base.is_fid_valid();
-    }
-    void set_fid(stid_t const &fid);
+    stid_t& stid() { return _stid; }
+    void set_stid(stid_t const &stid) { _stid = stid; }
 
     /* ---------------------- */
     /* --- access methods --- */
     /* ---------------------- */
 
-    uint32_t get_pd() const { return (_base.get_pd()); }
     inline bool is_unique() const { return (_unique); }
     inline bool is_primary() const { return (_primary); }
     inline bool is_relaxed() const { return (_nolock); }
@@ -142,21 +121,8 @@ public:
         lintel::unsafe::atomic_exchange(&_maxkeysize, sz);
     }
 
-
-    /* ---------------------------------- */
-    /* --- index link list operations --- */
-    /* ---------------------------------- */
-
-    index_desc_t* next() const;
-
-    // total number of indexes on the table
-    int index_count() const;
-
-    // insert a new index after the current index
-    void insert(index_desc_t* new_node);
-
     // find the index_desc_t by name
-    index_desc_t* find_by_name(const char* name);
+    bool matches_name(const char* name);
 
     int key_index(const unsigned index) const;
 

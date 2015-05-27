@@ -117,9 +117,14 @@
  *
  * --------------------------------------------------------------- */
 
-class table_desc_t : public file_desc_t
+class table_desc_t
 {
 protected:
+
+    pthread_mutex_t   _fschema_mutex;        // file schema mutex
+    char              _name[MAX_FNAME_LEN];  // file name
+    unsigned            _field_count;          // # of fields
+    uint32_t           _pd;                   // info about the physical design
 
     /* ------------------- */
     /* --- table schema -- */
@@ -129,13 +134,15 @@ protected:
 
     field_desc_t*   _desc;               // schema - set of field descriptors
 
-    index_desc_t*   _indexes;            // indexes on the table
-    index_desc_t*   _primary_idx;        // pointer to primary idx
+    // primary index for index-organized table (replaces Heap of Shore-MT)
+    index_desc_t*   _primary_idx;
 
-    // CS: removed volatile, which has nothing to do with thread safety!
+    // secondary indexes
+    std::vector<index_desc_t*>   _indexes;
+
     unsigned _maxsize;            // max tuple size for this table, shortcut
 
-    int find_field_by_name(const char* field_name) const;
+    vid_t _vid;
 
 public:
 
@@ -143,7 +150,8 @@ public:
     /* --- Constructor --- */
     /* ------------------- */
 
-    table_desc_t(const char* name, int fieldcnt, uint32_t pd);
+    table_desc_t(const char* name, int fieldcnt, uint32_t pd,
+            vid_t vid = vid_t(1));
     virtual ~table_desc_t();
 
 
@@ -179,19 +187,27 @@ public:
     /* --- index facilities --- */
     /* ------------------------ */
 
-    index_desc_t* indexes() { return (_indexes); }
-
     // index by name
-    index_desc_t* find_index(const char* index_name) {
-        return (_indexes ? _indexes->find_by_name(index_name) : NULL);
+    index_desc_t* find_index(const char* index_name)
+    {
+        for (size_t i = 0; i < _indexes.size(); i++) {
+            if (_indexes[i]->matches_name(index_name)) {
+                return _indexes[i];
+            }
+        }
+        return NULL;
+    }
+
+    std::vector<index_desc_t*>& get_indexes()
+    {
+        return _indexes;
     }
 
     // # of indexes
-    int index_count() { return (_indexes->index_count()); }
+    int index_count() { return _indexes.size(); }
 
     index_desc_t* primary_idx() { return (_primary_idx); }
     stid_t get_primary_stid();
-
 
     /* sets primary index, the index itself should be already set to
      * primary and unique */
@@ -215,6 +231,10 @@ public:
         return (&(_desc[descidx]));
     }
 
+    const char*   name() const { return _name; }
+    unsigned        field_count() const { return _field_count; }
+    uint32_t       get_pd() const { return _pd; }
+
     /* ---------- */
     /* --- db --- */
     /* ---------- */
@@ -226,6 +246,11 @@ public:
     /* ----------------- */
 
     void print_desc(ostream & os = cout);  /* print the schema */
+
+protected:
+    int find_field_by_name(const char* field_name) const;
+
+    srwlock_t _mutex;
 
 }; // EOF: table_desc_t
 

@@ -414,7 +414,7 @@ std::map<stid_t, table_man_t*> table_man_t::stid_to_tableman;
 void table_man_t::register_table_man()
 {
     spinlock_write_critical_section cs(&register_table_lock);
-    stid_to_tableman[this->table()->fid()] = this;
+    stid_to_tableman[this->table()->get_primary_stid()] = this;
 }
 
 
@@ -432,16 +432,8 @@ w_rc_t table_man_t::load_and_register_fid(ss_m* db)
 {
     assert (_ptable);
     assert (db);
-    // 1. get the fid of this table and register it
     _ptable->set_db(db);
-    W_DO(_ptable->check_fid(db));
     register_table_man();
-    // 2. get the fid of its indexes
-    index_desc_t* index = _ptable->indexes();
-    while(index) {
-	W_DO(index->check_fid(db));
-	index = index->next();
-    }
     return (RCOK);
 }
 
@@ -484,7 +476,7 @@ w_rc_t table_man_t::index_probe(ss_m* db,
 
     w_keystr_t kstr;
     kstr.construct_regularkey(ptuple->_rep->_dest, key_sz);
-    W_DO(ss_m::find_assoc(pindex->fid(),
+    W_DO(ss_m::find_assoc(pindex->stid(),
                 kstr,
                 &(ptuple->_rid),
                 len,
@@ -557,22 +549,18 @@ w_rc_t table_man_t::add_tuple(ss_m* db,
     //                     ));
 
     // update the indexes
-    index_desc_t* index = _ptable->indexes();
-    int ksz = 0;
-
-    while (index) {
-        ksz = format_key(index, ptuple, *ptuple->_rep);
+    const std::vector<index_desc_t*>& indexes = _ptable->get_indexes();
+    for (size_t i = 0; i < indexes.size(); i++) {
+        int ksz = format_key(indexes[i], ptuple, *ptuple->_rep);
         assert (ptuple->_rep->_dest); // if dest == NULL there is invalid key
 
         w_keystr_t kstr;
         kstr.construct_regularkey(ptuple->_rep->_dest, ksz);
-        W_DO(db->create_assoc(index->fid(),
+        W_DO(db->create_assoc(indexes[i]->stid(),
                     kstr,
                     vec_t(&(ptuple->_rid), sizeof(rid_t))
                     ));
         // TODO: how to support ignoring locks in Zero?
-        // move to next index
-	index = index->next();
     }
     return (RCOK);
 }
@@ -618,7 +606,7 @@ w_rc_t table_man_t::add_index_entry(ss_m* db,
 
     w_keystr_t kstr;
     kstr.construct_regularkey(ptuple->_rep->_dest, ksz);
-    W_DO(db->create_assoc(pindex->fid(),
+    W_DO(db->create_assoc(pindex->stid(),
                 kstr,
                 vec_t(&(ptuple->_rid), sizeof(rid_t))
                 ));
@@ -659,19 +647,14 @@ w_rc_t table_man_t::delete_tuple(ss_m* db,
 
 
     // delete all the corresponding index entries
-    index_desc_t* pindex = _ptable->indexes();
-    int key_sz = 0;
-
-    while (pindex) {
-        key_sz = format_key(pindex, ptuple, *ptuple->_rep);
+    std::vector<index_desc_t*>& indexes = _ptable->get_indexes();
+    for (size_t i = 0; i < indexes.size(); i++) {
+        int key_sz = format_key(indexes[i], ptuple, *ptuple->_rep);
         assert (ptuple->_rep->_dest); // if NULL invalid key
 
         w_keystr_t kstr;
         kstr.construct_regularkey(ptuple->_rep->_dest, key_sz);
-        W_DO(db->destroy_assoc(pindex->fid(), kstr));
-
-        // move to next index
-	pindex = pindex->next();
+        W_DO(db->destroy_assoc(indexes[i]->stid(), kstr));
     }
 
 
@@ -726,7 +709,7 @@ w_rc_t table_man_t::delete_index_entry(ss_m* db,
 
     w_keystr_t kstr;
     kstr.construct_regularkey(ptuple->_rep->_dest, key_sz);
-    W_DO(db->destroy_assoc(pindex->fid(), kstr));
+    W_DO(db->destroy_assoc(pindex->stid(), kstr));
 
     return (RCOK);
 }

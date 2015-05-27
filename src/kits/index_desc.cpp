@@ -44,14 +44,14 @@ index_desc_t::index_desc_t(const char* name, const int fieldcnt,
                            bool unique, bool primary,
                            const uint32_t& pd,
                            bool rmapholder)
-    : _base(name, fieldcnt, pd),
+    : _name(name), _field_count(fieldcnt),
       _unique(unique), _primary(primary),
       _rmapholder(rmapholder),
-      _next(NULL), _maxkeysize(0)
+      _maxkeysize(0)
 {
     // Copy the indexes of keys
-    _key = new unsigned[_base._field_count];
-    for (unsigned i=0; i<_base._field_count; i++) _key[i] = fields[i];
+    _key = new unsigned[_field_count];
+    for (unsigned i=0; i< _field_count; i++) _key[i] = fields[i];
 
     memset(_keydesc, 0, MAX_KEYDESC_LEN);
 
@@ -69,64 +69,12 @@ index_desc_t::~index_desc_t()
         delete [] _key;
         _key = NULL;
     }
-
-    // The deletes propagate to the next
-    if (_next) {
-        delete _next;
-        _next = NULL;
-    }
 }
-
-
-
-/******************************************************************
- *
- *  @fn:    set_fid
- *
- *  @brief: Sets a particular fid to the index (or index partition)
- *
- ******************************************************************/
-
-void index_desc_t::set_fid(stid_t const &fid)
-{
-        _base.set_fid(fid);
-}
-
-
-
-/******************************************************************
- *
- *  Index linked list operations
- *
- ******************************************************************/
-
-index_desc_t* index_desc_t::next() const
-{
-    return _next;
-}
-
-
-// total number of indexes on the table
-int index_desc_t::index_count() const
-{
-    return (_next ? _next->index_count()+1 : 1);
-}
-
-
-// insert a new index after the current index
-void index_desc_t::insert(index_desc_t* new_node)
-{
-    new_node->_next = _next;
-    _next = new_node;
-}
-
 
 // find the index_desc_t by name
-index_desc_t* index_desc_t::find_by_name(const char* name)
+bool index_desc_t::matches_name(const char* name)
 {
-    if (strcmp(name, _base._name) == 0) return (this);
-    if (_next) return _next->find_by_name(name);
-    return (NULL);
+    return (strcmp(name, _name.c_str()) == 0);
 }
 
 int index_desc_t::key_index(const unsigned index) const
@@ -146,10 +94,9 @@ int index_desc_t::key_index(const unsigned index) const
 // For debug use only: print the description for all the field
 void index_desc_t::print_desc(ostream& os)
 {
-    os << "Schema for index " << name() << endl;
-    unsigned fc = field_count();
-    os << "Numer of fields: " << fc << endl;
-    for (unsigned i=0; i< fc; i++) {
+    os << "Schema for index " << _name << endl;
+    os << "Numer of fields: " << _field_count << endl;
+    for (unsigned i=0; i< _field_count; i++) {
 	os << _keydesc[i] << "|";
     }
     os << endl;
