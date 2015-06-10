@@ -269,7 +269,8 @@ public:
     /* ----------------------------- */
 
     // format tuple
-    int  format(table_row_t* ptuple, rep_row_t &arep);
+    int  format(table_row_t* ptuple, rep_row_t &arep,
+            index_desc_t* pindex = NULL);
 
     // load tuple from input buffer
     bool load(table_row_t* ptuple, const char* string);
@@ -298,8 +299,7 @@ public:
                  rep_row_t &arep);
 
     // length of the formatted key
-    int  key_size(index_desc_t* pindex,
-                  const table_row_t* ptuple) const;
+    int  key_size(index_desc_t* pindex) const;
 
 
 

@@ -50,6 +50,7 @@
 #define IS_NULL_FLAG(start, offset)                     \
     (*(char*)((start)+((offset)>>3)))&(1<<((offset)>>3))
 
+const size_t MAX_RECORD = 2048;
 
 /* ---------------------------- */
 /* --- formating operations --- */
@@ -74,7 +75,8 @@
  *********************************************************************/
 
 int table_man_t::format(table_row_t* ptuple,
-                        rep_row_t &arep)
+                        rep_row_t &arep,
+                        index_desc_t* pindex)
 {
     // Format the data field by field
 
@@ -102,6 +104,18 @@ int table_man_t::format(table_row_t* ptuple,
 
     // loop over all the variable-sized fields and add their real size (set at ::set())
     for (unsigned i=0; i<_ptable->field_count(); i++) {
+
+        // skip fields which are part of the given index
+        bool skip = false;
+        if (pindex) {
+            for (unsigned j=0; j<pindex->field_count(); j++) {
+                if ((int) i == pindex->key_index(j)) {
+                    skip = true;
+                    break;
+                }
+            }
+        }
+        if (skip) continue;
 
 	if (ptuple->_pvalues[i].is_variable_length()) {
             // If it is of VARIABLE length, then if the value is null
@@ -284,7 +298,7 @@ int table_man_t::format_key(index_desc_t* pindex,
     assert (ptuple);
 
     // 1. calculate the key size
-    int isz = key_size(pindex, ptuple);
+    int isz = key_size(pindex);
     assert (isz);
 
     // 2. allocate buffer space, if necessary
@@ -401,8 +415,7 @@ int table_man_t::max_key(index_desc_t* pindex,
  *
  ******************************************************************/
 
-int table_man_t::key_size(index_desc_t* pindex,
-                          const table_row_t*) const
+int table_man_t::key_size(index_desc_t* pindex) const
 {
     assert (_ptable);
     return (_ptable->index_maxkeysize(pindex));
@@ -452,8 +465,8 @@ w_rc_t table_man_t::load_and_register_fid(ss_m* db)
 w_rc_t table_man_t::index_probe(ss_m* db,
                                 index_desc_t* pindex,
                                 table_row_t*  ptuple,
-                                lock_mode_t   lock_mode,
-                                const lpid_t& root)
+                                lock_mode_t   /* lock_mode */,
+                                const lpid_t& /* root */)
 {
     assert (_ptable);
     assert (pindex);
@@ -461,41 +474,38 @@ w_rc_t table_man_t::index_probe(ss_m* db,
     assert (ptuple->_rep);
 
     bool     found = false;
-    smsize_t len = sizeof(rid_t);
+    // smsize_t len = sizeof(rid_t);
 
     // if index created with NO-LOCK option (e.g., DORA) then:
     // - ignore lock mode (use NL)
     // - find_assoc ignoring any locks
-    if (pindex->is_relaxed()) {
-        lock_mode   = NL;
-    }
+    // if (pindex->is_relaxed()) {
+    //     lock_mode   = NL;
+    // }
 
     // find the tuple in the index
-    int key_sz = format_key(pindex, ptuple, *ptuple->_rep);
-    assert (ptuple->_rep->_dest); // if NULL invalid key
-
+    int key_sz = format_key(pindex, ptuple, *ptuple->_rep_key);
+    assert (ptuple->_rep_key->_dest); // if NULL invalid key
     w_keystr_t kstr;
-    kstr.construct_regularkey(ptuple->_rep->_dest, key_sz);
-    W_DO(ss_m::find_assoc(pindex->stid(),
-                kstr,
-                &(ptuple->_rid),
-                len,
-                found
-                ));
-    // TODO: how to support ignoring locks in Zero?
+    kstr.construct_regularkey(ptuple->_rep_key->_dest, key_sz);
+
+    // get (max) length of the reference key
+    // place ref key into tuple buffer, overwriting previous key
+    smsize_t len;
+    int ref_sz = key_size(ptuple->_ptable->primary_idx());
+    ptuple->_rep_key->set(ref_sz);
+    W_DO(db->find_assoc(pindex->stid(), kstr, ptuple->_rep_key->_dest, len,
+                found));
 
     if (!found) return RC(se_TUPLE_NOT_FOUND);
 
-    // read the tuple -- CS TODO
-    // pin_i pin;
-    // latch_mode_t heap_latch_mode = LATCH_SH;
-    // W_DO(pin.pin(ptuple->rid(), 0, lock_mode, heap_latch_mode));
+    // read the tuple from the primary index
+    kstr.construct_regularkey(ptuple->_rep_key->_dest, len);
+    W_DO(db->find_assoc(pindex->table()->get_primary_stid(), kstr,
+                ptuple->_rep->_dest, len, found));
 
-    // if (!load(ptuple, pin.body())) {
-    //     pin.unpin();
-    //     return RC(se_WRONG_DISK_DATA);
-    // }
-    // pin.unpin();
+    if (!found) return RC(se_TUPLE_NOT_FOUND);
+
     return (RCOK);
 }
 
@@ -522,45 +532,44 @@ w_rc_t table_man_t::index_probe(ss_m* db,
 
 w_rc_t table_man_t::add_tuple(ss_m* db,
                               table_row_t* ptuple,
-                              const lock_mode_t lock_mode,
-                              const lpid_t& primary_root)
+                              const lock_mode_t /* lock_mode */,
+                              const lpid_t& /* primary_root */)
 {
     assert (_ptable);
     assert (ptuple);
     assert (ptuple->_rep);
-    uint32_t system_mode = _ptable->get_pd();
+    // uint32_t system_mode = _ptable->get_pd();
 
     // figure out what mode will be used
-    bool bIgnoreLocks = false;
-    if (lock_mode==NL) bIgnoreLocks = true;
+    // bool bIgnoreLocks = false;
+    // if (lock_mode==NL) bIgnoreLocks = true;
 
+    index_desc_t* pindex = _ptable->primary_idx();
 
-    // append the tuple
-    int tsz = format(ptuple, *ptuple->_rep);
+    // build tuple data without index fields
+    int tsz = format(ptuple, *ptuple->_rep, pindex);
     assert (ptuple->_rep->_dest); // if NULL invalid
 
-    // CS TODO
-    // W_DO(db->create_rec(_ptable->fid(),
-    //                     vec_t(),
-    //                     tsz,
-    //                     vec_t(ptuple->_rep->_dest, tsz),
-    //                     ptuple->_rid,
-    //                     bIgnoreLocks
-    //                     ));
+    // build key data
+    w_keystr_t kstr;
+    int ksz = format_key(pindex, ptuple, *ptuple->_rep_key);
+    assert (ptuple->_rep_key->_dest); // if NULL invalid
+    kstr.construct_regularkey(ptuple->_rep_key->_dest, ksz);
+    W_DO(db->create_assoc(pindex->stid(), kstr, vec_t(ptuple->_rep->_dest, tsz)));
 
     // update the indexes
     const std::vector<index_desc_t*>& indexes = _ptable->get_indexes();
     for (size_t i = 0; i < indexes.size(); i++) {
-        int ksz = format_key(indexes[i], ptuple, *ptuple->_rep);
+        int sec_ksz = format_key(indexes[i], ptuple, *ptuple->_rep);
         assert (ptuple->_rep->_dest); // if dest == NULL there is invalid key
 
-        w_keystr_t kstr;
-        kstr.construct_regularkey(ptuple->_rep->_dest, ksz);
+        // primary key value (i.e., pointer) is stored in _rep_key
+        w_keystr_t sec_kstr;
+        sec_kstr.construct_regularkey(ptuple->_rep->_dest, sec_ksz);
         W_DO(db->create_assoc(indexes[i]->stid(),
-                    kstr,
-                    vec_t(&(ptuple->_rid), sizeof(rid_t))
+                    sec_kstr,
+                    vec_t(ptuple->_rep_key->_dest, ksz)
                     ));
-        // TODO: how to support ignoring locks in Zero?
     }
     return (RCOK);
 }
@@ -581,8 +590,8 @@ w_rc_t table_man_t::add_tuple(ss_m* db,
 w_rc_t table_man_t::add_index_entry(ss_m* db,
 				    const char* idx_name,
 				    table_row_t* ptuple,
-				    const lock_mode_t lock_mode,
-				    const lpid_t& primary_root)
+				    const lock_mode_t /* lock_mode */,
+				    const lpid_t& /* primary_root */)
 {
     assert (_ptable);
     assert (ptuple);
@@ -592,25 +601,27 @@ w_rc_t table_man_t::add_index_entry(ss_m* db,
     index_desc_t* pindex = _ptable->find_index(idx_name);
     assert (pindex);
 
-    if (!ptuple->is_rid_valid()) return RC(se_NO_CURRENT_TUPLE);
+    // if (!ptuple->is_rid_valid()) return RC(se_NO_CURRENT_TUPLE);
 
-    uint32_t system_mode = _ptable->get_pd();
+    // uint32_t system_mode = _ptable->get_pd();
 
     // figure out what mode will be used
-    bool bIgnoreLocks = false;
-    if (lock_mode==NL) bIgnoreLocks = true;
+    // bool bIgnoreLocks = false;
+    // if (lock_mode==NL) bIgnoreLocks = true;
+
+    // build primary key value (i.e., pointer)
+    int ksz = format_key(_ptable->primary_idx(), ptuple, *ptuple->_rep_key);
+    assert(ptuple->_rep_key->_dest);
 
     // update the index
-    int ksz = format_key(pindex, ptuple, *ptuple->_rep);
+    int sec_ksz = format_key(pindex, ptuple, *ptuple->_rep);
     assert (ptuple->_rep->_dest); // if dest == NULL there is invalid key
-
-    w_keystr_t kstr;
-    kstr.construct_regularkey(ptuple->_rep->_dest, ksz);
+    w_keystr_t sec_kstr;
+    sec_kstr.construct_regularkey(ptuple->_rep->_dest, sec_ksz);
     W_DO(db->create_assoc(pindex->stid(),
-                kstr,
-                vec_t(&(ptuple->_rid), sizeof(rid_t))
+                sec_kstr,
+                vec_t(ptuple->_rep_key->_dest, ksz)
                 ));
-    // TODO: how to support ignoring locks in Zero?
 
     return (RCOK);
 }
@@ -629,22 +640,20 @@ w_rc_t table_man_t::add_index_entry(ss_m* db,
 
 w_rc_t table_man_t::delete_tuple(ss_m* db,
                                  table_row_t* ptuple,
-                                 const lock_mode_t lock_mode,
-                                 const lpid_t& primary_root)
+                                 const lock_mode_t /* lock_mode */,
+                                 const lpid_t& /* primary_root */)
 {
     assert (_ptable);
     assert (ptuple);
     assert (ptuple->_rep);
 
-    if (!ptuple->is_rid_valid()) return RC(se_NO_CURRENT_TUPLE);
+    // if (!ptuple->is_rid_valid()) return RC(se_NO_CURRENT_TUPLE);
 
-    uint32_t system_mode = _ptable->get_pd();
-    rid_t todelete = ptuple->rid();
+    // uint32_t system_mode = _ptable->get_pd();
 
     // figure out what mode will be used
-    bool bIgnoreLocks = false;
-    if (lock_mode==NL) bIgnoreLocks = true;
-
+    // bool bIgnoreLocks = false;
+    // if (lock_mode==NL) bIgnoreLocks = true;
 
     // delete all the corresponding index entries
     std::vector<index_desc_t*>& indexes = _ptable->get_indexes();
@@ -652,18 +661,24 @@ w_rc_t table_man_t::delete_tuple(ss_m* db,
         int key_sz = format_key(indexes[i], ptuple, *ptuple->_rep);
         assert (ptuple->_rep->_dest); // if NULL invalid key
 
+        // TODO BUG??
+        // This is deleting the whole entry in the secondary index instead
+        // of just the pointer to the given tuple. If a key value points to
+        // multiple tuples, all tuples will be deleted instead of just one!
+
         w_keystr_t kstr;
         kstr.construct_regularkey(ptuple->_rep->_dest, key_sz);
         W_DO(db->destroy_assoc(indexes[i]->stid(), kstr));
     }
 
-
-    // delete the tuple
-    // CS TODO
-        // W_DO(db->destroy_rec(todelete, bIgnoreLocks));
+    int ksz = format_key(_ptable->primary_idx(), ptuple, *ptuple->_rep_key);
+    assert(ptuple->_rep_key->_dest);
+    w_keystr_t kstr;
+    kstr.construct_regularkey(ptuple->_rep_key->_dest, ksz);
+    W_DO(db->destroy_assoc(_ptable->primary_idx()->stid(), kstr));
 
     // invalidate tuple
-    ptuple->set_rid(rid_t::null);
+    // ptuple->set_rid(rid_t::null);
     return (RCOK);
 }
 
@@ -684,8 +699,8 @@ w_rc_t table_man_t::delete_tuple(ss_m* db,
 w_rc_t table_man_t::delete_index_entry(ss_m* db,
 				       const char* idx_name,
 				       table_row_t* ptuple,
-				       const lock_mode_t lock_mode,
-				       const lpid_t& primary_root)
+				       const lock_mode_t /* lock_mode */,
+				       const lpid_t& /* primary_root */)
 {
     assert (_ptable);
     assert (ptuple);
@@ -694,14 +709,14 @@ w_rc_t table_man_t::delete_index_entry(ss_m* db,
     index_desc_t* pindex = _ptable->find_index(idx_name);
     assert (pindex);
 
-    if (!ptuple->is_rid_valid()) return RC(se_NO_CURRENT_TUPLE);
+    // if (!ptuple->is_rid_valid()) return RC(se_NO_CURRENT_TUPLE);
 
-    uint32_t system_mode = _ptable->get_pd();
-    rid_t todelete = ptuple->rid();
+    // uint32_t system_mode = _ptable->get_pd();
+    // rid_t todelete = ptuple->rid();
 
     // figure out what mode will be used
-    bool bIgnoreLocks = false;
-    if (lock_mode==NL) bIgnoreLocks = true;
+    // bool bIgnoreLocks = false;
+    // if (lock_mode==NL) bIgnoreLocks = true;
 
     // delete the index entry
     int key_sz = format_key(pindex, ptuple, *ptuple->_rep);
@@ -735,21 +750,24 @@ w_rc_t table_man_t::delete_index_entry(ss_m* db,
  *********************************************************************/
 
 w_rc_t table_man_t::update_tuple(ss_m* /* db */,
-                                 table_row_t* ptuple,
-                                 const lock_mode_t  lock_mode) // physical_design_t
+                                 table_row_t* /* ptuple */,
+                                 const lock_mode_t  /* lock_mode */) // physical_design_t
 {
+    // CS: not implemented -- remove and insert required for now
+    return RC(eNOTIMPLEMENTED);
+
     assert (_ptable);
     assert (ptuple);
     assert (ptuple->_rep);
 
-    if (!ptuple->is_rid_valid()) return RC(se_NO_CURRENT_TUPLE);
+    // if (!ptuple->is_rid_valid()) return RC(se_NO_CURRENT_TUPLE);
 
-    uint32_t system_mode = _ptable->get_pd();
-    bool bIgnoreLocks = false;
-    if (lock_mode==NL) bIgnoreLocks = true;
+    // uint32_t system_mode = _ptable->get_pd();
+    // bool bIgnoreLocks = false;
+    // if (lock_mode==NL) bIgnoreLocks = true;
 
-    bool no_heap_latch = false;
-    latch_mode_t heap_latch_mode = LATCH_EX;
+    // bool no_heap_latch = false;
+    // latch_mode_t heap_latch_mode = LATCH_EX;
 
     // CS TODO
     // pin record
@@ -813,9 +831,9 @@ w_rc_t table_man_t::update_tuple(ss_m* /* db */,
  *
  *********************************************************************/
 
-w_rc_t table_man_t::read_tuple(table_row_t* ptuple,
-                               lock_mode_t lock_mode,
-			       latch_mode_t heap_latch_mode)
+w_rc_t table_man_t::read_tuple(table_row_t* /* ptuple */,
+                               lock_mode_t /* lock_mode */,
+			       latch_mode_t /* heap_latch_mode */)
 {
     // CS TODO
     // assert (_ptable);
@@ -837,7 +855,7 @@ w_rc_t table_man_t::read_tuple(table_row_t* ptuple,
     // }
     // pin.unpin();
 
-    return (RCOK);
+    return RC(eNOTIMPLEMENTED);
 }
 
 
@@ -858,7 +876,7 @@ w_rc_t table_man_t::read_tuple(table_row_t* ptuple,
  *
  *********************************************************************/
 
-w_rc_t table_man_t::fetch_table(ss_m* db, lock_mode_t alm)
+w_rc_t table_man_t::fetch_table(ss_m* /* db */, lock_mode_t /* alm */)
 {
     // CS TODO
     // assert (db);

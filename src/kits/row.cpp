@@ -1,19 +1,19 @@
 /* -*- mode:C++; c-basic-offset:4 -*-
      Shore-kits -- Benchmark implementations for Shore-MT
-   
+
                        Copyright (c) 2007-2009
       Data Intensive Applications and Systems Labaratory (DIAS)
                Ecole Polytechnique Federale de Lausanne
-   
+
                          All Rights Reserved.
-   
+
    Permission to use, copy, modify and distribute this software and
    its documentation is hereby granted, provided that both the
    copyright notice and this permission notice appear in all copies of
    the software, derivative works or modified versions, and any
    portions thereof, and that both notices appear in supporting
    documentation.
-   
+
    This code is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. THE AUTHORS
@@ -35,7 +35,7 @@
 
 
 /******************************************************************
- * 
+ *
  * @struct: rep_row_t
  *
  * @brief:  A scratchpad for writing the disk format of a tuple
@@ -46,13 +46,13 @@ rep_row_t::rep_row_t()
     : _dest(NULL), _bufsz(0), _pts(NULL)
 { }
 
-rep_row_t::rep_row_t(ats_char_t* apts) 
+rep_row_t::rep_row_t(ats_char_t* apts)
     : _dest(NULL), _bufsz(0), _pts(apts)
-{ 
+{
     assert (_pts);
 }
 
-rep_row_t::~rep_row_t() 
+rep_row_t::~rep_row_t()
 {
     if (_dest) {
         _pts->destroy(_dest);
@@ -62,7 +62,7 @@ rep_row_t::~rep_row_t()
 
 
 /******************************************************************
- * 
+ *
  * @fn:    set
  *
  * @brief: Set new buffer size
@@ -87,7 +87,7 @@ void rep_row_t::set(const unsigned nsz)
             //            delete [] tmp;
             _pts->destroy(tmp);
             tmp = NULL;
-        } 
+        }
         _bufsz = _pts->nbytes();
     }
 
@@ -97,7 +97,7 @@ void rep_row_t::set(const unsigned nsz)
 
 
 /******************************************************************
- * 
+ *
  * @fn:    set_ts
  *
  * @brief: Set new trash stack and buffer size
@@ -115,41 +115,41 @@ void rep_row_t::set_ts(ats_char_t* apts, const unsigned nsz)
 
 
 /******************************************************************
- * 
- * @class: table_row_t 
  *
- * @brief: The (main-memory) record representation in kits  
+ * @class: table_row_t
+ *
+ * @brief: The (main-memory) record representation in kits
  *
  ******************************************************************/
 
 
-table_row_t::table_row_t() 
+table_row_t::table_row_t()
     : _ptable(NULL),
-      _field_cnt(0), _is_setup(false), 
-      _rid(rid_t::null), _pvalues(NULL), 
+      _field_cnt(0), _is_setup(false),
+      _rid(rid_t::null), _pvalues(NULL),
       _fixed_offset(0),_var_slot_offset(0),_var_offset(0),_null_count(0),
       _rep(NULL), _rep_key(NULL)
-{ 
+{
 }
-        
-table_row_t::~table_row_t() 
+
+table_row_t::~table_row_t()
 {
     freevalues();
 }
 
 
 
-/****************************************************************** 
+/******************************************************************
  *
  *  @fn:    setup()
  *
- *  @brief: Setups the row (tuple main-memory representation) according 
- *          to its table description. This setup will be done only 
+ *  @brief: Setups the row (tuple main-memory representation) according
+ *          to its table description. This setup will be done only
  *          *once*. When this row will be initialized in the row cache.
  *
  ******************************************************************/
 
-int table_row_t::setup(table_desc_t* ptd) 
+int table_row_t::setup(table_desc_t* ptd)
 {
     assert (ptd);
 
@@ -180,14 +180,14 @@ int table_row_t::setup(table_desc_t* ptd)
 
         // count null-able fields
         if (_pvalues[i].field_desc()->allow_null())
-            _null_count++;            
+            _null_count++;
     }
 
     // offset for fixed length field values
     _fixed_offset = 0;
     if (_null_count) _fixed_offset = ((_null_count-1) >> 3) + 1;
     // offset for variable length field slots
-    _var_slot_offset = _fixed_offset + fixed_size; 
+    _var_slot_offset = _fixed_offset + fixed_size;
     // offset for variable length field values
     _var_offset = _var_slot_offset + sizeof(offset_t)*var_count;
 
@@ -196,7 +196,7 @@ int table_row_t::setup(table_desc_t* ptd)
 }
 
 
-/****************************************************************** 
+/******************************************************************
  *
  *  @fn:    size()
  *
@@ -258,7 +258,7 @@ void table_row_t::print_values(ostream& os)
 void table_row_t::print_tuple()
 {
     assert (_is_setup);
-    
+
     char* sbuf = NULL;
     int sz = 0;
     for (unsigned i=0; i<_field_cnt; i++) {
@@ -276,7 +276,7 @@ void table_row_t::print_tuple()
 void table_row_t::print_tuple_no_tracing()
 {
     assert (_is_setup);
-    
+
     char* sbuf = NULL;
     int sz = 0;
     for (unsigned i=0; i<_field_cnt; i++) {

@@ -1,19 +1,19 @@
 /* -*- mode:C++; c-basic-offset:4 -*-
      Shore-kits -- Benchmark implementations for Shore-MT
-   
+
                        Copyright (c) 2007-2009
       Data Intensive Applications and Systems Labaratory (DIAS)
                Ecole Polytechnique Federale de Lausanne
-   
+
                          All Rights Reserved.
-   
+
    Permission to use, copy, modify and distribute this software and
    its documentation is hereby granted, provided that both the
    copyright notice and this permission notice appear in all copies of
    the software, derivative works or modified versions, and any
    portions thereof, and that both notices appear in supporting
    documentation.
-   
+
    This code is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. THE AUTHORS
@@ -32,13 +32,13 @@
  */
 
 
-/* shore_row.h contains the (abstract) base class (table_row_t) for the 
- * tuple representation. 
+/* shore_row.h contains the (abstract) base class (table_row_t) for the
+ * tuple representation.
  *
  *
  * FUNCTIONALITY
  *
- * There are methods for formatting a tuple to its disk representation, 
+ * There are methods for formatting a tuple to its disk representation,
  * and loading it to memory, as well as, methods for accessing
  * the various fields of the tuple.
  *
@@ -53,7 +53,7 @@
  * The mapping between SQL types and C++ types are defined in
  * (field_desc_t).  Modify the class to support more SQL types or
  * change the mapping.  The NUMERIC type is currently stored as string;
- * no further understanding is provided yet.  
+ * no further understanding is provided yet.
  *
  */
 
@@ -78,7 +78,7 @@
  * to tell the length of the actual values.  So here comes the two
  * additional slots in the middle (between d and b).  In our
  * implementation, we store the offset of the end of b relative to the
- * beginning of the tuple (address of a).  
+ * beginning of the tuple (address of a).
  *
  */
 
@@ -116,8 +116,8 @@ typedef intptr_t offset_t;
  *
  * --------------------------------------------------------------- */
 
-struct rep_row_t 
-{    
+struct rep_row_t
+{
     char* _dest;       /* pointer to a buffer */
     unsigned   _bufsz;     /* buffer size */
     ats_char_t* _pts;  /* pointer to a trash stack */
@@ -130,7 +130,7 @@ struct rep_row_t
     void set(const unsigned nsz);
 
     void set_ts(ats_char_t* apts, const unsigned nsz);
-    
+
 }; // EOF: rep_row_t
 
 
@@ -139,21 +139,21 @@ struct rep_row_t
  *
  * @abstract struct: table_row_t
  *
- * @brief:  Abstract base class for the representation a row (record) 
- *          of a table. 
+ * @brief:  Abstract base class for the representation a row (record)
+ *          of a table.
  *
  * --------------------------------------------------------------- */
 
 class table_desc_t;
 
-struct table_row_t 
-{    
+struct table_row_t
+{
     table_desc_t*  _ptable;       /* pointer back to the table description */
 
-    unsigned           _field_cnt;    /* number of fields */
+    unsigned       _field_cnt;    /* number of fields */
     bool           _is_setup;     /* flag if already setup */
-    
-    rid_t          _rid;          /* record id */    
+
+    rid_t          _rid;          /* record id */
     field_value_t* _pvalues;      /* set of values */
 
     // pre-calculated offsets
@@ -163,18 +163,18 @@ struct table_row_t
     unsigned     _null_count;
 
     rep_row_t*     _rep;          /* a pointer to a row representation struct */
-    rep_row_t*     _rep_key;      /* a pointer to a row-key representation struct */
+    rep_row_t*     _rep_key;
 
 
     /* -------------------- */
     /* --- construction --- */
     /* -------------------- */
 
-    table_row_t();        
+    table_row_t();
     table_row_t(table_desc_t* ptd)
 	: _ptable(NULL),
-	  _field_cnt(0), _is_setup(false), 
-	  _rid(rid_t::null), _pvalues(NULL), 
+	  _field_cnt(0), _is_setup(false),
+	  _rid(rid_t::null), _pvalues(NULL),
 	  _fixed_offset(0),_var_slot_offset(0),_var_offset(0),_null_count(0),
 	  _rep(NULL), _rep_key(NULL)
     {
@@ -214,7 +214,7 @@ struct table_row_t
     /* ------------------------ */
     /* --- set field values --- */
     /* ------------------------ */
-    
+
     void set_null(const unsigned idx);
     void set_value(const unsigned idx, const int v);
     void set_value(const unsigned idx, const bool v);
@@ -260,11 +260,11 @@ struct table_row_t
     //    virtual void reset()=0; /* clear the tuple and prepare it for re-use */
 
     /* clear the tuple and prepare it for re-use */
-    void reset() { 
+    void reset() {
         assert (_is_setup);
         for (unsigned i=0; i<_field_cnt; i++)
             _pvalues[i].reset();
-    }        
+    }
 
     void freevalues()
     {
@@ -278,7 +278,7 @@ struct table_row_t
 
 
 /******************************************************************
- * 
+ *
  * class tuple_guard
  *
  * @brief: guard object to manage table_row_t operations more easily
@@ -302,8 +302,8 @@ private:
 
 
 /******************************************************************
- * 
- * class table_row_t methods 
+ *
+ * class table_row_t methods
  *
  * @brief: The {set,get}_value() functions are very frequently called.
  *         Therefore, they have been inlined here.
@@ -312,12 +312,12 @@ private:
 
 
 /******************************************************************
- * 
+ *
  * SET value functions
  *
  ******************************************************************/
-    
-inline void table_row_t::set_null(const unsigned idx) 
+
+inline void table_row_t::set_null(const unsigned idx)
 {
     assert (_is_setup);
     assert (idx < _field_cnt);
@@ -325,7 +325,7 @@ inline void table_row_t::set_null(const unsigned idx)
     _pvalues[idx].set_null();
 }
 
-inline void table_row_t::set_value(const unsigned idx, const int v) 
+inline void table_row_t::set_value(const unsigned idx, const int v)
 {
     assert (_is_setup);
     assert (idx < _field_cnt);
@@ -333,7 +333,7 @@ inline void table_row_t::set_value(const unsigned idx, const int v)
     _pvalues[idx].set_int_value(v);
 }
 
-inline void table_row_t::set_value(const unsigned idx, const bool v) 
+inline void table_row_t::set_value(const unsigned idx, const bool v)
 {
     assert (_is_setup);
     assert (idx < _field_cnt);
@@ -341,7 +341,7 @@ inline void table_row_t::set_value(const unsigned idx, const bool v)
     _pvalues[idx].set_bit_value(v);
 }
 
-inline void table_row_t::set_value(const unsigned idx, const short v) 
+inline void table_row_t::set_value(const unsigned idx, const short v)
 {
     assert (_is_setup);
     assert (idx < _field_cnt);
@@ -349,7 +349,7 @@ inline void table_row_t::set_value(const unsigned idx, const short v)
     _pvalues[idx].set_smallint_value(v);
 }
 
-inline void table_row_t::set_value(const unsigned idx, const double v) 
+inline void table_row_t::set_value(const unsigned idx, const double v)
 {
     assert (_is_setup);
     assert (idx < _field_cnt);
@@ -357,7 +357,7 @@ inline void table_row_t::set_value(const unsigned idx, const double v)
     _pvalues[idx].set_float_value(v);
 }
 
-inline void table_row_t::set_value(const unsigned idx, const long long v) 
+inline void table_row_t::set_value(const unsigned idx, const long long v)
 {
     assert (_is_setup);
     assert (idx < _field_cnt);
@@ -365,7 +365,7 @@ inline void table_row_t::set_value(const unsigned idx, const long long v)
     _pvalues[idx].set_long_value(v);
 }
 
-inline void table_row_t::set_value(const unsigned idx, const decimal v) 
+inline void table_row_t::set_value(const unsigned idx, const decimal v)
 {
     assert (_is_setup);
     assert (idx < _field_cnt);
@@ -373,7 +373,7 @@ inline void table_row_t::set_value(const unsigned idx, const decimal v)
     _pvalues[idx].set_decimal_value(v);
 }
 
-inline void table_row_t::set_value(const unsigned idx, const time_t v) 
+inline void table_row_t::set_value(const unsigned idx, const time_t v)
 {
     assert (_is_setup);
     assert (idx < _field_cnt);
@@ -381,7 +381,7 @@ inline void table_row_t::set_value(const unsigned idx, const time_t v)
     _pvalues[idx].set_time_value(v);
 }
 
-inline void table_row_t::set_value(const unsigned idx, const char v) 
+inline void table_row_t::set_value(const unsigned idx, const char v)
 {
     assert (_is_setup);
     assert (idx < _field_cnt);
@@ -389,7 +389,7 @@ inline void table_row_t::set_value(const unsigned idx, const char v)
     _pvalues[idx].set_char_value(v);
 }
 
-inline void table_row_t::set_value(const unsigned idx, const char* string) 
+inline void table_row_t::set_value(const unsigned idx, const char* string)
 {
     assert (_is_setup);
     assert (idx < _field_cnt);
@@ -399,7 +399,7 @@ inline void table_row_t::set_value(const unsigned idx, const char* string)
     assert (sqlt == SQL_VARCHAR || sqlt == SQL_FIXCHAR );
 
     int len = strlen(string);
-    if ( sqlt == SQL_VARCHAR ) { 
+    if ( sqlt == SQL_VARCHAR ) {
         // if variable length
         _pvalues[idx].set_var_string_value(string, len);
     }
@@ -420,7 +420,7 @@ inline void table_row_t::set_value(const unsigned idx, const timestamp_t& time)
 
 
 /******************************************************************
- * 
+ *
  * GET value functions
  *
  ******************************************************************/
@@ -527,7 +527,7 @@ inline bool table_row_t::get_value(const unsigned idx,
     assert(idx < _field_cnt);
     if (_pvalues[idx].is_null()) {
         dest = decimal(0);
-        return false;        
+        return false;
     }
     dest = _pvalues[idx].get_decimal_value();
     return true;

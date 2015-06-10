@@ -61,13 +61,15 @@ class table_desc_t;
 
 class index_desc_t
 {
-    friend class table_desc_t;
+    // friend class table_desc_t;
 private:
     stid_t _stid;
     string _name;
 
-    unsigned*           _key;                      /* index of fields in the base table */
-    unsigned             _field_count;
+    table_desc_t*   _table;
+
+    unsigned*       _key;                      /* index of fields in the base table */
+    unsigned        _field_count;
     bool            _unique;                   /* whether allow duplicates or not */
     bool            _primary;                  /* is it primary or not */
     bool            _nolock;                   /* is it using locking or not */
@@ -97,6 +99,7 @@ public:
 
     const char*  name() const { return _name.c_str(); }
     unsigned field_count() const { return _field_count; }
+    table_desc_t* table() const { return _table; }
 
 
     bool          is_fid_valid() const { return (_stid != stid_t::null); }
