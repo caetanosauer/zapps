@@ -28,8 +28,8 @@ add_executable(zapps main.cpp)
 set(zapps_LIBS
     # zapps components
     base
-    restore
     kits
+    restore
     loginspect
     # Zero/Shore libraries
     libsm

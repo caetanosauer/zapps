@@ -1,9 +1,40 @@
 set(kits_SRCS
+    # BASIC TABLE INFRASTRUCTURE
     ${CMAKE_CURRENT_SOURCE_DIR}/field.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/index_desc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/row.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/table_desc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/table_man.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/table_desc.cpp
+
+    # KITS SM INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/shore_env.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shore_client.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reqs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/daemons.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/skewer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/thread.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/trx_worker.cpp
+
+    # UTILITIES
+    ${CMAKE_CURRENT_SOURCE_DIR}/mersenne.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/envvar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/trace.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/stl_pool.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/random_input.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/confparser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shore_worker.cpp
+
+    # TPC-B
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcb/tpcb_client.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcb/tpcb_env.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcb/tpcb_input.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcb/tpcb_schema.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcb/tpcb_schema_man.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcb/tpcb_xct.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcb/templates.cpp
+
+    # KITS ZAPPS INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/kits_cmd.cpp
     )
 
 add_library (kits ${kits_SRCS})

@@ -74,7 +74,8 @@ const size_t MAX_RECORD = 2048;
  *
  *********************************************************************/
 
-int table_man_t::format(table_row_t* ptuple,
+template<class T>
+int table_man_t<T>::format(table_row_t* ptuple,
                         rep_row_t &arep,
                         index_desc_t* pindex)
 {
@@ -207,7 +208,8 @@ int table_man_t::format(table_row_t* ptuple,
  *
  *********************************************************************/
 
-bool table_man_t::load(table_row_t* ptuple,
+template<class T>
+bool table_man_t<T>::load(table_row_t* ptuple,
                        const char* data)
 {
     // Read the data field by field
@@ -289,7 +291,8 @@ bool table_man_t::load(table_row_t* ptuple,
  *
  ******************************************************************/
 
-int table_man_t::format_key(index_desc_t* pindex,
+template<class T>
+int table_man_t<T>::format_key(index_desc_t* pindex,
                             table_row_t* ptuple,
                             rep_row_t &arep)
 {
@@ -342,7 +345,8 @@ int table_man_t::format_key(index_desc_t* pindex,
  *
  *********************************************************************/
 
-bool table_man_t::load_key(const char* string,
+template<class T>
+bool table_man_t<T>::load_key(const char* string,
                            index_desc_t* pindex,
                            table_row_t* ptuple)
 {
@@ -373,7 +377,8 @@ bool table_man_t::load_key(const char* string,
  *
  ******************************************************************/
 
-int table_man_t::min_key(index_desc_t* pindex,
+template<class T>
+int table_man_t<T>::min_key(index_desc_t* pindex,
                          table_row_t* ptuple,
                          rep_row_t &arep)
 {
@@ -386,7 +391,8 @@ int table_man_t::min_key(index_desc_t* pindex,
 }
 
 
-int table_man_t::max_key(index_desc_t* pindex,
+template<class T>
+int table_man_t<T>::max_key(index_desc_t* pindex,
                          table_row_t* ptuple,
                          rep_row_t &arep)
 {
@@ -415,19 +421,23 @@ int table_man_t::max_key(index_desc_t* pindex,
  *
  ******************************************************************/
 
-int table_man_t::key_size(index_desc_t* pindex) const
+template<class T>
+int table_man_t<T>::key_size(index_desc_t* pindex) const
 {
     assert (_ptable);
     return (_ptable->index_maxkeysize(pindex));
 }
 
-srwlock_t table_man_t::register_table_lock;
-std::map<stid_t, table_man_t*> table_man_t::stid_to_tableman;
+template<class T>
+srwlock_t table_man_t<T>::register_table_lock;
 
-void table_man_t::register_table_man()
+// std::map<stid_t, table_man_t*> table_man_t::stid_to_tableman;
+
+template<class T>
+void table_man_t<T>::register_table_man()
 {
     spinlock_write_critical_section cs(&register_table_lock);
-    stid_to_tableman[this->table()->get_primary_stid()] = this;
+    // stid_to_tableman[this->table()->get_primary_stid()] = this;
 }
 
 
@@ -441,7 +451,8 @@ void table_man_t::register_table_man()
  *
  *********************************************************************/
 
-w_rc_t table_man_t::load_and_register_fid(ss_m* db)
+template<class T>
+w_rc_t table_man_t<T>::load_and_register_fid(ss_m* db)
 {
     assert (_ptable);
     assert (db);
@@ -462,7 +473,8 @@ w_rc_t table_man_t::load_and_register_fid(ss_m* db)
  *
  *********************************************************************/
 
-w_rc_t table_man_t::index_probe(ss_m* db,
+template<class T>
+w_rc_t table_man_t<T>::index_probe(ss_m* db,
                                 index_desc_t* pindex,
                                 table_row_t*  ptuple,
                                 lock_mode_t   /* lock_mode */,
@@ -530,7 +542,8 @@ w_rc_t table_man_t::index_probe(ss_m* db,
  *
  *********************************************************************/
 
-w_rc_t table_man_t::add_tuple(ss_m* db,
+template<class T>
+w_rc_t table_man_t<T>::add_tuple(ss_m* db,
                               table_row_t* ptuple,
                               const lock_mode_t /* lock_mode */,
                               const lpid_t& /* primary_root */)
@@ -587,7 +600,8 @@ w_rc_t table_man_t::add_tuple(ss_m* db,
  *
  *********************************************************************/
 
-w_rc_t table_man_t::add_index_entry(ss_m* db,
+template<class T>
+w_rc_t table_man_t<T>::add_index_entry(ss_m* db,
 				    const char* idx_name,
 				    table_row_t* ptuple,
 				    const lock_mode_t /* lock_mode */,
@@ -638,7 +652,8 @@ w_rc_t table_man_t::add_index_entry(ss_m* db,
  *
  *********************************************************************/
 
-w_rc_t table_man_t::delete_tuple(ss_m* db,
+template<class T>
+w_rc_t table_man_t<T>::delete_tuple(ss_m* db,
                                  table_row_t* ptuple,
                                  const lock_mode_t /* lock_mode */,
                                  const lpid_t& /* primary_root */)
@@ -696,7 +711,8 @@ w_rc_t table_man_t::delete_tuple(ss_m* db,
  *
  *********************************************************************/
 
-w_rc_t table_man_t::delete_index_entry(ss_m* db,
+template<class T>
+w_rc_t table_man_t<T>::delete_index_entry(ss_m* db,
 				       const char* idx_name,
 				       table_row_t* ptuple,
 				       const lock_mode_t /* lock_mode */,
@@ -749,7 +765,8 @@ w_rc_t table_man_t::delete_index_entry(ss_m* db,
  *
  *********************************************************************/
 
-w_rc_t table_man_t::update_tuple(ss_m* /* db */,
+template<class T>
+w_rc_t table_man_t<T>::update_tuple(ss_m* /* db */,
                                  table_row_t* /* ptuple */,
                                  const lock_mode_t  /* lock_mode */) // physical_design_t
 {
@@ -831,7 +848,8 @@ w_rc_t table_man_t::update_tuple(ss_m* /* db */,
  *
  *********************************************************************/
 
-w_rc_t table_man_t::read_tuple(table_row_t* /* ptuple */,
+template<class T>
+w_rc_t table_man_t<T>::read_tuple(table_row_t* /* ptuple */,
                                lock_mode_t /* lock_mode */,
 			       latch_mode_t /* heap_latch_mode */)
 {
@@ -876,7 +894,8 @@ w_rc_t table_man_t::read_tuple(table_row_t* /* ptuple */,
  *
  *********************************************************************/
 
-w_rc_t table_man_t::fetch_table(ss_m* /* db */, lock_mode_t /* alm */)
+template<class T>
+w_rc_t table_man_t<T>::fetch_table(ss_m* /* db */, lock_mode_t /* alm */)
 {
     // CS TODO
     // assert (db);
@@ -917,7 +936,6 @@ w_rc_t table_man_t::fetch_table(ss_m* /* db */, lock_mode_t /* alm */)
 
     return (RCOK);
 }
-
 
 #if 0 // CS -- TODO migrate to other file
 

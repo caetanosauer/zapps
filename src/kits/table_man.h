@@ -91,17 +91,19 @@
 #ifndef __TABLE_MAN_H
 #define __TABLE_MAN_H
 
-
+#include "tls.h"
 #include "sm_vas.h"
 #include "srwlock.h"
+#include "btcursor.h"
 
 //#include "shore_msg.h"
 #include "util/guard.h"
 
-#include "file_desc.h"
+#include "table_desc.h"
 #include "field.h"
 #include "index_desc.h"
 #include "row.h"
+#include "row_cache.h"
 
 #include "util/zero_proxy.h"
 
@@ -115,17 +117,18 @@
  *
  * --------------------------------------------------------------- */
 
+template<class T> // T is a table_desc_t implementation
 class table_man_t
 {
 protected:
 
-    table_desc_t* _ptable;       /* pointer back to the table description */
+    T* _ptable;       /* pointer back to the table description */
 
     guard<ats_char_t> _pts;   /* trash stack */
 
 public:
 
-    table_man_t(table_desc_t* aTableDesc,
+    table_man_t(T* aTableDesc,
 		bool construct_cache=true)
         : _ptable(aTableDesc)
     {
@@ -140,9 +143,9 @@ public:
 
     static srwlock_t register_table_lock;
     void register_table_man();
-    static std::map<stid_t, table_man_t*> stid_to_tableman;
+    // static std::map<stid_t, table_man_t*> stid_to_tableman;
 
-    table_desc_t* table() { return (_ptable); }
+    T* table() { return (_ptable); }
 
     // loads store id values in fid field for this table and its indexes
     w_rc_t load_and_register_fid(ss_m* db);
@@ -162,31 +165,31 @@ public:
     w_rc_t index_probe(ss_m* db,
                        index_desc_t* pidx,
                        table_row_t*  ptuple,
-                       const lock_mode_t lock_mode = SH,     /* One of: NL, SH, EX */
+                       const lock_mode_t lock_mode = okvl_mode::S,     /* One of: N, S, X */
                        const lpid_t& root = lpid_t::null);   /* Start of the search */
 
-    // probe idx in EX (& LATCH_EX) mode
+    // probe idx in X (& LATCH_EX) mode
     inline w_rc_t   index_probe_forupdate(ss_m* db,
                                           index_desc_t* pidx,
                                           table_row_t*  ptuple,
                                           const lpid_t& root = lpid_t::null)
     {
-        return (index_probe(db, pidx, ptuple, EX, root));
+        return (index_probe(db, pidx, ptuple, okvl_mode::X, root));
     }
 
-    // probe idx in NL (& LATCH_SH) mode
+    // probe idx in N (& LATCH_SH) mode
     inline w_rc_t   index_probe_nl(ss_m* db,
                                    index_desc_t* pidx,
                                    table_row_t*  ptuple,
                                    const lpid_t& root = lpid_t::null)
     {
-        return (index_probe(db, pidx, ptuple, NL, root));
+        return (index_probe(db, pidx, ptuple, okvl_mode::N, root));
     }
 
     // probe primary idx
     inline w_rc_t   index_probe_primary(ss_m* db,
                                         table_row_t* ptuple,
-                                        lock_mode_t  lock_mode = SH,
+                                        lock_mode_t  lock_mode = okvl_mode::S,
                                         const lpid_t& root = lpid_t::null)
     {
         assert (_ptable && _ptable->primary_idx());
@@ -197,7 +200,7 @@ public:
     inline w_rc_t   index_probe_by_name(ss_m* db,
                                         const char*  idx_name,
                                         table_row_t* ptuple,
-                                        lock_mode_t  lock_mode = SH,
+                                        lock_mode_t  lock_mode = okvl_mode::S,
                                         const lpid_t& root = lpid_t::null)
     {
         index_desc_t* pindex = _ptable->find_index(idx_name);
@@ -214,7 +217,7 @@ public:
 	return (index_probe_forupdate(db, pindex, ptuple, root));
     }
 
-    // probe idx in NL (& LATCH_NL) mode - based on idx name //
+    // probe idx in N (& LATCH_NL) mode - based on idx name //
     inline w_rc_t   index_probe_nl_by_name(ss_m* db,
                                            const char* idx_name,
                                            table_row_t* ptuple,
@@ -231,35 +234,35 @@ public:
 
     w_rc_t    add_tuple(ss_m* db,
                         table_row_t*  ptuple,
-                        const lock_mode_t   lock_mode = EX,
+                        const lock_mode_t   lock_mode = okvl_mode::X,
                         const lpid_t& primary_root = lpid_t::null);
 
     w_rc_t    add_index_entry(ss_m* db,
 			      const char* idx_name,
 			      table_row_t* ptuple,
-			      const lock_mode_t lock_mode = EX,
+			      const lock_mode_t lock_mode = okvl_mode::X,
 			      const lpid_t& primary_root = lpid_t::null);
 
     w_rc_t    delete_tuple(ss_m* db,
                            table_row_t* ptuple,
-                           const lock_mode_t lock_mode = EX,
+                           const lock_mode_t lock_mode = okvl_mode::X,
                            const lpid_t& primary_root = lpid_t::null);
 
     w_rc_t    delete_index_entry(ss_m* db,
 				 const char* idx_name,
 				 table_row_t* ptuple,
-				 const lock_mode_t lock_mode = EX,
+				 const lock_mode_t lock_mode = okvl_mode::X,
 				 const lpid_t& primary_root = lpid_t::null);
 
 
     // Direct access through the rid
     w_rc_t    update_tuple(ss_m* db,
                            table_row_t* ptuple,
-                           const lock_mode_t lock_mode = EX);
+                           const lock_mode_t lock_mode = okvl_mode::X);
 
     // Direct access through the rid
     w_rc_t    read_tuple(table_row_t* ptuple,
-                         lock_mode_t lock_mode = SH,
+                         lock_mode_t lock_mode = okvl_mode::S,
 			 latch_mode_t heap_latch_mode = LATCH_SH);
 
 
@@ -309,11 +312,12 @@ public:
     /* --- check consistency between the indexes and table --- */
     /* ------------------------------------------------------- */
 
-    virtual w_rc_t check_all_indexes_together(ss_m* db)=0;
-    virtual bool   check_all_indexes(ss_m* db)=0;
-    virtual w_rc_t check_index(ss_m* db, index_desc_t* pidx)=0;
-    virtual w_rc_t scan_all_indexes(ss_m* db)=0;
-    virtual w_rc_t scan_index(ss_m* db, index_desc_t* pidx)=0;
+    // CS TODO
+    // virtual w_rc_t check_all_indexes_together(ss_m* db)=0;
+    // virtual bool   check_all_indexes(ss_m* db)=0;
+    // virtual w_rc_t check_index(ss_m* db, index_desc_t* pidx)=0;
+    // virtual w_rc_t scan_all_indexes(ss_m* db)=0;
+    // virtual w_rc_t scan_index(ss_m* db, index_desc_t* pidx)=0;
 
 
     /* -------------------------------- */
@@ -334,7 +338,7 @@ public:
      * @note: PIN: right now it prints to files,
      *             with slight modification it can print to the screen as well
      */
-    virtual w_rc_t print_table(ss_m* db, int num_lines)=0;
+    // virtual w_rc_t print_table(ss_m* db, int num_lines)=0;
 
 
     /* --------------- */
@@ -342,16 +346,64 @@ public:
     /* --------------- */
 
     /* fetch the pages of the table and its indexes to buffer pool */
-    virtual w_rc_t fetch_table(ss_m* db, lock_mode_t alm = SH);
+    virtual w_rc_t fetch_table(ss_m* db, lock_mode_t alm = okvl_mode::S);
 
+// Row cache
+protected:
+
+    /* Place-holder until we clean up the code
+
+       WARNING: forward decl only... must be specialized manually for
+       each instance we create
+    */
+    struct pcache_link {
+	static row_cache_t<T>* tls_get();
+	operator row_cache_t<T>*() { return tls_get(); }
+	row_cache_t<T>* operator->() { return tls_get(); }
+    };
+
+    pcache_link _pcache; /* pointer to a tuple cache */
+
+public:
+
+    row_cache_t<T>* get_cache() { assert (_pcache); return (_pcache); }
+
+    inline table_row_t* get_tuple()
+    {
+        return (_pcache->borrow());
+    }
+
+
+    inline void give_tuple(table_row_t* ptt)
+    {
+        _pcache->giveback(ptt);
+    }
 
 }; // EOF: table_man_t
+
+#define DEFINE_ROW_CACHE_TLS(bench, table) \
+    DECLARE_TLS(row_cache_t<bench::table##_t>, bench##_##table##_cache); \
+    template<> row_cache_t<bench::table##_t>* \
+        table_man_t<bench::table##_t>::pcache_link::tls_get() \
+            { return bench##_##table##_cache; }
 
 /******************************************************************
  *
  *  class table_desc_t methods
  *
  ******************************************************************/
+
+template<class T>
+class table_scan_iter_impl
+{
+public:
+    table_scan_iter_impl(T* desc);
+    rc_t next(ss_m* db, bool& eof, table_row_t& tuple);
+
+private:
+    bt_cursor_t* btcursor;
+    stid_t stid;
+};
 
 #if 0 // CS: disabled for now -- should be moved to other file anyway
 
@@ -406,6 +458,5 @@ public:
 
 }; // EOF: table_fetcher_t
 #endif // 0
-
 
 #endif /* __TABLE_MAN_H */

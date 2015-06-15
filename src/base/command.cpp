@@ -10,6 +10,7 @@
 //#include "commands/dirtypagestats.h"
 //#include "commands/trace.h"
 
+#include "kits_cmd.h"
 #include "genarchive.h"
 #include "logcat.h"
 
@@ -44,6 +45,7 @@ void Command::init()
     //REGISTER_COMMAND("dbstats", DBStats);
     //REGISTER_COMMAND("agglog", AggLog);
     //REGISTER_COMMAND("mrestore", MergeRestore);
+    REGISTER_COMMAND("kits", KitsCommand);
 }
 
 

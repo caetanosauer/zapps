@@ -61,7 +61,8 @@ class table_desc_t;
 
 class index_desc_t
 {
-    // friend class table_desc_t;
+    // this is needed at least for accessing the lock
+    friend class table_desc_t;
 private:
     stid_t _stid;
     string _name;
@@ -76,11 +77,11 @@ private:
     bool            _latchless;                /* does it use any latches at all */
     bool            _rmapholder;               /* it is used only for the range mapping */
 
-    char            _keydesc[MAX_KEYDESC_LEN]; /* buffer for the index key description */
-    tatas_lock      _keydesc_lock;             /* lock for the key desc */
-
     // CS: removed volatile, which has nothing to do with thread safety!
     unsigned _maxkeysize;               /* maximum key size */
+
+    char            _keydesc[MAX_KEYDESC_LEN]; /* buffer for the index key description */
+    tatas_lock      _keydesc_lock;             /* lock for the key desc */
 
 
 public:

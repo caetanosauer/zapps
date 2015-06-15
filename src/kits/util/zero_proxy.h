@@ -6,7 +6,7 @@
 #define ZERO_PROXY_H
 
 #include "sm_base.h"
-#include "w_okvl_inl.h"
+#include "w_okvl.h"
 
 #ifndef XCT_DEPENDENT_H
 #include <xct_dependent.h>
@@ -14,11 +14,9 @@
 
 class bt_cursor_t;
 
-typedef okvl_mode lock_mode_t;
-okvl_mode SH = ALL_S_GAP_S;
-okvl_mode EX = ALL_X_GAP_X;
-okvl_mode NL = ALL_N_GAP_N;
+typedef okvl_mode::element_lock_mode lock_mode_t;
 
+#if 0
 /**\brief Iterator over an index.
  * \details
  * \ingroup SSMSCANI
@@ -176,7 +174,6 @@ private:
  * To avoid the name colision, Shore's version of the class is ignored
  * using the CFG_ZERO flag (see shore_iter.h)
  */
-#if 0
 template <class TableDesc>
 class table_scan_iter_impl
     : public tuple_iter_t<TableDesc, scan_index_i, table_row_t>

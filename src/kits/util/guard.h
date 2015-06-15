@@ -1,19 +1,19 @@
 /* -*- mode:C++; c-basic-offset:4 -*-
      Shore-kits -- Benchmark implementations for Shore-MT
-   
+
                        Copyright (c) 2007-2009
       Data Intensive Applications and Systems Labaratory (DIAS)
                Ecole Polytechnique Federale de Lausanne
-   
+
                          All Rights Reserved.
-   
+
    Permission to use, copy, modify and distribute this software and
    its documentation is hereby granted, provided that both the
    copyright notice and this permission notice appear in all copies of
    the software, derivative works or modified versions, and any
    portions thereof, and that both notices appear in supporting
    documentation.
-   
+
    This code is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. THE AUTHORS
@@ -52,10 +52,10 @@ inline void test_alignment(void const* ptr, int align) {
 
     (void) u;
     (void) align;
-    
+
     // make sure the requested alignment is a power of 2
     assert((align & -align) == align);
-    
+
     // make sure the pointer is properly aligned
     assert(((align-1) & u.i) == 0);
 }
@@ -99,11 +99,12 @@ private:
     // Specialize this function as necessary
 
     void action(T* ptr) {
+        if (ptr)
         delete ptr;
     }
 
-    
-    /* possible change 
+
+    /* possible change
     void action(T* ptr) {
        if (ptr != NULL)
           delete ptr;
@@ -111,7 +112,7 @@ private:
     */
 
 public:
-    
+
     guard(T* ptr=NULL)
         : _ptr(ptr)
     {
@@ -140,7 +141,7 @@ public:
     guard(guard const &);
     guard &operator =(const guard &);
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    
+
     guard &operator =(guard &other) {
         assign(other.release());
         return *this;
@@ -163,28 +164,28 @@ public:
     T const &operator *() const {
         return *get();
     }
-    
+
     T* operator ->() {
         return get();
     }
     T const* operator ->() const {
         return get();
     }
-    
+
     T* get() {
         return _ptr;
     }
     T const* get() const {
         return _ptr;
     }
-    
+
     /**
      * @brief Notifies this guard that its services are no longer
      * needed because some other entity has assumed ownership of the
      * pointer.
      *
      * NOTE: this function is marked const so that the assignment
-     * operator and copy constructor can work properly. 
+     * operator and copy constructor can work properly.
      */
     T* release() {
         T* ptr = _ptr;
@@ -203,14 +204,14 @@ public:
     ~guard() {
         done();
     }
-    
+
 private:
     void assign(T* ptr) {
         if(_ptr && _ptr != ptr)
             action(_ptr);
         _ptr = ptr;
     }
-    
+
 };
 
 template<>
@@ -258,7 +259,7 @@ public:
     static bool different(const T &a, const T &b) {
         return a != b;
     }
-    
+
     guard_base_t(T obj)
         : _obj(obj)
     {
@@ -271,7 +272,7 @@ public:
         assign(other.release());
         return *this;
     }
-    
+
     operator T() const {
         return get();
     }
@@ -279,14 +280,14 @@ public:
     T get() const {
         return _obj;
     }
-    
+
     /**
      * @brief Notifies this guard that its services are no longer
      * needed because some other entity has assumed ownership of the
      * pointer.
      *
      * NOTE: this function is marked const so that the assignment
-     * operator and copy constructor can work properly. 
+     * operator and copy constructor can work properly.
      */
     T release() const {
         T obj = _obj;
@@ -305,7 +306,7 @@ public:
     ~guard_base_t() {
         done();
     }
-    
+
 protected:
     void assign(T obj) const {
         if(Impl::different(_obj, obj)) {
@@ -314,7 +315,7 @@ protected:
             _obj = obj;
         }
     }
-    
+
 };
 
 template <typename T, typename Impl>
@@ -380,7 +381,7 @@ struct file_guard_t : pointer_guard_base_t<FILE, file_guard_t> {
     }
     static void guard_action(FILE *ptr) {
         if(ptr && fclose(ptr)) {
-            TRACE(TRACE_ALWAYS, 
+            TRACE(TRACE_ALWAYS,
                   "fclose failed in guard destructor");
         }
     }
@@ -395,7 +396,7 @@ struct fd_guard_t : guard_base_t<int, fd_guard_t> {
     {
     }
     static void guard_action(int fd) {
-        if(fd >= 0 && close(fd)) 
+        if(fd >= 0 && close(fd))
             TRACE(TRACE_ALWAYS, "close() failed in guard destructor");
     }
     static int null_value() {

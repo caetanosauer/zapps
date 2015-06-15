@@ -107,6 +107,14 @@
 #include "util/zero_proxy.h"
 
 
+#define DECLARE_TABLE_SCHEMA(tablename)         \
+    class tablename : public table_desc_t {     \
+    public: tablename(string sysname); }
+
+
+#define DECLARE_TABLE_SCHEMA_PD(tablename)              \
+    class tablename : public table_desc_t {             \
+    public: tablename(const uint32_t& pd); }
 
 /* ---------------------------------------------------------------
  *
@@ -256,5 +264,129 @@ protected:
 
 
 typedef std::list<table_desc_t*> table_list_t;
+
+/******************************************************************
+ *
+ *  class table_desc_t methods
+ *
+ ******************************************************************/
+
+
+
+/******************************************************************
+ *
+ * @fn:    find_field_by_name
+ *
+ * @brief: Returns the field index, given its name. If no such field
+ *         name exists it returns -1.
+ *
+ ******************************************************************/
+
+inline int table_desc_t::find_field_by_name(const char* field_name) const
+{
+    for (unsigned i=0; i<_field_count; i++) {
+        if (strcmp(field_name, _desc[i].name())==0)
+            return (i);
+    }
+    return (-1);
+}
+
+
+
+/******************************************************************
+ *
+ * @fn:    index_keydesc
+ *
+ * @brief: Iterates over all the fields of a selected index and returns
+ *         on a single string the corresponding key description
+ *
+ ******************************************************************/
+
+inline char* table_desc_t::index_keydesc(index_desc_t* idx)
+{
+    CRITICAL_SECTION(idx_kd_cs, idx->_keydesc_lock);
+    if (strlen(idx->_keydesc)>1) // is key_desc is already set
+        return (idx->_keydesc);
+
+    // else set the index keydesc
+    for (unsigned i=0; i<idx->field_count(); i++) {
+        strcat(idx->_keydesc, _desc[idx->key_index(i)].keydesc());
+    }
+    return (idx->_keydesc);
+}
+
+
+
+/******************************************************************
+ *
+ *  @fn:    index_maxkeysize
+ *
+ *  @brief: For an index it returns the maximum size of the index key
+ *
+ *  @note:  !!! Now that key_size() Uses the maxsize() of each field,
+ *              key_size() == maxkeysize()
+ *
+ ******************************************************************/
+
+inline int table_desc_t::index_maxkeysize(index_desc_t* idx) const
+{
+    unsigned size = 0;
+    if ((size = idx->get_keysize()) > 0) {
+        // keysize has already been calculated
+        // just return that value
+        return (size);
+    }
+
+    // needs to calculate the (max)key for that index
+    unsigned ix = 0;
+    for (unsigned i=0; i<idx->field_count(); i++) {
+        ix = idx->key_index(i);
+        size += _desc[ix].fieldmaxsize();
+    }
+    // set it for the index, for future invokations
+    idx->set_keysize(size);
+    return(size);
+}
+
+
+
+/******************************************************************
+ *
+ *  @fn:    maxsize()
+ *
+ *  @brief: Return the maximum size requirement for a tuple in disk format.
+ *          Normally, it will be calculated only once.
+ *
+ ******************************************************************/
+
+inline unsigned table_desc_t::maxsize()
+{
+    // shortcut not to re-compute maxsize
+    if (*&_maxsize)
+        return (*&_maxsize);
+
+    // calculate maximum size required
+    unsigned size = 0;
+    unsigned var_count = 0;
+    unsigned null_count = 0;
+    for (unsigned i=0; i<_field_count; i++) {
+        size += _desc[i].fieldmaxsize();
+        if (_desc[i].allow_null()) null_count++;
+        if (_desc[i].is_variable_length()) var_count++;
+    }
+
+    size += (var_count*sizeof(offset_t)) + (null_count>>3) + 1;
+
+    // There is a small window from the time it checks if maxsize is already set,
+    // until the time it tries to set it up. In the meantime, another thread may
+    // has done the calculation already. If that had happened, the two threads
+    // should have calculated the same maxsize, since it is the same table desc.
+    // In other words, the maxsize should be either 0 or equal to the size.
+    assert ((*&_maxsize==0) || (*&_maxsize==size));
+
+    // atomic_swap_uint(&_maxsize, size);
+    _maxsize = size;
+    return (*&_maxsize);
+}
 
 #endif /* __TABLE_DESC_H */
