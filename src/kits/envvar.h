@@ -75,7 +75,7 @@ using namespace std;
  *********************************************************************/
 
 const string ENVCONFFILE = "shore.conf";
-const string DEFAULTCONFIG = "tm1-1";
+const string DEFAULTCONFIG = "tpcb-1";
 
 class envVar
 {

@@ -250,7 +250,8 @@ void worker_stats_t::update_rvp_notify_time(const double rvp_notify_time_ms)
 
 void base_worker_t::work()
 {
-    ss_m::set_sli_enabled(_use_sli);
+    // not supported in Zero
+    // ss_m::set_sli_enabled(_use_sli);
     int rval = 0;
 
     // state machine

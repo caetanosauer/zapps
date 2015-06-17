@@ -773,9 +773,9 @@ w_rc_t table_man_t<T>::update_tuple(ss_m* /* db */,
     // CS: not implemented -- remove and insert required for now
     return RC(eNOTIMPLEMENTED);
 
-    assert (_ptable);
-    assert (ptuple);
-    assert (ptuple->_rep);
+    // assert (_ptable);
+    // assert (ptuple);
+    // assert (ptuple->_rep);
 
     // if (!ptuple->is_rid_valid()) return RC(se_NO_CURRENT_TUPLE);
 

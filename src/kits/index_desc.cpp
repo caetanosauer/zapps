@@ -79,7 +79,7 @@ bool index_desc_t::matches_name(const char* name)
 
 int index_desc_t::key_index(const unsigned index) const
 {
-    assert (index < _base._field_count);
+    assert (index < _field_count);
     return (_key[index]);
 }
 

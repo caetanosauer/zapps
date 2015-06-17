@@ -37,4 +37,9 @@ set(kits_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/kits_cmd.cpp
     )
 
+
+# copy shore.conf file
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/shore.conf
+        ${CMAKE_CURRENT_BINARY_DIR}/shore.conf COPYONLY)
+
 add_library (kits ${kits_SRCS})

@@ -30,18 +30,19 @@
 #include <unistd.h>
 #include "trace.h"
 //#include "util/exception.h"
+#include <type_traits> // alignment_of
 
 // see http://src.opensolaris.org/source/xref/sfw/usr/src/cmd/gcc/gcc-3.4.3/gcc/testsuite/g++.old-deja/g++.abi/align.C
 // Origin: Alex Samuel <samuel (at) codesourcery.com>
-#define alignmentof(type) (alignment_of<type>())
-template<typename T>
-inline size_t alignment_of() {
-    struct S {
-	char c;
-	T t;
-    };
-    return offsetof(S, t);
-}
+#define alignmentof(type) (std::alignment_of<type>())
+// template<typename T>
+// inline size_t alignment_of() {
+//     struct S {
+// 	char c;
+// 	T t;
+//     };
+//     return offsetof(S, t);
+// }
 
 inline void test_alignment(void const* ptr, int align) {
     union {
