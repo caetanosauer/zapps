@@ -4,6 +4,7 @@
 #include "command.h"
 
 class ShoreEnv;
+class sm_options;
 
 class KitsCommand : public Command
 {
@@ -12,6 +13,9 @@ public:
     virtual void run();
 private:
     ShoreEnv* shoreEnv;
+
+    string logdir;
+    string archdir;
 
     string opt_benchmark;
     string opt_conffile;
@@ -22,6 +26,8 @@ private:
     bool opt_spread;
 
     template<class Client, class Environment> void runBenchmark();
+
+    void initShoreEnv();
 };
 
 #endif

@@ -136,6 +136,8 @@ public:
         if (construct_cache) {
             // init trash stack
             _pts = new ats_char_t(_ptable->maxsize());
+            // CS TODO: implement new row cache!
+            row_cache_t<T>::tuple_factory::ptable() = aTableDesc;
         }
     }
 

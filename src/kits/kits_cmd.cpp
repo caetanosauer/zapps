@@ -18,6 +18,10 @@ void KitsCommand::setupOptions()
             "Benchmark to execute. Possible values: tpcb, tpcc")
         // ("config,c", po::value<string>(&opt_conffile)->required(),
         //     "Path to configuration file")
+        ("logdir,l", po::value<string>(&logdir)->required(),
+            "Directory containing log to be scanned")
+        ("archdir,a", po::value<string>(&archdir)->default_value(""),
+            "Directory in which to store the log archive")
         ("txrs", po::value<int>(&opt_num_trxs)->default_value(100),
             "Number of transactions to execute")
         ("threads,t", po::value<int>(&opt_num_threads)->default_value(4),
@@ -46,7 +50,7 @@ template<class Client, class Environment>
 void KitsCommand::runBenchmark()
 {
     shoreEnv = new Environment();
-    shoreEnv->load();
+    initShoreEnv();
 
     // reset starting cpu and wh id
     int current_prs_id = -1;
@@ -125,4 +129,12 @@ void KitsCommand::runBenchmark()
     shoreEnv->print_throughput(opt_queried_sf, opt_spread, opt_num_threads, delay,
             miochs, usage);
 
+}
+
+void KitsCommand::initShoreEnv()
+{
+    shoreEnv->get_opts().set_string_option("sm_logdir", logdir);
+    shoreEnv->get_opts().set_string_option("sm_archdir", archdir);
+    shoreEnv->init();
+    shoreEnv->load();
 }

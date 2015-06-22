@@ -153,7 +153,9 @@ history_t::history_t(const uint4_t& pd)
     _desc[5].setup(SQL_FIXCHAR,  "H_PADDING", 50-3*sizeof(int)-2*sizeof(double));
 #endif
 
-    // NO INDEXES
+    // index is required in Zero -- use all fields
+    unsigned keys[5] = { 0, 1, 2, 3, 4 };
+    create_primary_idx_desc("H_IDX", keys, 5, pd);
 }
 
 }; // namespace

@@ -43,6 +43,7 @@ class row_cache_t
 public:
     struct tuple_factory {
 	// WARNING: manually assign non-NULL before using the cache... Or Else
+        // CS TODO -- bad design! Implement new row cache
 	static TableDesc* &ptable() {
 	    static TableDesc* _ptable;
 	    return _ptable;

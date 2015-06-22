@@ -571,6 +571,8 @@ public:
     virtual ~ShoreEnv();
 
 
+    sm_options& get_opts() { return *_popts; }
+
     // DB INTERFACE
 
     virtual int conf();

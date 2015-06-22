@@ -91,6 +91,7 @@ w_rc_t table_desc_t::create_physical_table(ss_m* db)
     _db = db;
 
     W_DO(create_physical_index(db, _primary_idx));
+    w_assert0(_primary_idx);
 
     for (size_t i = 0; i < _indexes.size(); i++) {
         W_DO(create_physical_index(db, _indexes[i]));
@@ -115,6 +116,7 @@ w_rc_t table_desc_t::create_physical_index(ss_m* db, index_desc_t* index)
     stid_t stid = stid_t::null;
 
     W_DO(db->create_index(_vid, stid));
+    w_assert0(index);
     index->set_stid(stid);
 
     // Print info
