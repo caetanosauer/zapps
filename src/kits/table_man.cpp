@@ -208,9 +208,11 @@ int table_man_t<T>::format(table_row_t* ptuple,
  *
  *********************************************************************/
 
+// If index is given, then only the non-key fields are loaded
 template<class T>
 bool table_man_t<T>::load(table_row_t* ptuple,
-                       const char* data)
+                       const char* data,
+                       index_desc_t* index)
 {
     // Read the data field by field
     assert (ptuple);
@@ -232,6 +234,18 @@ bool table_man_t<T>::load(table_row_t* ptuple,
 
     int null_index = -1;
     for (unsigned i=0; i<_ptable->field_count(); i++) {
+
+        if (index) {
+            // skip key fields, which are already loaded
+            bool iskey = false;
+            for (unsigned j = 0; j < index->field_count(); j++) {
+                if (i == index->key_index(j)) {
+                    iskey = true;
+                    break;
+                }
+            }
+            if (iskey) continue;
+        }
 
         // Check if the field can be NULL.
         // If it can be NULL, increase the null_index,
@@ -495,28 +509,44 @@ w_rc_t table_man_t<T>::index_probe(ss_m* db,
     //     lock_mode   = NL;
     // }
 
-    // find the tuple in the index
+    // extract serialized key into _rep_key
     int key_sz = format_key(pindex, ptuple, *ptuple->_rep_key);
     assert (ptuple->_rep_key->_dest); // if NULL invalid key
     w_keystr_t kstr;
     kstr.construct_regularkey(ptuple->_rep_key->_dest, key_sz);
 
-    // get (max) length of the reference key
-    // place ref key into tuple buffer, overwriting previous key
-    smsize_t len;
-    int ref_sz = key_size(ptuple->_ptable->primary_idx());
-    ptuple->_rep_key->set(ref_sz);
-    W_DO(db->find_assoc(pindex->stid(), kstr, ptuple->_rep_key->_dest, len,
-                found));
+    if (pindex == table()->primary_idx()) {
+        // If we are probing the primary index, then we just need
+        // to fetch the non-key fields into the tuple
+        int fields_sz = ptuple->_ptable->maxsize();
+        ptuple->_rep->set(fields_sz);
 
-    if (!found) return RC(se_TUPLE_NOT_FOUND);
+        smsize_t len;
+        W_DO(db->find_assoc(pindex->stid(), kstr, ptuple->_rep->_dest, len,
+                    found));
+        if (!found) return RC(se_TUPLE_NOT_FOUND);
 
-    // read the tuple from the primary index
-    kstr.construct_regularkey(ptuple->_rep_key->_dest, len);
-    W_DO(db->find_assoc(pindex->table()->get_primary_stid(), kstr,
-                ptuple->_rep->_dest, len, found));
+        // load the non-key fields into the tuple
+        load(ptuple, ptuple->_rep->_dest, pindex);
+    }
+    else {
+        // get (max) length of the reference key
+        // place ref key into tuple buffer, overwriting previous key
+        smsize_t len;
+        int ref_sz = key_size(ptuple->_ptable->primary_idx());
+        ptuple->_rep_key->set(ref_sz);
+        W_DO(db->find_assoc(pindex->stid(), kstr, ptuple->_rep_key->_dest, len,
+                    found));
 
-    if (!found) return RC(se_TUPLE_NOT_FOUND);
+        if (!found) return RC(se_TUPLE_NOT_FOUND);
+
+        // read the tuple from the primary index
+        kstr.construct_regularkey(ptuple->_rep_key->_dest, len);
+        W_DO(db->find_assoc(pindex->table()->get_primary_stid(), kstr,
+                    ptuple->_rep->_dest, len, found));
+
+        if (!found) return RC(se_TUPLE_NOT_FOUND);
+    }
 
     return (RCOK);
 }

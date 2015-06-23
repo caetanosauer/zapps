@@ -279,7 +279,8 @@ public:
             index_desc_t* pindex = NULL);
 
     // load tuple from input buffer
-    bool load(table_row_t* ptuple, const char* string);
+    bool load(table_row_t* ptuple, const char* string,
+            index_desc_t* index = NULL);
 
     // disk space needed for tuple
     int  size(table_row_t* ptuple) const;
