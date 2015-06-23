@@ -124,7 +124,7 @@ protected:
 
     T* _ptable;       /* pointer back to the table description */
 
-    guard<ats_char_t> _pts;   /* trash stack */
+    guard<blob_pool> _pts;   /* trash stack */
 
 public:
 
@@ -135,7 +135,7 @@ public:
 	// init tuple cache
         if (construct_cache) {
             // init trash stack
-            _pts = new ats_char_t(_ptable->maxsize());
+            _pts = new blob_pool(_ptable->maxsize());
             // CS TODO: implement new row cache!
             row_cache_t<T>::tuple_factory::ptable() = aTableDesc;
         }
@@ -156,7 +156,7 @@ public:
     /* --- trash stack operations --- */
     /* ------------------------------ */
 
-    ats_char_t* ts() { assert (_pts); return (_pts); }
+    blob_pool* ts() { assert (_pts); return (_pts); }
 
 
     /* ---------------------------- */
@@ -216,6 +216,7 @@ public:
                                                   const lpid_t& root = lpid_t::null)
     {
 	index_desc_t* pindex = _ptable->find_index(idx_name);
+        w_assert0(pindex);
 	return (index_probe_forupdate(db, pindex, ptuple, root));
     }
 

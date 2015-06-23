@@ -150,7 +150,7 @@ bool table_desc_t::create_index_desc(const char* name,
                                      const bool primary,
                                      const uint32_t& pd)
 {
-    index_desc_t* p_index = new index_desc_t(name, num, fields,
+    index_desc_t* p_index = new index_desc_t(this, name, num, fields,
                                              unique, primary, pd);
 
     // check the validity of the index
@@ -182,7 +182,7 @@ bool table_desc_t::create_primary_idx_desc(const char* name,
                                            const unsigned num,
                                            const uint32_t& pd)
 {
-    index_desc_t* p_index = new index_desc_t(name, num, fields,
+    index_desc_t* p_index = new index_desc_t(this, name, num, fields,
                                              true, true, pd);
 
     // check the validity of the index

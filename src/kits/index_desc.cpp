@@ -39,12 +39,14 @@
  ******************************************************************/
 
 
-index_desc_t::index_desc_t(const char* name, const int fieldcnt,
+index_desc_t::index_desc_t(table_desc_t* table,
+                           const char* name,
+                           const int fieldcnt,
                            const unsigned* fields,
                            bool unique, bool primary,
                            const uint32_t& pd,
                            bool rmapholder)
-    : _name(name), _field_count(fieldcnt),
+    : _table(table), _name(name), _field_count(fieldcnt),
       _unique(unique), _primary(primary),
       _rmapholder(rmapholder),
       _maxkeysize(0)

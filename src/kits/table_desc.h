@@ -198,6 +198,9 @@ public:
     // index by name
     index_desc_t* find_index(const char* index_name)
     {
+        if (_primary_idx->matches_name(index_name)) {
+            return _primary_idx;
+        }
         for (size_t i = 0; i < _indexes.size(); i++) {
             if (_indexes[i]->matches_name(index_name)) {
                 return _indexes[i];

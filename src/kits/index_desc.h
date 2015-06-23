@@ -64,10 +64,10 @@ class index_desc_t
     // this is needed at least for accessing the lock
     friend class table_desc_t;
 private:
+    table_desc_t*   _table;
+
     stid_t _stid;
     string _name;
-
-    table_desc_t*   _table;
 
     unsigned*       _key;                      /* index of fields in the base table */
     unsigned        _field_count;
@@ -90,7 +90,8 @@ public:
     /* --- constructor --- */
     /* ------------------- */
 
-    index_desc_t(const char* name, const int fieldcnt,
+    index_desc_t(table_desc_t* table,
+                 const char* name, const int fieldcnt,
                  const unsigned* fields,
                  bool unique=true, bool primary=false,
                  const uint32_t& pd=PD_NORMAL,

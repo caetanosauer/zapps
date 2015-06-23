@@ -185,10 +185,10 @@ w_rc_t ShoreEnv::load()
     W_DO(create_tables());
 
     // 3. Kick-off checkpoint thread
-    guard<checkpointer_t> chk(new checkpointer_t(this));
-    if (_chkpt_freq > 0) {
-        chk->fork();
-    }
+    // guard<checkpointer_t> chk(new checkpointer_t(this));
+    // if (_chkpt_freq > 0) {
+    //     chk->fork();
+    // }
 
     // CS: loaders only start working once this is set (was in old checkpointer code)
     set_measure(MST_MEASURE);
@@ -202,10 +202,10 @@ w_rc_t ShoreEnv::load()
     time_t tstop = time(NULL);
     TRACE( TRACE_ALWAYS, "Loading finished in (%d) secs...\n", (tstop - tstart));
 
-    if (_chkpt_freq > 0) {
-    	chk->set_active(false);
-    	chk->join();
-    }
+    // if (_chkpt_freq > 0) {
+    // 	chk->set_active(false);
+    // 	chk->join();
+    // }
 
     _loaded = true;
     return RCOK;
@@ -819,7 +819,9 @@ int ShoreEnv::configure_sm()
     for (map<string,string>::iterator sm_iter = _sm_opts.begin();
          sm_iter != _sm_opts.end(); sm_iter++)
     {
-        string key = sm_iter->first.c_str();
+        // the "+1" is a hack to remove the preceding "-" from options
+        // e.g., -sm_logsize -> sm_logsize
+        string key = sm_iter->first.c_str() + 1;
         string value = sm_iter->second.c_str();
 
         // In Zero, we have to call the specific method depending on the

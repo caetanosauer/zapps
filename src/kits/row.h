@@ -104,7 +104,6 @@
  *
  * --------------------------------------------------------------- */
 
-typedef blob_pool ats_char_t;
 typedef intptr_t offset_t;
 
 
@@ -120,16 +119,16 @@ struct rep_row_t
 {
     char* _dest;       /* pointer to a buffer */
     unsigned   _bufsz;     /* buffer size */
-    ats_char_t* _pts;  /* pointer to a trash stack */
+    blob_pool* _pts;  /* pointer to a trash stack */
 
 
     rep_row_t();
-    rep_row_t(ats_char_t* apts);
+    rep_row_t(blob_pool* apts);
     ~rep_row_t();
 
     void set(const unsigned nsz);
 
-    void set_ts(ats_char_t* apts, const unsigned nsz);
+    void set_ts(blob_pool* apts, const unsigned nsz);
 
 }; // EOF: rep_row_t
 

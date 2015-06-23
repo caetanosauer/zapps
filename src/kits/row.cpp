@@ -46,7 +46,7 @@ rep_row_t::rep_row_t()
     : _dest(NULL), _bufsz(0), _pts(NULL)
 { }
 
-rep_row_t::rep_row_t(ats_char_t* apts)
+rep_row_t::rep_row_t(blob_pool* apts)
     : _dest(NULL), _bufsz(0), _pts(apts)
 {
     assert (_pts);
@@ -104,7 +104,7 @@ void rep_row_t::set(const unsigned nsz)
  *
  ******************************************************************/
 
-void rep_row_t::set_ts(ats_char_t* apts, const unsigned nsz)
+void rep_row_t::set_ts(blob_pool* apts, const unsigned nsz)
 {
     assert(apts);
     _pts = apts;

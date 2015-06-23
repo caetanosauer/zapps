@@ -8,6 +8,7 @@
 #include "tpcb/tpcb_client.h"
 
 #include "util/stopwatch.h"
+#include "envvar.h"
 
 int MAX_THREADS = 1000;
 
@@ -28,7 +29,7 @@ void KitsCommand::setupOptions()
             "Number of threads to execute benchmark with")
         ("select_trx,s", po::value<int>(&opt_select_trx)->default_value(0),
             "Transaction code or mix identifier (0 = all trxs)")
-        ("queried_sf,q", po::value<int>(&opt_queried_sf)->default_value(0),
+        ("queried_sf,q", po::value<int>(&opt_queried_sf)->default_value(1),
             "Scale factor to which to restrict queries")
         ("spread", po::value<bool>(&opt_spread)->default_value(true),
             "Attach each worker thread to a fixed core for improved concurrency")
@@ -51,6 +52,7 @@ void KitsCommand::runBenchmark()
 {
     shoreEnv = new Environment();
     initShoreEnv();
+    shoreEnv->load();
 
     // reset starting cpu and wh id
     int current_prs_id = -1;
@@ -129,12 +131,30 @@ void KitsCommand::runBenchmark()
     shoreEnv->print_throughput(opt_queried_sf, opt_spread, opt_num_threads, delay,
             miochs, usage);
 
+    finish();
 }
 
 void KitsCommand::initShoreEnv()
 {
     shoreEnv->get_opts().set_string_option("sm_logdir", logdir);
     shoreEnv->get_opts().set_string_option("sm_archdir", archdir);
+
+    // Kits does not seem to respect the db-config set in the file.
+    // It always uses ssb-1. In the old Kits code, thie config was
+    // specified with the -c command line
+    stringstream benchCfg;
+    benchCfg << opt_benchmark << "-" << opt_queried_sf;
+    envVar::instance()->setConfiguration(benchCfg.str());
+
+    shoreEnv->set_sf(opt_queried_sf);
+    shoreEnv->set_qf(opt_queried_sf);
+
     shoreEnv->init();
-    shoreEnv->load();
+    shoreEnv->start();
+}
+
+void KitsCommand::finish()
+{
+    // shoreEnv has stop() and close(), and close calls stop (confusing!)
+    shoreEnv->close();
 }

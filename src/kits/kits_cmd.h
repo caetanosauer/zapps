@@ -28,6 +28,7 @@ private:
     template<class Client, class Environment> void runBenchmark();
 
     void initShoreEnv();
+    void finish();
 };
 
 #endif

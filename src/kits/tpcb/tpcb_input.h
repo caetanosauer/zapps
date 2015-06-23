@@ -35,7 +35,8 @@
 #include "skewer.h"
 #include "util/random_input.h"
 
-const int XCT_TPCB_ACCT_UPDATE = 31;
+// CS: default mix should always be 0
+const int XCT_TPCB_ACCT_UPDATE = 0;
 const int XCT_TPCB_POPULATE_DB = 39;
 
 // microbenchmarks
