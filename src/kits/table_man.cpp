@@ -796,12 +796,28 @@ w_rc_t table_man_t<T>::delete_index_entry(ss_m* db,
  *********************************************************************/
 
 template<class T>
-w_rc_t table_man_t<T>::update_tuple(ss_m* /* db */,
-                                 table_row_t* /* ptuple */,
+w_rc_t table_man_t<T>::update_tuple(ss_m* db,
+                                 table_row_t* ptuple,
                                  const lock_mode_t  /* lock_mode */) // physical_design_t
 {
-    // CS: not implemented -- remove and insert required for now
-    return RC(eNOTIMPLEMENTED);
+    // CS TODO -- calling overwrite directly, which only works if updated
+    // tuple did not grow (shrinking should be ok).
+    // Also assuming that:
+    // 1) key fields didn't change
+    // 2) key is serialized in _rep_key
+    //
+    // CS TODO (performance) -- most xcts call this after an index probe,
+    // where all this format/load was already done. So there is a lot of
+    // repeated work.
+    int key_sz = format_key(table()->primary_idx(), ptuple, *ptuple->_rep_key);
+    assert (ptuple->_rep_key->_dest); // if NULL invalid key
+    w_keystr_t kstr;
+    kstr.construct_regularkey(ptuple->_rep_key->_dest, key_sz);
+    W_DO(db->overwrite_assoc(table()->primary_idx()->stid(),
+                kstr, ptuple->_rep->_dest, 0, 0));
+
+    return RCOK;
+
 
     // assert (_ptable);
     // assert (ptuple);

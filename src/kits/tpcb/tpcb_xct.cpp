@@ -283,12 +283,12 @@ w_rc_t ShoreTPCBEnv::xct_acct_update(const int /* xct_id */,
     tuple_guard<account_man_impl> pracct(account_man);
     tuple_guard<history_man_impl> prhist(history_man);
 
-    rep_row_t areprow(account_man->ts());
-    rep_row_t areprowkey(account_man->ts());
+    rep_row_t areprow(history_man->ts());
+    rep_row_t areprowkey(history_man->ts());
 
     // allocate space for the biggest of the 4 table representations
-    areprow.set(account_man->table()->maxsize());
-    areprowkey.set(account_man->table()->maxsize());
+    areprow.set(history_man->table()->maxsize());
+    areprowkey.set(history_man->table()->maxsize());
 
     // CS TODO -- this makes no sense!
     // Change allocation mechanism!
