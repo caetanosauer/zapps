@@ -11,7 +11,7 @@ class KitsCommand : public Command
 public:
     virtual void setupOptions();
     virtual void run();
-private:
+protected:
     ShoreEnv* shoreEnv;
 
     string logdir;
@@ -25,9 +25,11 @@ private:
     int opt_queried_sf;
     bool opt_spread;
 
-    template<class Client, class Environment> void runBenchmark();
+    template<class Client, class Environment> void runBenchmarkSpec();
+    void runBenchmark();
 
-    void initShoreEnv();
+    template <class Environment> void initShoreEnv();
+    void init();
     void finish();
 };
 

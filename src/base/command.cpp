@@ -13,6 +13,7 @@
 #include "kits_cmd.h"
 #include "genarchive.h"
 #include "logcat.h"
+#include "experiments/restore_cmd.h"
 
 /*
  * Adapted from
@@ -46,6 +47,7 @@ void Command::init()
     //REGISTER_COMMAND("agglog", AggLog);
     //REGISTER_COMMAND("mrestore", MergeRestore);
     REGISTER_COMMAND("kits", KitsCommand);
+    REGISTER_COMMAND("restore", RestoreCmd);
 }
 
 

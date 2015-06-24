@@ -38,9 +38,28 @@ void KitsCommand::setupOptions()
 
 void KitsCommand::run()
 {
+    init();
+    shoreEnv->load();
+    runBenchmark();
+    finish();
+}
+
+void KitsCommand::init()
+{
     // just TPC-B for now
     if (opt_benchmark == "tpcb") {
-        runBenchmark<tpcb::baseline_tpcb_client_t, tpcb::ShoreTPCBEnv>();
+        initShoreEnv<tpcb::ShoreTPCBEnv>();
+    }
+    else {
+        throw runtime_error("Unknown benchmark string");
+    }
+}
+
+void KitsCommand::runBenchmark()
+{
+    // just TPC-B for now
+    if (opt_benchmark == "tpcb") {
+        runBenchmarkSpec<tpcb::baseline_tpcb_client_t, tpcb::ShoreTPCBEnv>();
     }
     else {
         throw runtime_error("Unknown benchmark string");
@@ -48,12 +67,8 @@ void KitsCommand::run()
 }
 
 template<class Client, class Environment>
-void KitsCommand::runBenchmark()
+void KitsCommand::runBenchmarkSpec()
 {
-    shoreEnv = new Environment();
-    initShoreEnv();
-    shoreEnv->load();
-
     // reset starting cpu and wh id
     int current_prs_id = -1;
     int wh_id = 0;
@@ -130,14 +145,18 @@ void KitsCommand::runBenchmark()
     TRACE(TRACE_ALWAYS, "end measurement\n");
     shoreEnv->print_throughput(opt_queried_sf, opt_spread, opt_num_threads, delay,
             miochs, usage);
-
-    finish();
 }
 
+template<class Environment>
 void KitsCommand::initShoreEnv()
 {
+    shoreEnv = new Environment();
+
     shoreEnv->get_opts().set_string_option("sm_logdir", logdir);
-    shoreEnv->get_opts().set_string_option("sm_archdir", archdir);
+    if (!archdir.empty()) {
+        shoreEnv->get_opts().set_bool_option("sm_archiving", true);
+        shoreEnv->get_opts().set_string_option("sm_archdir", archdir);
+    }
 
     // Kits does not seem to respect the db-config set in the file.
     // It always uses ssb-1. In the old Kits code, thie config was
