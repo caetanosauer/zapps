@@ -11,6 +11,7 @@
 #include "handler.h"
 
 #include <bitset>
+#include <functional>
 
 class BaseScanner : public basethread_t {
 public:
