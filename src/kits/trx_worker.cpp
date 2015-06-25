@@ -150,7 +150,9 @@ int trx_worker_t::_serve_action(Request* prequest)
         TRACE( TRACE_TRX_FLOW, "Problem running xct (%d) (%d) [0x%x]\n",
                prequest->_tid.get_lo(), prequest->_xct_id, e.err_num());
         ++_stats._problems;
-        W_COERCE(e);
+        // CS TODO -- added this so that error in xct execution don't
+        // go unnoticed
+        // W_COERCE(e);
         return (1);
     }
     }
