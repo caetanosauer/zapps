@@ -120,7 +120,7 @@ w_rc_t table_desc_t::create_physical_index(ss_m* db, index_desc_t* index)
     index->set_stid(stid);
 
     // Print info
-    TRACE( TRACE_STATISTICS, "%s %d (%s) (%s) (%s) (%s) (%s)\n",
+    TRACE( TRACE_STATISTICS, "%s %d (%s) (%s) (%s) (%s)\n",
            index->name(), stid.store,
            (index->is_latchless() ? "no latch" : "latch"),
            (index->is_relaxed() ? "relaxed" : "no relaxed"),
