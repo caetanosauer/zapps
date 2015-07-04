@@ -912,6 +912,13 @@ int ShoreEnv::start_sm()
         W_COERCE(_pssm->mount_vol(_device.c_str(), _vid));
         TRACE( TRACE_DEBUG, "Mounting (new) device completed...\n");
 
+        // create catalog index (must be on stid 1)
+        stid_t cat_stid;
+        W_COERCE(_pssm->begin_xct());
+        W_COERCE(_pssm->create_index(_vid, cat_stid));
+        w_assert0(cat_stid == stid_t(_vid, 1));
+        W_COERCE(_pssm->commit_xct());
+
         // set that the database is not loaded
         _loaded = false;
     }
@@ -926,8 +933,11 @@ int ShoreEnv::start_sm()
         // system state. Mount here is only necessary if we explicitly dismount
         // after loading, which is not the case.
 
-        // _lvid = volume_list[0];
-        // delete [] volume_list;
+        // Make sure that catalog index (stid 1) exists
+        vol_t* vol = ss_m::vol->get(_vid);
+        w_assert0(vol);
+        w_assert0(vol->is_alloc_store(1));
+        w_assert0(strcmp(vol->devname(), _device.c_str()) == 0);
 
         // "speculate" that the database is loaded
         _loaded = true;

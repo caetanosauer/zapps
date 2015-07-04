@@ -60,7 +60,7 @@ w_rc_t branch_man_impl::b_index_probe_forupdate(ss_m* db,
 {
     assert (ptuple);
     ptuple->set_value(0, b_id);
-    return (index_probe_forupdate_by_name(db, "B_IDX", ptuple));
+    return (index_probe_forupdate_by_name(db, "BRANCH", ptuple));
 }
 
 w_rc_t branch_man_impl::b_idx_nl(ss_m* db,
@@ -69,7 +69,7 @@ w_rc_t branch_man_impl::b_idx_nl(ss_m* db,
 {
     assert (ptuple);
     ptuple->set_value(0, b_id);
-    return (index_probe_nl_by_name(db, "B_IDX", ptuple));
+    return (index_probe_nl_by_name(db, "BRANCH", ptuple));
 }
 
 
@@ -84,7 +84,7 @@ w_rc_t teller_man_impl::t_index_probe_forupdate(ss_m* db,
 {
     assert (ptuple);
     ptuple->set_value(0, t_id);
-    return (index_probe_forupdate_by_name(db, "T_IDX", ptuple));
+    return (index_probe_forupdate_by_name(db, "TELLER", ptuple));
 }
 
 w_rc_t teller_man_impl::t_idx_nl(ss_m* db,
@@ -93,7 +93,7 @@ w_rc_t teller_man_impl::t_idx_nl(ss_m* db,
 {
     assert (ptuple);
     ptuple->set_value(0, t_id);
-    return (index_probe_nl_by_name(db, "T_IDX", ptuple));
+    return (index_probe_nl_by_name(db, "TELLER", ptuple));
 }
 
 
@@ -117,7 +117,7 @@ w_rc_t account_man_impl::a_index_probe(ss_m* db,
     (void)b_id;
     (void)balance;
 #endif
-    return (index_probe_by_name(db, "A_IDX", ptuple));
+    return (index_probe_by_name(db, "ACCOUNT", ptuple));
 }
 
 w_rc_t account_man_impl::a_delete_by_index(ss_m* db,
@@ -135,7 +135,7 @@ w_rc_t account_man_impl::a_delete_by_index(ss_m* db,
     (void)b_id;
     (void)balance;
 #endif
-    W_DO(index_probe_forupdate_by_name(db, "A_IDX", ptuple));
+    W_DO(index_probe_forupdate_by_name(db, "ACCOUNT", ptuple));
     return (delete_tuple(db, ptuple));
 }
 
@@ -154,7 +154,7 @@ w_rc_t account_man_impl::a_index_probe_forupdate(ss_m* db,
     (void)b_id;
     (void)balance;
 #endif
-    return (index_probe_forupdate_by_name(db, "A_IDX", ptuple));
+    return (index_probe_forupdate_by_name(db, "ACCOUNT", ptuple));
 }
 
 w_rc_t account_man_impl::a_idx_nl(ss_m* db,
@@ -172,7 +172,7 @@ w_rc_t account_man_impl::a_idx_nl(ss_m* db,
     (void)b_id;
     (void)balance;
 #endif
-    return (index_probe_nl_by_name(db, "A_IDX", ptuple));
+    return (index_probe_nl_by_name(db, "ACCOUNT", ptuple));
 }
 
 };

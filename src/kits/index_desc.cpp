@@ -40,7 +40,7 @@
 
 
 index_desc_t::index_desc_t(table_desc_t* table,
-                           const char* name,
+                           string name,
                            const int fieldcnt,
                            const unsigned* fields,
                            bool unique, bool primary,
@@ -102,6 +102,23 @@ void index_desc_t::print_desc(ostream& os)
 	os << _keydesc[i] << "|";
     }
     os << endl;
+}
+
+w_rc_t index_desc_t::load_stid(ss_m* db, stid_t cat_stid)
+{
+    smsize_t size = sizeof(stid_t);
+    w_keystr_t kstr;
+    kstr.construct_regularkey(_name.c_str(), _name.length());
+    stid_t stid;
+    bool found;
+    W_DO(db->find_assoc(cat_stid, kstr, &stid, size, found));
+
+    if (!found) {
+        return RC(eNOTFOUND);
+    }
+    set_stid(stid);
+
+    return RCOK;
 }
 
 

@@ -36,17 +36,13 @@
 
 table_desc_t::table_desc_t(const char* name, int fieldcnt, uint32_t pd,
         vid_t vid)
-    : _field_count(fieldcnt), _pd(pd), _db(NULL), _primary_idx(NULL),
+    : _name(name), _field_count(fieldcnt), _pd(pd), _db(NULL), _primary_idx(NULL),
     _maxsize(0), _vid(vid)
 {
     assert (fieldcnt>0);
 
     pthread_mutex_init(&_fschema_mutex, NULL);
 
-    // Copy name
-    memset(_name,0,MAX_FNAME_LEN);
-    std::string str(name);
-    strncpy(_name, str.c_str(), str.length());
     // Create placeholders for the field descriptors
     _desc = new field_desc_t[fieldcnt];
 }
@@ -119,6 +115,12 @@ w_rc_t table_desc_t::create_physical_index(ss_m* db, index_desc_t* index)
     w_assert0(index);
     index->set_stid(stid);
 
+    // Add entry on catalog
+    w_keystr_t kstr;
+    kstr.construct_regularkey(_name.c_str(), _name.length());
+    W_DO(db->create_assoc(get_catalog_stid(), kstr,
+                vec_t(&stid, sizeof(stid_t))));
+
     // Print info
     TRACE( TRACE_STATISTICS, "%s %d (%s) (%s) (%s) (%s)\n",
            index->name(), stid.store,
@@ -177,13 +179,13 @@ bool table_desc_t::create_index_desc(const char* name,
 }
 
 
-bool table_desc_t::create_primary_idx_desc(const char* name,
-                                           const unsigned* fields,
+bool table_desc_t::create_primary_idx_desc(const unsigned* fields,
                                            const unsigned num,
                                            const uint32_t& pd)
 {
-    index_desc_t* p_index = new index_desc_t(this, name, num, fields,
-                                             true, true, pd);
+
+    index_desc_t* p_index = new index_desc_t(this,
+            _name, num, fields, true, true, pd);
 
     // check the validity of the index
     for (unsigned i=0; i<num; i++) {
@@ -210,6 +212,16 @@ stid_t table_desc_t::get_primary_stid()
     return _primary_idx->stid();
 }
 
+w_rc_t table_desc_t::load_stids()
+{
+    w_assert0(_db);
+    stid_t cat_stid = get_catalog_stid();
+    W_DO(_primary_idx->load_stid(_db, cat_stid));
+    for (size_t i = 0; i < _indexes.size(); i++) {
+        W_DO(_indexes[i]->load_stid(_db, cat_stid));
+    }
+    return RCOK;
+}
 
 /* ----------------- */
 /* --- debugging --- */

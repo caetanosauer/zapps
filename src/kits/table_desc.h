@@ -130,7 +130,7 @@ class table_desc_t
 protected:
 
     pthread_mutex_t   _fschema_mutex;        // file schema mutex
-    char              _name[MAX_FNAME_LEN];  // file name
+    string              _name;  // file name
     unsigned            _field_count;          // # of fields
     uint32_t           _pd;                   // info about the physical design
 
@@ -171,6 +171,14 @@ public:
 
     w_rc_t create_physical_index(ss_m* db, index_desc_t* index);
 
+    stid_t get_catalog_stid()
+    {
+        // using fixed stid=1 for catalog (enforced when creating)
+        return stid_t(_vid, 1);
+    }
+
+    w_rc_t load_stids();
+
 
     /* ----------------------------------------------------- */
     /* --- create the logical description of the indexes --- */
@@ -184,8 +192,7 @@ public:
                              const bool primary=false,
                              const uint32_t& pd=PD_NORMAL);
 
-    bool   create_primary_idx_desc(const char* name,
-                                   const unsigned* fields,
+    bool   create_primary_idx_desc(const unsigned* fields,
                                    const unsigned num,
                                    const uint32_t& pd=PD_NORMAL);
 
@@ -242,7 +249,7 @@ public:
         return (&(_desc[descidx]));
     }
 
-    const char*   name() const { return _name; }
+    const char*   name() const { return _name.c_str(); }
     unsigned        field_count() const { return _field_count; }
     uint32_t       get_pd() const { return _pd; }
 

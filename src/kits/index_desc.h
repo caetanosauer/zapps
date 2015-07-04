@@ -91,7 +91,7 @@ public:
     /* ------------------- */
 
     index_desc_t(table_desc_t* table,
-                 const char* name, const int fieldcnt,
+                 string name, const int fieldcnt,
                  const unsigned* fields,
                  bool unique=true, bool primary=false,
                  const uint32_t& pd=PD_NORMAL,
@@ -108,6 +108,8 @@ public:
 
     stid_t& stid() { return _stid; }
     void set_stid(stid_t const &stid) { _stid = stid; }
+
+    w_rc_t load_stid(ss_m* db, stid_t cat_stid);
 
     /* ---------------------- */
     /* --- access methods --- */
