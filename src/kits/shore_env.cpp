@@ -736,7 +736,6 @@ int ShoreEnv::close_sm()
     if (activexcts) {
         TRACE (TRACE_ALWAYS, "\n*** Warning (%d) active xcts. Cannot dismount!!\n",
                activexcts);
-        w_assert3 (false); // hmmm
 
         W_IGNORE(ss_m::dump_xcts(cout));
         cout << flush;
