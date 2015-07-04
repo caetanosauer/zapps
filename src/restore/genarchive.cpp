@@ -54,7 +54,7 @@ void GenArchive::run()
     // we wait for logarchiver to consume up to durableLSN
     smlevel_0::logArchiver->activate(durableLSN, true);
 
-    smlevel_0::logArchiver->start_shutdown();
+    smlevel_0::logArchiver->shutdown();
     smlevel_0::logArchiver->join();
 
     smlevel_0::operating_mode = smlevel_0::t_in_redo;

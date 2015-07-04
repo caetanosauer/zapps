@@ -49,7 +49,7 @@ void RestoreCmd::archiveLog()
     while (smlevel_0::logArchiver->getNextConsumedLSN() < smlevel_0::log->curr_lsn()) {
         usleep(1000);
     }
-    smlevel_0::logArchiver->start_shutdown();
+    smlevel_0::logArchiver->shutdown();
     smlevel_0::logArchiver->join();
 }
 
