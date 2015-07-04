@@ -57,6 +57,8 @@ void RestoreCmd::loadOptions(sm_options& options)
 {
     KitsCommand::loadOptions(options);
     options.set_bool_option("sm_archiver_eager", opt_eager);
+    options.set_int_option("sm_restore_segsize", opt_segmentSize);
+    options.set_bool_option("sm_restore_instant", opt_instant);
 }
 
 void RestoreCmd::run()
