@@ -3,6 +3,10 @@
 #include <stdexcept>
 #include <string>
 
+#define BOOST_FILESYSTEM_NO_DEPRECATED
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+
 #include "shore_env.h"
 #include "tpcb/tpcb_env.h"
 #include "tpcb/tpcb_client.h"
@@ -19,10 +23,15 @@ void KitsCommand::setupOptions()
             "Benchmark to execute. Possible values: tpcb, tpcc")
         // ("config,c", po::value<string>(&opt_conffile)->required(),
         //     "Path to configuration file")
+        ("dbfile,d", po::value<string>(&opt_dbfile)->default_value("db"),
+            "Path to database file (non-empty)")
         ("logdir,l", po::value<string>(&logdir)->required(),
             "Directory containing log to be scanned")
         ("archdir,a", po::value<string>(&archdir)->default_value(""),
             "Directory in which to store the log archive")
+        ("load", po::value<bool>(&opt_load)->default_value(false),
+            "If set, log and archive folders are emptied, database files \
+            and backups are deleted, and dataset is loaded from scratch")
         ("txrs", po::value<int>(&opt_num_trxs)->default_value(100),
             "Number of transactions to execute")
         ("threads,t", po::value<int>(&opt_num_threads)->default_value(4),
@@ -39,7 +48,9 @@ void KitsCommand::setupOptions()
 void KitsCommand::run()
 {
     init();
-    shoreEnv->load();
+    if (opt_load) {
+        shoreEnv->load();
+    }
     runBenchmark();
     finish();
 }
@@ -165,15 +176,73 @@ void KitsCommand::initShoreEnv()
     shoreEnv->set_qf(opt_queried_sf);
 
     shoreEnv->init();
+
+    if (opt_load) {
+        // delete existing logs and db files
+        ensureEmptyPath(logdir);
+        if (!archdir.empty()) {
+            ensureEmptyPath(archdir);
+        }
+        ensureEmptyPath(opt_dbfile);
+    }
+
+    shoreEnv->set_clobber(opt_load);
+    shoreEnv->set_device(opt_dbfile);
+
     shoreEnv->start();
+}
+
+void KitsCommand::mkdirs(string path)
+{
+    // if directory does not exist, create it
+    fs::path fspath(path);
+    if (!fs::exists(fspath)) {
+        fs::create_directories(fspath);
+    }
+    else {
+        if (!fs::is_directory(fspath)) {
+            throw runtime_error("Provided path is not a directory!");
+        }
+    }
+}
+
+/**
+ * If called on directory, remove all its contents, leavin an empty directory
+ * behind. Otherwise, simply delete the file.
+ */
+void KitsCommand::ensureEmptyPath(string path)
+{
+    fs::path fspath(path);
+    if (!fs::exists(path)) {
+        return;
+    }
+
+    if (!fs::is_empty(fspath)) {
+        if (fs::is_directory(fspath)) {
+            fs::remove_all(fspath);
+            fs::create_directory(fspath);
+            w_assert1(fs::is_empty(fspath));
+        }
+        else {
+            fs::remove(path);
+            w_assert1(!fs::exists(fspath));
+        }
+    }
 }
 
 void KitsCommand::loadOptions(sm_options& options)
 {
     options.set_string_option("sm_logdir", logdir);
+    mkdirs(logdir);
+
     if (!archdir.empty()) {
         options.set_bool_option("sm_archiving", true);
         options.set_string_option("sm_archdir", archdir);
+        mkdirs(archdir);
+    }
+
+    if (opt_dbfile.empty()) {
+        throw runtime_error("Option dbfile cannot be empty!");
     }
 }
 

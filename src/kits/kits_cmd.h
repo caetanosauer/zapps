@@ -16,7 +16,9 @@ protected:
 
     string logdir;
     string archdir;
+    string opt_dbfile;
 
+    bool opt_load;
     string opt_benchmark;
     string opt_conffile;
     int opt_num_trxs;
@@ -34,6 +36,10 @@ protected:
     template <class Environment> void initShoreEnv();
     void init();
     void finish();
+
+    // Filesystem functions
+    void mkdirs(string);
+    void ensureEmptyPath(string);
 };
 
 #endif

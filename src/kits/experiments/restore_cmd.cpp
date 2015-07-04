@@ -67,9 +67,17 @@ void RestoreCmd::run()
     }
 
     // STEP 1 - load database and take backup
+    if (opt_load) {
+        // delete existing backups
+        if (!opt_backup.empty()) {
+            ensureEmptyPath(opt_backup);
+        }
+    }
     init();
 
-    shoreEnv->load();
+    if (opt_load) {
+        shoreEnv->load();
+    }
 
     vid_t vid(1);
     vol_t* vol = smlevel_0::vol->get(vid);

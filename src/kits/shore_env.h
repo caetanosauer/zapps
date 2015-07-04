@@ -64,7 +64,6 @@ const string CONFIG_PARAM_VALUE = "invalid";
 // SHORE_SYS_OPTIONS:
 // Database-independent options
 const string SHORE_SYS_OPTIONS[][2] = {
-    { "db-clobberdev", "0" },
     { "sys-maxcpucount", "0" },
     { "sys-activecpucount", "0" },
     { "shore-fakeiodelay", "0" },
@@ -72,7 +71,7 @@ const string SHORE_SYS_OPTIONS[][2] = {
     { "activation_delay", "0" }
 };
 
-const int    SHORE_NUM_SYS_OPTIONS  = 6;
+const int    SHORE_NUM_SYS_OPTIONS  = 5;
 
 
 // SHORE_SYS_SM_OPTIONS:
@@ -117,14 +116,12 @@ const int    SHORE_NUM_DB_SM_OPTIONS   = 6;
 // SHORE_DB_OPTIONS
 // Database-instance-specific options
 const string SHORE_DB_OPTIONS[][2] = {
-    { "device", "databases/shore" },
     { "devicequota", "0" },
-    { "loadatadir", SHORE_TABLE_DATA_DIR },
     { "sf", "0" },
     { "system", "invalid" }
 };
 
-const int    SHORE_NUM_DB_OPTIONS  = 5;
+const int    SHORE_NUM_DB_OPTIONS  = 3;
 
 
 
@@ -460,6 +457,10 @@ protected:
 
     ss_m*           _pssm;               // database handle
 
+    // CS: parameters removed from envVar/shore.conf/SHORE_*_OPTIONS
+    bool _clobber;
+    string _device;
+
     // Status variables
     bool            _initialized;
     pthread_mutex_t _init_mutex;
@@ -474,12 +475,11 @@ protected:
     vid_t            _vid;     // device id
     stid_t             _root_iid;  // root id of the volume
     pthread_mutex_t    _vol_mutex; // volume mutex
-    vid_t              _lvid;      // logical volume id (unnecessary, using physical ids)
-    unsigned int       _vol_cnt;   // volume count (unnecessary, always 1)
 
     // Configuration variables
     guard<sm_options> _popts;
 
+    // TODO: get rid of this stuff!
     ParamMap      _sys_opts;  // db-instance-independent options
     ParamMap      _sm_opts;   // db-instance-specific options that are passed to Shore
     ParamMap      _dev_opts;  // db-instance-specific options
@@ -639,6 +639,9 @@ public:
     void set_active_cpu_count(const uint actcpucnt);
     // disabled - max_count can be set only on conf
     //    void set_max_cpu_count(const int maxcpucnt);
+
+    void set_clobber(bool c) { _clobber = c; }
+    void set_device(string d) { _device = d; }
 
     // --- scaling and querying factor --- //
     void set_qf(const double aQF);

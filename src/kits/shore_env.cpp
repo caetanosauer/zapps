@@ -519,29 +519,6 @@ int ShoreEnv::init()
     }
 
 
-    // Start the storage manager
-    if (start_sm()) {
-        TRACE( TRACE_ALWAYS, "Error starting Shore database\n");
-        return (5);
-    }
-
-    int clobber = atoi(_sys_opts[SHORE_SYS_OPTIONS[0][0]].c_str());
-    if (!clobber) {
-	// Cache fids at the kits side
-	W_COERCE(db()->begin_xct());
-	W_COERCE(load_and_register_fids());
-	W_COERCE(db()->commit_xct());
-	// Call the (virtual) post-initialization function
-        if (int rval = post_init()) {
-            TRACE( TRACE_ALWAYS, "Error in Shore post-init\n");
-            return (rval);
-        }
-    }
-
-    // if we reached this point the environment is properly initialized
-    _initialized = true;
-    TRACE( TRACE_DEBUG, "ShoreEnv initialized\n");
-
     return (0);
 }
 
@@ -559,6 +536,28 @@ int ShoreEnv::init()
 
 int ShoreEnv::start()
 {
+    // Start the storage manager
+    if (start_sm()) {
+        TRACE( TRACE_ALWAYS, "Error starting Shore database\n");
+        return (5);
+    }
+
+    if (!_clobber) {
+	// Cache fids at the kits side
+	W_COERCE(db()->begin_xct());
+	W_COERCE(load_and_register_fids());
+	W_COERCE(db()->commit_xct());
+	// Call the (virtual) post-initialization function
+        if (int rval = post_init()) {
+            TRACE( TRACE_ALWAYS, "Error in Shore post-init\n");
+            return (rval);
+        }
+    }
+
+    // if we reached this point the environment is properly initialized
+    _initialized = true;
+    TRACE( TRACE_DEBUG, "ShoreEnv initialized\n");
+
     upd_sf();
     upd_worker_cnt();
 
@@ -889,29 +888,28 @@ int ShoreEnv::start_sm()
     // format and mount the database...
 
     // Get the configuration from the config file
-    char const* device =  _dev_opts[SHORE_DB_OPTIONS[0][0]].c_str();
-    int quota = atoi(_dev_opts[SHORE_DB_OPTIONS[1][0]].c_str());
-    int clobber = atoi(_sys_opts[SHORE_SYS_OPTIONS[0][0]].c_str());
+    // TODO: get these options from sm_options and get rid of envVar and shore.conf!
+    int quota = atoi(_dev_opts[SHORE_DB_OPTIONS[0][0]].c_str());
 
     assert (_pssm);
-    assert (strlen(device)>0);
+    assert (!_device.empty());
     assert (quota>0);
 
-    if (clobber) {
+    if (_clobber) {
         // if didn't clobber then the db is already loaded
         CRITICAL_SECTION(cs, _load_mutex);
 
         TRACE( TRACE_DEBUG, "Formatting a new device (%s) with a (%d) kB quota\n",
-               device, quota);
+               _device.c_str(), quota);
 
 	// create and mount device
 	// http://www.cs.wisc.edu/shore/1.0/man/device.ssm.html
         ss_m::smksize_t smquota = quota;
-	W_COERCE(_pssm->create_vol(device, smquota, _vid));
+	W_COERCE(_pssm->create_vol(_device.c_str(), smquota, _vid));
         TRACE( TRACE_DEBUG, "Formatting device completed...\n");
 
         // mount it...
-        W_COERCE(_pssm->mount_vol(device, _vid));
+        W_COERCE(_pssm->mount_vol(_device.c_str(), _vid));
         TRACE( TRACE_DEBUG, "Mounting (new) device completed...\n");
 
         // set that the database is not loaded
@@ -921,20 +919,12 @@ int ShoreEnv::start_sm()
         // if didn't clobber then the db is already loaded
         CRITICAL_SECTION(cs, _load_mutex);
 
-        TRACE( TRACE_DEBUG, "Using device (%s)\n", device);
+        TRACE( TRACE_DEBUG, "Using device (%s)\n", _device.c_str());
 
-        // mount it...
-        W_COERCE(_pssm->mount_vol(device, _vid));
-        TRACE( TRACE_DEBUG,
-               "Mounting (old) device completed. Volumes found: (%d)...\n",
-               _vol_cnt);
-
-        // get the list of volumes in order to set (_lvid)
-        // vid_t* volume_list;
-        // unsigned int volume_cnt;
-        // W_COERCE(_pssm->list_volumes(device, volume_list, volume_cnt));
-
-        // assert (volume_cnt); // there should be at least one volume
+        // CS: No need to mount since mounted devices are restored during
+        // log analysis, i.e., list of mounted devices is kept in the persistent
+        // system state. Mount here is only necessary if we explicitly dismount
+        // after loading, which is not the case.
 
         // _lvid = volume_list[0];
         // delete [] volume_list;
@@ -1056,11 +1046,11 @@ int ShoreEnv::_set_sys_params()
 {
     // procmonitor returns 0 if it cannot find the number of processors
     if (_max_cpu_count==0) {
-        _max_cpu_count = atoi(_sys_opts[SHORE_SYS_OPTIONS[1][0]].c_str());
+        _max_cpu_count = atoi(_sys_opts[SHORE_SYS_OPTIONS[0][0]].c_str());
     }
 
     // Set active CPU info
-    uint tmp_active_cpu_count = atoi(_sys_opts[SHORE_SYS_OPTIONS[2][0]].c_str());
+    uint tmp_active_cpu_count = atoi(_sys_opts[SHORE_SYS_OPTIONS[1][0]].c_str());
     if (tmp_active_cpu_count>_max_cpu_count) {
         _active_cpu_count = _max_cpu_count;
     }
@@ -1069,7 +1059,7 @@ int ShoreEnv::_set_sys_params()
     }
     print_cpus();
 
-    _activation_delay = atoi(_sys_opts[SHORE_SYS_OPTIONS[5][0]].c_str());
+    _activation_delay = atoi(_sys_opts[SHORE_SYS_OPTIONS[4][0]].c_str());
     return (0);
 }
 
