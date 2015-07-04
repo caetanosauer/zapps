@@ -152,11 +152,7 @@ void KitsCommand::initShoreEnv()
 {
     shoreEnv = new Environment();
 
-    shoreEnv->get_opts().set_string_option("sm_logdir", logdir);
-    if (!archdir.empty()) {
-        shoreEnv->get_opts().set_bool_option("sm_archiving", true);
-        shoreEnv->get_opts().set_string_option("sm_archdir", archdir);
-    }
+    loadOptions(shoreEnv->get_opts());
 
     // Kits does not seem to respect the db-config set in the file.
     // It always uses ssb-1. In the old Kits code, thie config was
@@ -170,6 +166,15 @@ void KitsCommand::initShoreEnv()
 
     shoreEnv->init();
     shoreEnv->start();
+}
+
+void KitsCommand::loadOptions(sm_options& options)
+{
+    options.set_string_option("sm_logdir", logdir);
+    if (!archdir.empty()) {
+        options.set_bool_option("sm_archiving", true);
+        options.set_string_option("sm_archdir", archdir);
+    }
 }
 
 void KitsCommand::finish()

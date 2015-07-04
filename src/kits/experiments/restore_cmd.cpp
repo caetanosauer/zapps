@@ -33,6 +33,8 @@ void RestoreCmd::setupOptions()
             "Run log archiving concurrently with benchmark execution and \
             restore, instead of generating log archive \"offline\" when \
             marking the volume as failed")
+        ("eager", po::value<bool>(&opt_eager)->default_value(true),
+            "Run log archiving in eager mode")
         // further options to add:
         // fail volume again while it is being restored
         // fail and restore multiple times in a loop
@@ -51,6 +53,12 @@ void RestoreCmd::archiveLog()
     smlevel_0::logArchiver->join();
 }
 
+void RestoreCmd::loadOptions(sm_options& options)
+{
+    KitsCommand::loadOptions(options);
+    options.set_bool_option("sm_archiver_eager", opt_eager);
+}
+
 void RestoreCmd::run()
 {
     if (archdir.empty()) {
@@ -60,12 +68,16 @@ void RestoreCmd::run()
 
     // STEP 1 - load database and take backup
     init();
+
     shoreEnv->load();
 
     vid_t vid(1);
     vol_t* vol = smlevel_0::vol->get(vid);
 
-    archiveLog();
+    if (!opt_eager) {
+        archiveLog();
+    }
+
     if (!opt_backup.empty()) {
         vol->take_backup(opt_backup);
     }

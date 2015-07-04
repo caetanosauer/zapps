@@ -25,6 +25,9 @@ protected:
     int opt_queried_sf;
     bool opt_spread;
 
+    // overridden in sub-commands to set their own options
+    virtual void loadOptions(sm_options& opt);
+
     template<class Client, class Environment> void runBenchmarkSpec();
     void runBenchmark();
 
