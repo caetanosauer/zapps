@@ -12,7 +12,9 @@
 
 #include "kits_cmd.h"
 #include "genarchive.h"
+#include "agglog.h"
 #include "logcat.h"
+#include "verifylog.h"
 #include "experiments/restore_cmd.h"
 
 /*
@@ -42,9 +44,9 @@ void Command::init()
     //REGISTER_COMMAND("dirtypagestats", dirtypagestats);
     //REGISTER_COMMAND("logreplay", LogReplay);
     REGISTER_COMMAND("genarchive", GenArchive);
-    //REGISTER_COMMAND("verifylog", VerifyLog);
+    REGISTER_COMMAND("verifylog", VerifyLog);
     //REGISTER_COMMAND("dbstats", DBStats);
-    //REGISTER_COMMAND("agglog", AggLog);
+    REGISTER_COMMAND("agglog", AggLog);
     //REGISTER_COMMAND("mrestore", MergeRestore);
     REGISTER_COMMAND("kits", KitsCommand);
     REGISTER_COMMAND("restore", RestoreCmd);
@@ -87,9 +89,10 @@ Command* Command::parse(int argc, char ** argv)
 
 size_t LogScannerCommand::BLOCK_SIZE = 1024 * 1024;
 
-BaseScanner* LogScannerCommand::getScanner(bool archive)
+BaseScanner* LogScannerCommand::getScanner(
+        bitset<logrec_t::t_max_logrec>* filter)
 {
-    return new BlockScanner(logdir.c_str(), BLOCK_SIZE, archive);
+    return new BlockScanner(logdir.c_str(), BLOCK_SIZE, filter);
 }
 
 BaseScanner* LogScannerCommand::getMergeScanner()

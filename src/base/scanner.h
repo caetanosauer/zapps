@@ -33,7 +33,7 @@ class ShoreScanner : public BaseScanner {
 
 class BlockScanner : public BaseScanner {
 public:
-    BlockScanner(const char* logdir, size_t blockSize, bool archive = false,
+    BlockScanner(const char* logdir, size_t blockSize,
             bitset<logrec_t::t_max_logrec>* filter = NULL);
     virtual ~BlockScanner();
 
@@ -43,12 +43,22 @@ private:
     char* currentBlock;
     const char* logdir;
     size_t blockSize;
-    bool archive;
     int pnum;
+
+    void findFirstFile();
+    string getNextFile();
+};
+
+class LogArchiveScanner : public BaseScanner {
+public:
+    LogArchiveScanner(string archdir);
+    virtual ~LogArchiveScanner() {};
+
+    virtual void run();
+private:
+    string archdir;
     lsn_t runBegin;
     lsn_t runEnd;
-    size_t runCount;
-    size_t runsScanned;
 
     void findFirstFile();
     string getNextFile();

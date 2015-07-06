@@ -46,11 +46,9 @@ void BaseScanner::finalize()
     }
 }
 
-BlockScanner::BlockScanner(const char* logdir, size_t blockSize, bool archive,
+BlockScanner::BlockScanner(const char* logdir, size_t blockSize,
         bitset<logrec_t::t_max_logrec>* filter)
-    : logdir(logdir), blockSize(blockSize), archive(archive),
-    pnum(-1),
-    runBegin(lsn_t::null), runEnd(lsn_t::null), runCount(0), runsScanned(0)
+    : logdir(logdir), blockSize(blockSize), pnum(-1)
 {
     logScanner = new LogScanner(blockSize);
     currentBlock = new char[blockSize];
@@ -76,82 +74,32 @@ void BlockScanner::findFirstFile()
         W_COERCE(RC(fcOS));
     }
     os_dirent_t* entry = os_readdir(dir);
-    const char * PREFIX = archive ? LogArchiver::RUN_PREFIX : "log.";
-    lsn_t minLSN = lsn_t::null;
+    const char * PREFIX = "log.";
 
     while (entry != NULL) {
         const char* fname = entry->d_name;
         if (strncmp(PREFIX, fname, strlen(PREFIX)) == 0) {
-            if (archive) {
-                lsn_t lsn = PARSE_LSN(fname, false);
-                if (minLSN == lsn_t::null || lsn < minLSN) {
-                    runEnd = PARSE_LSN(fname, true);
-                    minLSN = lsn;
-                }
-                runCount++;
-            }
-            else {
-                int p = atoi(fname + strlen(PREFIX));
-                if (p < pnum) {
-                    pnum = p;
-                }
+            int p = atoi(fname + strlen(PREFIX));
+            if (p < pnum) {
+                pnum = p;
             }
         }
         entry = os_readdir(dir);
     }
     os_closedir(dir);
-
-    if (minLSN != lsn_t::null) {
-        runBegin = minLSN;
-    }
 }
 
 string BlockScanner::getNextFile()
 {
     stringstream fname;
     fname << logdir << "/";
-    if (archive) {
-        if (runBegin == lsn_t::null) {
-            findFirstFile();
-        }
-        else {
-            // set boundaries for next file
-            runBegin = lsn_t::null;
-            os_dir_t dir = os_opendir(logdir);
-            assert(dir);
-            os_dirent_t* entry = os_readdir(dir);
-            const char * PREFIX = LogArchiver::RUN_PREFIX;
-            while (entry != NULL) {
-                const char* fname = entry->d_name;
-                if (strncmp(PREFIX, fname, strlen(PREFIX)) == 0) {
-                    lsn_t lsn = PARSE_LSN(fname, false);
-                    if (lsn == runEnd) {
-                        runBegin = runEnd;
-                        runEnd = PARSE_LSN(fname, true);
-                        break;
-                    }
-                }
-                entry = os_readdir(dir);
-            }
-            os_closedir(dir);
-
-            if (runBegin == lsn_t::null && runsScanned != runCount) {
-                throw runtime_error("Hole found in run boundaries!");
-            }
-        }
-
-        runsScanned++;
-        fname << LogArchiver::RUN_PREFIX << runBegin << "-" << runEnd;
+    if (pnum < 0) {
+        findFirstFile();
     }
     else {
-        if (pnum < 0) {
-            findFirstFile();
-        }
-        else {
-            pnum++;
-        }
-        fname << "log." << pnum;
+        pnum++;
     }
+    fname << "log." << pnum;
 
     if (openFileCallback) {
         openFileCallback(fname.str().c_str());
@@ -172,11 +120,6 @@ void BlockScanner::run()
         // open partition number pnum
         string fname = getNextFile();
         ifstream in(fname, ios::binary | ios::ate);
-
-        if (archive && runBegin == lsn_t::null) {
-            // scan is over
-            break;
-        }
 
         // does the file exist?
         if (!in.good()) {
@@ -222,7 +165,7 @@ void BlockScanner::run()
         in.close();
     }
 
-    if (!archive && pnum == firstPartition && bpos == 0) {
+    if (pnum == firstPartition && bpos == 0) {
         throw runtime_error("Could not find/open log files in "
                 + string(logdir));
     }
@@ -234,6 +177,60 @@ BlockScanner::~BlockScanner()
 {
     delete currentBlock;
     delete logScanner;
+}
+
+
+LogArchiveScanner::LogArchiveScanner(string archdir)
+    : archdir(archdir), runBegin(lsn_t::null), runEnd(lsn_t::null)
+{
+}
+
+bool runCompare (string a, string b)
+{
+    lsn_t lsn_a = PARSE_LSN(a.c_str(), false);
+    lsn_t lsn_b = PARSE_LSN(b.c_str(), false);
+    return lsn_a < lsn_b;
+}
+
+void LogArchiveScanner::run()
+{
+    LogArchiver::ArchiveDirectory* directory = new
+        // CS TODO -- fix block size bug (Issue #9)
+        LogArchiver::ArchiveDirectory(archdir, 1024 * 1024);
+
+    std::vector<std::string> runFiles;
+    directory->listFiles(&runFiles);
+
+    std::sort(runFiles.begin(), runFiles.end(), runCompare);
+
+    runBegin = PARSE_LSN(runFiles[0].c_str(), false);
+    runEnd = PARSE_LSN(runFiles[0].c_str(), true);
+    std::vector<std::string>::const_iterator it;
+    for(size_t i = 1; i < runFiles.size(); i++) {
+        // begin of run i must be equal to end of run i-1
+        runBegin = PARSE_LSN(runFiles[i].c_str(), false);
+        if (runBegin != runEnd) {
+            throw runtime_error("Hole found in run boundaries!");
+        }
+        runEnd = PARSE_LSN(runFiles[i].c_str(), true);
+
+        LogArchiver::ArchiveScanner::RunScanner* rs =
+            new LogArchiver::ArchiveScanner::RunScanner(
+                    runBegin,
+                    runEnd,
+                    lpid_t::null, // first PID
+                    lpid_t::null, // last PID
+                    0,            // file offset
+                    directory
+            );
+
+        logrec_t* lr;
+        while (rs->next(lr)) {
+            handle(lr);
+        };
+
+        delete lr;
+    }
 }
 
 MergeScanner::MergeScanner()

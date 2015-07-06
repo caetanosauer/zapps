@@ -43,7 +43,7 @@ public:
 
     virtual void setupOptions();
 protected:
-    BaseScanner* getScanner(bool archive = false);
+    BaseScanner* getScanner( bitset<logrec_t::t_max_logrec>* filter = NULL);
     BaseScanner* getMergeScanner();
 
 private:
