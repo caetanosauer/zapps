@@ -12,28 +12,34 @@ void RestoreCmd::setupOptions()
         ("segmentSize", po::value<unsigned>(&opt_segmentSize)
             ->default_value(1024),
             "Size of restore segment in number of pages")
-        ("singlePass", po::value<bool>(&opt_singlePass)->default_value(false),
+        ("singlePass", po::value<bool>(&opt_singlePass)->default_value(false)
+            ->implicit_value(true),
             "Whether to use single-pass restore scheduler from the start")
-        ("instant", po::value<bool>(&opt_instant)->default_value(true),
+        ("instant", po::value<bool>(&opt_instant)->default_value(true)
+            ->implicit_value(true),
             "Use instant restore (i.e., access data before restore is done)")
-        ("evict", po::value<bool>(&opt_evict)->default_value(false),
+        ("evict", po::value<bool>(&opt_evict)->default_value(false)
+            ->implicit_value(true),
             "Evict all pages from buffer pool when failure happens")
-        ("crash", po::value<bool>(&opt_crash)->default_value(false),
+        ("crash", po::value<bool>(&opt_crash)->default_value(false)
+            ->implicit_value(true),
             "Simulate media failure together with system failure")
         ("crashDelay", po::value<int>(&opt_crashDelay)->default_value(0),
             "Number of seconds passed between media and system failure. \
             If <= 0, system comes back up with device failed, i.e., \
             volume is marked failed immediately after log analysis.")
         ("postRestoreWorkFactor", po::value<float>(&opt_postRestoreWorkFactor)
-            ->default_value(1.0),
+            ->default_value(5.0),
             "Numer of transactions to execute after media failure is the \
             number executed before failure times this factor")
         ("concurrentArchiving", po::value<bool>(&opt_concurrentArchiving)
-            ->default_value(false),
+            ->default_value(false)
+            ->implicit_value(true),
             "Run log archiving concurrently with benchmark execution and \
             restore, instead of generating log archive \"offline\" when \
             marking the volume as failed")
-        ("eager", po::value<bool>(&opt_eager)->default_value(true),
+        ("eager", po::value<bool>(&opt_eager)->default_value(true)
+            ->implicit_value(true),
             "Run log archiving in eager mode")
         // further options to add:
         // fail volume again while it is being restored
@@ -105,6 +111,7 @@ void RestoreCmd::run()
     // errors, which should be ok (see trx_worker_t::_serve_action).
 
     // STEP 3 - continue benchmark on restored data
+    opt_num_trxs *= opt_postRestoreWorkFactor;
     runBenchmark();
 
     finish();

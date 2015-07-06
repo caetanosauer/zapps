@@ -29,10 +29,11 @@ void KitsCommand::setupOptions()
             "Directory containing log to be scanned")
         ("archdir,a", po::value<string>(&archdir)->default_value(""),
             "Directory in which to store the log archive")
-        ("load", po::value<bool>(&opt_load)->default_value(false),
+        ("load", po::value<bool>(&opt_load)->default_value(false)
+            ->implicit_value(true),
             "If set, log and archive folders are emptied, database files \
             and backups are deleted, and dataset is loaded from scratch")
-        ("txrs", po::value<int>(&opt_num_trxs)->default_value(100),
+        ("trxs", po::value<int>(&opt_num_trxs)->default_value(100),
             "Number of transactions to execute")
         ("threads,t", po::value<int>(&opt_num_threads)->default_value(4),
             "Number of threads to execute benchmark with")
@@ -40,7 +41,8 @@ void KitsCommand::setupOptions()
             "Transaction code or mix identifier (0 = all trxs)")
         ("queried_sf,q", po::value<int>(&opt_queried_sf)->default_value(1),
             "Scale factor to which to restrict queries")
-        ("spread", po::value<bool>(&opt_spread)->default_value(true),
+        ("spread", po::value<bool>(&opt_spread)->default_value(true)
+            ->implicit_value(true),
             "Attach each worker thread to a fixed core for improved concurrency")
     ;
 }
@@ -244,6 +246,9 @@ void KitsCommand::loadOptions(sm_options& options)
     if (opt_dbfile.empty()) {
         throw runtime_error("Option dbfile cannot be empty!");
     }
+
+    // ticker always turned on
+    options.set_bool_option("sm_ticker_enable", true);
 }
 
 void KitsCommand::finish()
