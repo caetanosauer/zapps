@@ -45,13 +45,13 @@ void base_request_t::notify_client()
     // signal cond var
     condex* pcondex = _result.get_notify();
     if (pcondex) {
-        TRACE( TRACE_TRX_FLOW, "Xct (%d) notifying client (%x)\n",
-               _tid.get_lo(), pcondex);
+        // TRACE( TRACE_TRX_FLOW, "Xct (%d) notifying client (%x)\n",
+        //       _tid.get_lo(), pcondex);
 	pcondex->signal();
         _result.set_notify(NULL);
     }
     else {
-        TRACE( TRACE_TRX_FLOW, "Xct (%d) not notifying client\n",
-               _tid.get_lo());
+        //TRACE( TRACE_TRX_FLOW, "Xct (%d) not notifying client\n",
+        //       _tid.get_lo());
     }
 }

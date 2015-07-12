@@ -132,6 +132,7 @@ int trx_worker_t::_serve_action(Request* prequest)
     if (e.is_error()) {
         TRACE( TRACE_TRX_FLOW, "Problem beginning xct [0x%x]\n",
                e.err_num());
+        W_COERCE(e);
         ++_stats._problems;
         return (1);
     }
@@ -139,7 +140,7 @@ int trx_worker_t::_serve_action(Request* prequest)
 
     xct_t* pxct = smthread_t::me()->xct();
     assert (pxct);
-    TRACE( TRACE_TRX_FLOW, "Begin (%d)\n", atid.get_lo());
+    // TRACE( TRACE_TRX_FLOW, "Begin (%d)\n", atid.get_lo());
     prequest->_xct = pxct;
     prequest->_tid = atid;
 

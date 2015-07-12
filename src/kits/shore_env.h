@@ -191,7 +191,7 @@ const int    SHORE_NUM_DB_OPTIONS  = 3;
 #define DEFINE_RUN_WITH_INPUT_TRX_WRAPPER(cname,trxlid,trximpl)         \
     w_rc_t cname::run_##trximpl(Request* prequest, trxlid##_input_t& in) { \
         int xct_id = prequest->xct_id();                                \
-        TRACE( TRACE_TRX_FLOW, "%d. %s ...\n", xct_id, #trximpl);       \
+        /* TRACE( TRACE_TRX_FLOW, "%d. %s ...\n", xct_id, #trximpl);     */  \
         _inc_##trxlid##_att();                                          \
         w_rc_t e = xct_##trximpl(xct_id, in);                           \
         if (!e.is_error()) {                                            \
@@ -208,7 +208,7 @@ const int    SHORE_NUM_DB_OPTIONS  = 3;
             if ((*&_measure)!=MST_MEASURE) return (e);                  \
             _env_stats.inc_trx_att();                                   \
             return (e); }                                               \
-        TRACE( TRACE_TRX_FLOW, "Xct (%d) completed\n", xct_id);         \
+        /* TRACE( TRACE_TRX_FLOW, "Xct (%d) completed\n", xct_id);      */   \
         prequest->notify_client();                                      \
         if ((*&_measure)!=MST_MEASURE) return (RCOK);                   \
         _env_stats.inc_trx_com();                                       \

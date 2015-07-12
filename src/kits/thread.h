@@ -59,7 +59,7 @@ DEFINE_EXCEPTION(ThreadException);
 
 // No-op
 #define TRY_TO_BIND(cpu,boundflag)              \
-    TRACE( TRACE_DEBUG, "Should bind me to (%d)\n", _prs_id);
+ /*    TRACE( TRACE_DEBUG, "Should bind me to (%d)\n", _prs_id); */
 
 #endif
 

@@ -172,8 +172,8 @@ w_rc_t ShoreEnv::load()
     // 1. lock the loading status and the scaling factor
     CRITICAL_SECTION(load_cs, _load_mutex);
     if (_loaded) {
-        TRACE( TRACE_TRX_FLOW,
-               "Env already loaded. Doing nothing...\n");
+        // TRACE( TRACE_TRX_FLOW,
+        //       "Env already loaded. Doing nothing...\n");
         return (RCOK);
     }
     CRITICAL_SECTION(scale_cs, _scaling_mutex);
