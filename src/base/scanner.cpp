@@ -60,6 +60,8 @@ BlockScanner::BlockScanner(const char* logdir, size_t blockSize,
                 logScanner->unsetIgnore((logrec_t::kind_t) i);
             }
         }
+        // skip cannot be ignored because it tells us when file ends
+        logScanner->unsetIgnore(logrec_t::t_skip);
     }
 }
 
@@ -146,6 +148,10 @@ void BlockScanner::run()
                 // partial read on end of file
                 fpos = fend;
             }
+            else if (in.gcount() == 0) {
+                // file ended exactly on block boundary
+                break;
+            }
             else if (in.fail()) {
                 // EOF implies fail, so we check it first
                 throw runtime_error("IO error reading block from file");
@@ -159,6 +165,10 @@ void BlockScanner::run()
             bpos = 0;
             while (logScanner->nextLogrec(currentBlock, bpos, lr)) {
                 handle(lr);
+                if (lr->type() == logrec_t::t_skip) {
+                    fpos = fend;
+                    break;
+                }
             }
         }
 
