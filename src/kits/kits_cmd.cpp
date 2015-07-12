@@ -33,6 +33,8 @@ void KitsCommand::setupOptions()
             ->implicit_value(true),
             "If set, log and archive folders are emptied, database files \
             and backups are deleted, and dataset is loaded from scratch")
+        ("bufsize", po::value<int>(&opt_bufsize)->default_value(0),
+            "Size of buffer pool in Kbytes")
         ("trxs", po::value<int>(&opt_num_trxs)->default_value(100),
             "Number of transactions to execute")
         ("threads,t", po::value<int>(&opt_num_threads)->default_value(4),
@@ -249,6 +251,12 @@ void KitsCommand::loadOptions(sm_options& options)
 
     // ticker always turned on
     options.set_bool_option("sm_ticker_enable", true);
+
+    if (opt_bufsize <= 0) {
+        // TODO: default size for buffer pool may depend on SF and benchmark
+        opt_bufsize = 8192; // 8 MB
+    }
+    options.set_int_option("sm_bufpoolsize", opt_bufsize);
 }
 
 void KitsCommand::finish()

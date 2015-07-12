@@ -21,10 +21,12 @@ protected:
     bool opt_load;
     string opt_benchmark;
     string opt_conffile;
+    int opt_bufsize;
     int opt_num_trxs;
     int opt_num_threads;
     int opt_select_trx;
     int opt_queried_sf;
+
     bool opt_spread;
 
     // overridden in sub-commands to set their own options

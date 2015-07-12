@@ -102,15 +102,12 @@ const int    SHORE_NUM_SYS_SM_OPTIONS   = 15;
 // Those options are appended as parameters when starting Shore
 // Thore are the database-instance-specific
 const string SHORE_DB_SM_OPTIONS[][3]  = {
-    { "-sm_bufpoolsize", "bufpoolsize", "0" },
-    { "-sm_logdir", "logdir", "log" },
     { "-sm_logsize", "logsize", "0" },
     { "-sm_logbufsize", "logbufsize", "0" },
     { "-sm_logcount", "logcount", "10" },      /*** IP: Remove -sm_logcount no dlog anymore... ****/
-    { "-sm_archdir", "archdir", "arch" },
 };
 
-const int    SHORE_NUM_DB_SM_OPTIONS   = 6;
+const int    SHORE_NUM_DB_SM_OPTIONS   = 3;
 
 
 // SHORE_DB_OPTIONS
