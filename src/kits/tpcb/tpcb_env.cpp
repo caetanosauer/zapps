@@ -524,7 +524,6 @@ int ShoreTPCBEnv::conf()
 {
     // reread the params
     ShoreEnv::conf();
-    upd_sf();
     upd_worker_cnt();
     return (0);
 }

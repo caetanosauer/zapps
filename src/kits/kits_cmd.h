@@ -23,9 +23,13 @@ protected:
     string opt_conffile;
     int opt_bufsize;
     int opt_num_trxs;
+    unsigned opt_duration;
     int opt_num_threads;
     int opt_select_trx;
     int opt_queried_sf;
+    unsigned opt_logsize;
+    unsigned opt_logbufsize;
+    unsigned opt_quota;
 
     bool opt_spread;
 

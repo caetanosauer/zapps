@@ -272,15 +272,6 @@ double ShoreEnv::get_sf() const
     return (_scaling_factor);
 }
 
-double ShoreEnv::upd_sf()
-{
-    envVar* ev = envVar::instance();
-    double tmp_sf = ev->getSysVarDouble("sf");
-    assert (tmp_sf>0);
-    set_sf(tmp_sf);
-    return (_scaling_factor);
-}
-
 void ShoreEnv::print_sf() const
 {
     TRACE( TRACE_ALWAYS, "Scaling Factor = (%.1f)\n", get_sf());
@@ -558,7 +549,6 @@ int ShoreEnv::start()
     _initialized = true;
     TRACE( TRACE_DEBUG, "ShoreEnv initialized\n");
 
-    upd_sf();
     upd_worker_cnt();
 
     assert (_workers.empty());
@@ -846,7 +836,6 @@ int ShoreEnv::configure_sm()
         }
     }
 
-    upd_sf();
     upd_worker_cnt();
 
     // If we reached this point the sm is configured correctly
@@ -886,24 +875,20 @@ int ShoreEnv::start_sm()
 
     // format and mount the database...
 
-    // Get the configuration from the config file
-    // TODO: get these options from sm_options and get rid of envVar and shore.conf!
-    int quota = atoi(_dev_opts[SHORE_DB_OPTIONS[0][0]].c_str());
-
     assert (_pssm);
     assert (!_device.empty());
-    assert (quota>0);
+    assert (_quota>0);
 
     if (_clobber) {
         // if didn't clobber then the db is already loaded
         CRITICAL_SECTION(cs, _load_mutex);
 
         TRACE( TRACE_DEBUG, "Formatting a new device (%s) with a (%d) kB quota\n",
-               _device.c_str(), quota);
+               _device.c_str(), _quota);
 
 	// create and mount device
 	// http://www.cs.wisc.edu/shore/1.0/man/device.ssm.html
-        ss_m::smksize_t smquota = quota;
+        ss_m::smksize_t smquota = _quota;
 	W_COERCE(_pssm->create_vol(_device.c_str(), smquota, _vid));
         TRACE( TRACE_DEBUG, "Formatting device completed...\n");
 
@@ -1099,13 +1084,6 @@ void ShoreEnv::readconfig()
     string tmp;
     int i=0;
 
-    // Parse the configuration which will use (suffix)
-    string configsuf = ev->getVar(CONFIG_PARAM,CONFIG_PARAM_VALUE);
-
-    // configsuf should have taken a valid value
-    assert (configsuf.compare(CONFIG_PARAM_VALUE)!=0);
-    TRACE( TRACE_ALWAYS, "Reading configuration (%s)\n", configsuf.c_str());
-
     // Parse SYSTEM parameters
     TRACE( TRACE_DEBUG, "Reading SYS options\n");
     for (i=0; i<SHORE_NUM_SYS_OPTIONS; i++) {
@@ -1118,20 +1096,6 @@ void ShoreEnv::readconfig()
     for (i=0; i<SHORE_NUM_SYS_SM_OPTIONS; i++) {
         tmp = ev->getVar(SHORE_SYS_SM_OPTIONS[i][1],SHORE_SYS_SM_OPTIONS[i][2]);
         _sm_opts[SHORE_SYS_SM_OPTIONS[i][0]] = tmp;
-    }
-
-    // Parse DB-SM (database-specific) parameters
-    TRACE( TRACE_DEBUG, "Reading DB-SM options\n");
-    for (i=0; i<SHORE_NUM_DB_SM_OPTIONS; i++) {
-        tmp = ev->getVar(configsuf + "-" + SHORE_DB_SM_OPTIONS[i][1],SHORE_DB_SM_OPTIONS[i][2]);
-        _sm_opts[SHORE_DB_SM_OPTIONS[i][0]] = tmp;
-    }
-
-    // Parse DB-specific parameters
-    TRACE( TRACE_DEBUG, "Reading DB options\n");
-    for (i=0; i<SHORE_NUM_DB_OPTIONS; i++) {
-        tmp = ev->getVar(configsuf + "-" + SHORE_DB_OPTIONS[i][0],SHORE_DB_OPTIONS[i][1]);
-        _dev_opts[SHORE_DB_OPTIONS[i][0]] = tmp;
     }
 
     //ev->printVars();
@@ -1182,10 +1146,6 @@ int ShoreEnv::conf()
 
     TRACE( TRACE_DEBUG, "** SM options\n");
     for ( iter = _sm_opts.begin(); iter != _sm_opts.end(); iter++)
-        cout << "(" << iter->first << ") (" << iter->second << ")" << endl;
-
-    TRACE( TRACE_DEBUG, "** DB options\n");
-    for ( iter = _dev_opts.begin(); iter != _dev_opts.end(); iter++)
         cout << "(" << iter->first << ") (" << iter->second << ")" << endl;
 
     return (0);

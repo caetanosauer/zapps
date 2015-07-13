@@ -125,7 +125,7 @@ void abort_smt_t::work()
 {
     w_rc_t r = RCOK;
     xct_t* victim = NULL;
-    me()->alloc_sdesc_cache();
+    // me()->alloc_sdesc_cache();
     for (vector<xct_t*>::iterator it = _toabort->begin();
          it != _toabort->end(); ++it) {
 
@@ -140,7 +140,7 @@ void abort_smt_t::work()
             _aborted++;
         }
     }
-    me()->free_sdesc_cache();
+    // me()->free_sdesc_cache();
 }
 
 void checkpointer_t::work()

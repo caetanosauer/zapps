@@ -54,13 +54,6 @@ const int SHORE_NUM_OF_RETRIES       = 3;
 const string CONFIG_PARAM       = "db-config";
 const string CONFIG_PARAM_VALUE = "invalid";
 
-
-// !!!
-// shore.conf should have values with the corresponding configuration suffix
-// for all the database-instance-dependent parameters
-// !!!
-
-
 // SHORE_SYS_OPTIONS:
 // Database-independent options
 const string SHORE_SYS_OPTIONS[][2] = {
@@ -78,48 +71,15 @@ const int    SHORE_NUM_SYS_OPTIONS  = 5;
 // Those options are appended as parameters when starting Shore
 // Those are the database-independent
 const string SHORE_SYS_SM_OPTIONS[][3]  = {
-    { "-sm_logging", "shore-logging", "yes" },
-    { "-sm_logisraw", "shore-logisraw", "no" },
-    { "-sm_diskrw", "shore-diskrw", "diskrw" },
     { "-sm_errlog", "shore-errlog", "shoremt.err.log" },
     { "-sm_num_page_writers", "shore-pagecleaners", "16" },
     { "-sm_chkpt_flush_interval", "shore-chkpt_flush_interval", "-1" },
     { "-sm_backgroundflush", "shore-backgroundflush", "yes" },
     { "-sm_log_page_flushes", "shore-log_page_flushes", "yes" },
-    { "-sm_preventive_chkpt", "shore-preventive_chkpt", "yes" },
-    { "-sm_cleaner_policy", "shore-cleaner_policy", "normal" },
-    { "-sm_archiving", "shore-archiving", "no" },
-    { "-sm_async_merging", "shore-async_merging", "no" },
-    { "-sm_merge_factor", "shore-merge_factor", "1000" },
-    { "-sm_merge_blocksize", "shore-merge_blocksize", "1048576" },
-    { "-sm_sort_archive", "shore-sort_archive", "yes" }
+    { "-sm_preventive_chkpt", "shore-preventive_chkpt", "yes" }
 };
 
-const int    SHORE_NUM_SYS_SM_OPTIONS   = 15;
-
-
-// SHORE_DB_SM_OPTIONS:
-// Those options are appended as parameters when starting Shore
-// Thore are the database-instance-specific
-const string SHORE_DB_SM_OPTIONS[][3]  = {
-    { "-sm_logsize", "logsize", "0" },
-    { "-sm_logbufsize", "logbufsize", "0" },
-    { "-sm_logcount", "logcount", "10" },      /*** IP: Remove -sm_logcount no dlog anymore... ****/
-};
-
-const int    SHORE_NUM_DB_SM_OPTIONS   = 3;
-
-
-// SHORE_DB_OPTIONS
-// Database-instance-specific options
-const string SHORE_DB_OPTIONS[][2] = {
-    { "devicequota", "0" },
-    { "sf", "0" },
-    { "system", "invalid" }
-};
-
-const int    SHORE_NUM_DB_OPTIONS  = 3;
-
+const int    SHORE_NUM_SYS_SM_OPTIONS   = 6;
 
 
 
@@ -457,6 +417,7 @@ protected:
     // CS: parameters removed from envVar/shore.conf/SHORE_*_OPTIONS
     bool _clobber;
     string _device;
+    int _quota;
 
     // Status variables
     bool            _initialized;
@@ -639,13 +600,13 @@ public:
 
     void set_clobber(bool c) { _clobber = c; }
     void set_device(string d) { _device = d; }
+    void set_quota(int q) { _quota = q; }
 
     // --- scaling and querying factor --- //
     void set_qf(const double aQF);
     double get_qf() const;
     void set_sf(const double aSF);
     double get_sf() const;
-    double upd_sf();
     void print_sf() const;
 
     // kits logging

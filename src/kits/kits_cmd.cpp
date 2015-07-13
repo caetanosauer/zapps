@@ -46,6 +46,15 @@ void KitsCommand::setupOptions()
         ("spread", po::value<bool>(&opt_spread)->default_value(true)
             ->implicit_value(true),
             "Attach each worker thread to a fixed core for improved concurrency")
+        ("logsize", po::value<unsigned>(&opt_logsize)
+            ->default_value(10485760),
+            "Maximum size of log (in KB) (default 10GB)")
+        ("logbufsize", po::value<unsigned>(&opt_logbufsize)
+            ->default_value(81920),
+            "Size of log buffer (in KB) (default 80MB)")
+        ("quota", po::value<unsigned>(&opt_quota)
+            ->default_value(12097512),
+            "Maximum size of device (in KB) (default 12GB)")
     ;
 }
 
@@ -169,13 +178,6 @@ void KitsCommand::initShoreEnv()
 
     loadOptions(shoreEnv->get_opts());
 
-    // Kits does not seem to respect the db-config set in the file.
-    // It always uses ssb-1. In the old Kits code, thie config was
-    // specified with the -c command line
-    stringstream benchCfg;
-    benchCfg << opt_benchmark << "-" << opt_queried_sf;
-    envVar::instance()->setConfiguration(benchCfg.str());
-
     shoreEnv->set_sf(opt_queried_sf);
     shoreEnv->set_qf(opt_queried_sf);
 
@@ -192,6 +194,7 @@ void KitsCommand::initShoreEnv()
 
     shoreEnv->set_clobber(opt_load);
     shoreEnv->set_device(opt_dbfile);
+    shoreEnv->set_quota(opt_quota);
 
     shoreEnv->start();
 }
@@ -238,6 +241,9 @@ void KitsCommand::loadOptions(sm_options& options)
 {
     options.set_string_option("sm_logdir", logdir);
     mkdirs(logdir);
+
+    options.set_int_option("sm_logsize", opt_logsize);
+    options.set_int_option("sm_logbufsize", opt_logbufsize);
 
     if (!archdir.empty()) {
         options.set_bool_option("sm_archiving", true);

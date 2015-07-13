@@ -38,9 +38,9 @@ set(kits_SRCS
     )
 
 
-# copy shore.conf file
+# copy shore.conf file to /src/
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/shore.conf
-        ${CMAKE_CURRENT_BINARY_DIR}/shore.conf COPYONLY)
+        ${CMAKE_CURRENT_BINARY_DIR}/../shore.conf COPYONLY)
 
 add_subdirectory(experiments)
 
