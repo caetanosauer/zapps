@@ -37,6 +37,9 @@ void KitsCommand::setupOptions()
             "Size of buffer pool in Kbytes")
         ("trxs", po::value<int>(&opt_num_trxs)->default_value(100),
             "Number of transactions to execute")
+        ("duration", po::value<unsigned>(&opt_duration)->default_value(60),
+            "Run benchmark for the given number of seconds (overrides the \
+            trxs option)")
         ("threads,t", po::value<int>(&opt_num_threads)->default_value(4),
             "Number of threads to execute benchmark with")
         ("select_trx,s", po::value<int>(&opt_select_trx)->default_value(0),
@@ -123,9 +126,11 @@ void KitsCommand::runBenchmarkSpec()
         opt_queried_sf = shoreEnv->get_sf();
     }
 
+    MeasurementType mtype = opt_duration > 0 ? MT_TIME_DUR : MT_NUM_OF_TRXS;
+
     // 1. create and fork client clients
-    int trxsPerThread = opt_num_trxs / opt_num_threads;
-    for (int i=0; i<opt_num_threads; i++) {
+    int trxsPerThread = opt_duration > 0 ?  0 : opt_num_trxs / opt_num_threads;
+    for (int i = 0; i < opt_num_threads; i++) {
         // create & fork testing threads
         if (opt_spread) {
             wh_id = (i%(int)opt_queried_sf)+1;
@@ -133,7 +138,7 @@ void KitsCommand::runBenchmarkSpec()
 
         testers[i] = new Client("client-" + std::to_string(i), i,
                 (Environment*) shoreEnv,
-                MT_NUM_OF_TRXS, opt_select_trx, trxsPerThread,
+                mtype, opt_select_trx, trxsPerThread,
                 current_prs_id /* cpu id -- see below */,
                 wh_id, opt_queried_sf);
         assert (testers[i]);
@@ -142,18 +147,16 @@ void KitsCommand::runBenchmarkSpec()
         // CS: 1st arg is binding type, which I don't know what it is for
         // It seems like it is a way to specify what the next CPU id is.
         // If BT_NONE is given, it simply returns -1
+        // TODO: this is required to implement opt_spread -- take a look!
         // current_prs_id = next_cpu(BT_NONE, current_prs_id);
     }
 
-    // 2. join the tester threads
-    for (int i=0; i<opt_num_threads; i++) {
-        testers[i]->join();
-        if (testers[i]->rv()) {
-            TRACE( TRACE_ALWAYS, "Error in testing...\n");
-            TRACE( TRACE_ALWAYS, "Exiting...\n");
-            assert (false);
+    // If running for a time duration, wait specified number of seconds
+    if (mtype == MT_TIME_DUR) {
+        int remaining = opt_duration;
+        while (remaining > 0) {
+            remaining = ::sleep(remaining);
         }
-        delete (testers[i]);
     }
 
     double delay = timer.time();
@@ -169,6 +172,19 @@ void KitsCommand::runBenchmarkSpec()
     TRACE(TRACE_ALWAYS, "end measurement\n");
     shoreEnv->print_throughput(opt_queried_sf, opt_spread, opt_num_threads, delay,
             miochs, usage);
+
+    shoreEnv->set_measure(MST_DONE);
+
+    // 2. join the tester threads
+    for (int i=0; i<opt_num_threads; i++) {
+        testers[i]->join();
+        if (testers[i]->rv()) {
+            TRACE( TRACE_ALWAYS, "Error in testing...\n");
+            TRACE( TRACE_ALWAYS, "Exiting...\n");
+            assert (false);
+        }
+        delete (testers[i]);
+    }
 }
 
 template<class Environment>
