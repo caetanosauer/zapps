@@ -15,6 +15,7 @@ protected:
     bool opt_singlePass;
     bool opt_instant;
     bool opt_evict;
+    unsigned opt_failDelay;
     bool opt_crash;
     int opt_crashDelay;
     float opt_postRestoreWorkFactor;

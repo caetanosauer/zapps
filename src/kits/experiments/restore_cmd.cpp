@@ -3,6 +3,32 @@
 #include "shore_env.h"
 #include "vol.h"
 
+class FailureThread : public smthread_t
+{
+public:
+    FailureThread(vid_t vid, unsigned delay, bool evict)
+        : smthread_t(t_regular, "FailureThread"),
+        vid(vid), delay(delay), evict(evict)
+    {
+    }
+
+    virtual ~FailureThread() {}
+
+    virtual void run()
+    {
+        ::sleep(delay);
+
+        vol_t* vol = smlevel_0::vol->get(vid);
+        w_assert0(vol);
+        vol->mark_failed(evict);
+    }
+
+private:
+    vid_t vid;
+    unsigned delay;
+    bool evict;
+};
+
 void RestoreCmd::setupOptions()
 {
     KitsCommand::setupOptions();
@@ -21,6 +47,8 @@ void RestoreCmd::setupOptions()
         ("evict", po::value<bool>(&opt_evict)->default_value(false)
             ->implicit_value(true),
             "Evict all pages from buffer pool when failure happens")
+        ("failDelay", po::value<unsigned>(&opt_failDelay)->default_value(60),
+            "Time to wait before marking the volume as failed")
         ("crash", po::value<bool>(&opt_crash)->default_value(false)
             ->implicit_value(true),
             "Simulate media failure together with system failure")
@@ -98,9 +126,9 @@ void RestoreCmd::run()
         vol->take_backup(opt_backup);
     }
 
-    // STEP 2 - run benchmark and fail device
-    runBenchmark();
-    vol->mark_failed(opt_evict);
+    // STEP 2 - spawn failure thread and run benchmark
+    FailureThread* t = new FailureThread(vid, opt_failDelay, opt_evict);
+    t->fork();
 
     // TODO if crash is on, move runBenchmark into a separate thread
     // and crash after specified delay. To crash, look at the restart
@@ -110,9 +138,11 @@ void RestoreCmd::run()
     // Meanwhile, the thread running the benchmark will accumulate
     // errors, which should be ok (see trx_worker_t::_serve_action).
 
-    // STEP 3 - continue benchmark on restored data
-    opt_num_trxs *= opt_postRestoreWorkFactor;
+    // opt_num_trxs *= opt_postRestoreWorkFactor;
     runBenchmark();
+
+    t->join();
+    delete t;
 
     finish();
 }
