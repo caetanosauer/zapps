@@ -45,10 +45,12 @@ public:
 protected:
     BaseScanner* getScanner( bitset<logrec_t::t_max_logrec>* filter = NULL);
     BaseScanner* getMergeScanner();
+    BaseScanner* getLogArchiveScanner();
+
+    string logdir;
 
 private:
     BaseScanner* scanner;
-    string logdir;
     size_t limit;
 };
 

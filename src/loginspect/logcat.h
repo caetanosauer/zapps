@@ -10,6 +10,8 @@ public:
     void setupOptions();
 
 private:
+    bool isArchive;
+    string filename;
     size_t number;
 };
 

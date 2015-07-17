@@ -120,7 +120,7 @@ void BlockScanner::run()
 
     while (true) {
         // open partition number pnum
-        string fname = getNextFile();
+        string fname = restrictFile.empty() ? getNextFile() : restrictFile;
         ifstream in(fname, ios::binary | ios::ate);
 
         // does the file exist?
@@ -173,6 +173,10 @@ void BlockScanner::run()
         }
 
         in.close();
+
+        if (!restrictFile.empty()) {
+            break;
+        }
     }
 
     if (pnum == firstPartition && bpos == 0) {
@@ -209,20 +213,27 @@ void LogArchiveScanner::run()
         LogArchiver::ArchiveDirectory(archdir, 1024 * 1024);
 
     std::vector<std::string> runFiles;
-    directory->listFiles(&runFiles);
 
-    std::sort(runFiles.begin(), runFiles.end(), runCompare);
+    if (restrictFile.empty()) {
+        directory->listFiles(&runFiles);
+        std::sort(runFiles.begin(), runFiles.end(), runCompare);
+    }
+    else {
+        runFiles.push_back(restrictFile);
+    }
 
     runBegin = PARSE_LSN(runFiles[0].c_str(), false);
     runEnd = PARSE_LSN(runFiles[0].c_str(), true);
     std::vector<std::string>::const_iterator it;
-    for(size_t i = 1; i < runFiles.size(); i++) {
-        // begin of run i must be equal to end of run i-1
-        runBegin = PARSE_LSN(runFiles[i].c_str(), false);
-        if (runBegin != runEnd) {
-            throw runtime_error("Hole found in run boundaries!");
+    for(size_t i = 0; i < runFiles.size(); i++) {
+        if (i > 0) {
+            // begin of run i must be equal to end of run i-1
+            runBegin = PARSE_LSN(runFiles[i].c_str(), false);
+            if (runBegin != runEnd) {
+                throw runtime_error("Hole found in run boundaries!");
+            }
+            runEnd = PARSE_LSN(runFiles[i].c_str(), true);
         }
-        runEnd = PARSE_LSN(runFiles[i].c_str(), true);
 
         LogArchiver::ArchiveScanner::RunScanner* rs =
             new LogArchiver::ArchiveScanner::RunScanner(
@@ -239,7 +250,7 @@ void LogArchiveScanner::run()
             handle(lr);
         };
 
-        delete lr;
+        delete rs;
     }
 }
 

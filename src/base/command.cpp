@@ -95,6 +95,11 @@ BaseScanner* LogScannerCommand::getScanner(
     return new BlockScanner(logdir.c_str(), BLOCK_SIZE, filter);
 }
 
+BaseScanner* LogScannerCommand::getLogArchiveScanner()
+{
+    return new LogArchiveScanner(logdir);
+}
+
 BaseScanner* LogScannerCommand::getMergeScanner()
 {
     return new MergeScanner();

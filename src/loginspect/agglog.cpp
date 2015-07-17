@@ -80,7 +80,7 @@ void AggregateHandler::dumpCounts()
 {
     for (size_t i = 0; i < counts.capacity(); i++) {
         if (filter[i]) {
-            cout << counts[i] << " ";
+            cout << counts[i] << '\t';
             counts[i] = 0;
         }
     }

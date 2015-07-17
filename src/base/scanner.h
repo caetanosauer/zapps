@@ -15,17 +15,26 @@
 
 class BaseScanner : public basethread_t {
 public:
+    BaseScanner() : restrictFile("")
+    {}
+
     virtual ~BaseScanner()
-    {}; // TODO do we need to delete the handlers here?
+    {} // TODO do we need to delete the handlers here?
+
+    void setRestrictFile(string fname) { restrictFile = fname; }
 protected:
     virtual void handle(logrec_t* lr);
     virtual void finalize();
+
 public: // TODO make protected and add register methods
     std::vector<Handler*> any_handlers;
     std::vector<Handler*> pid_handlers;
     std::vector<Handler*> transaction_handlers;
     std::vector<std::vector<Handler*>> type_handlers;
     std::function<void(const char*)> openFileCallback;
+
+protected:
+    string restrictFile;
 };
 
 class ShoreScanner : public BaseScanner {
