@@ -402,7 +402,9 @@ w_rc_t ShoreTPCBEnv::create_tables()
        up the real workers.
      */
     long total_accounts = _scaling_factor*TPCB_ACCOUNTS_PER_BRANCH;
-    w_assert1((total_accounts % _loaders_to_use) == 0);
+    while (total_accounts % _loaders_to_use != 0) {
+        _loaders_to_use--;
+    }
     long accts_per_worker = total_accounts/_loaders_to_use;
 
     // Adjust the number of loaders to use, if the scaling factor is very small

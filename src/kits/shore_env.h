@@ -601,6 +601,7 @@ public:
     void set_clobber(bool c) { _clobber = c; }
     void set_device(string d) { _device = d; }
     void set_quota(int q) { _quota = q; }
+    void set_loaders(int l) { _loaders_to_use = l; }
 
     // --- scaling and querying factor --- //
     void set_qf(const double aQF);

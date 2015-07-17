@@ -196,6 +196,7 @@ void KitsCommand::initShoreEnv()
 
     shoreEnv->set_sf(opt_queried_sf);
     shoreEnv->set_qf(opt_queried_sf);
+    shoreEnv->set_loaders(opt_num_threads);
 
     shoreEnv->init();
 

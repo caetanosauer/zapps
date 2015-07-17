@@ -179,8 +179,6 @@ w_rc_t ShoreEnv::load()
     CRITICAL_SECTION(scale_cs, _scaling_mutex);
     time_t tstart = time(NULL);
 
-    _loaders_to_use = envVar::instance()->getVarInt("db-loaders", 10);
-
     // 2. Invoke benchmark-specific table creator
     W_DO(create_tables());
 
