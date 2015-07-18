@@ -716,9 +716,6 @@ int ShoreEnv::close_sm()
     // Disabling fake io delay, if any
     _pssm->disable_fake_disk_latency(_vid);
 
-
-    TRACE( TRACE_ALWAYS, "Dismounting all devices...\n");
-
     // check if any active xcts
     int activexcts = ss_m::num_active_xcts();
     if (activexcts) {
@@ -729,28 +726,10 @@ int ShoreEnv::close_sm()
         cout << flush;
     }
 
-    // w_rc_t e = _pssm->dismount_all();
-    // if (e.is_error()) {
-
-    //     if (e.err_num() == eCANTWHILEACTIVEXCTS) {
-    //         // ACTIVE TRANSACTIONS
-    //         TRACE( TRACE_ALWAYS,
-    //                " ACTIVE TRANSACTIONS [0x%x]\n",
-    //                e.err_num());
-    //     }
-    //     else {
-    //         TRACE( TRACE_ALWAYS,
-    //                "Problem in dismounting [0x%x]\n",
-    //                e.err_num());
-    //     }
-    // }
-
     // Final stats
-    //TRACE( TRACE_ALWAYS, "Final sm stats ...\n");
-    //gatherstats_sm();
+    gatherstats_sm();
 
-    /** @note According to
-     *  http://www.cs.wisc.edu/shore/1.0/ssmapi/node3.html
+    /*
      *  destroying the ss_m instance causes the SSM to shutdown
      */
     delete (_pssm);

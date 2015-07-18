@@ -66,9 +66,6 @@ void RestoreCmd::setupOptions()
             "Run log archiving concurrently with benchmark execution and \
             restore, instead of generating log archive \"offline\" when \
             marking the volume as failed")
-        ("eager", po::value<bool>(&opt_eager)->default_value(true)
-            ->implicit_value(true),
-            "Run log archiving in eager mode")
         // further options to add:
         // fail volume again while it is being restored
         // fail and restore multiple times in a loop
@@ -90,7 +87,6 @@ void RestoreCmd::archiveLog()
 void RestoreCmd::loadOptions(sm_options& options)
 {
     KitsCommand::loadOptions(options);
-    options.set_bool_option("sm_archiver_eager", opt_eager);
     options.set_int_option("sm_restore_segsize", opt_segmentSize);
     options.set_bool_option("sm_restore_instant", opt_instant);
 }

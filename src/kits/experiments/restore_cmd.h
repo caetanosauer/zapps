@@ -20,7 +20,6 @@ protected:
     int opt_crashDelay;
     float opt_postRestoreWorkFactor;
     bool opt_concurrentArchiving;
-    bool opt_eager;
 
     virtual void loadOptions(sm_options& opt);
 

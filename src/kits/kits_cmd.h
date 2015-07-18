@@ -30,6 +30,8 @@ protected:
     unsigned opt_logsize;
     unsigned opt_logbufsize;
     unsigned opt_quota;
+    bool opt_eager;
+    bool opt_cleanShutdown;
 
     bool opt_spread;
 

@@ -35,9 +35,9 @@ void KitsCommand::setupOptions()
             and backups are deleted, and dataset is loaded from scratch")
         ("bufsize", po::value<int>(&opt_bufsize)->default_value(0),
             "Size of buffer pool in Kbytes")
-        ("trxs", po::value<int>(&opt_num_trxs)->default_value(100),
+        ("trxs", po::value<int>(&opt_num_trxs)->default_value(0),
             "Number of transactions to execute")
-        ("duration", po::value<unsigned>(&opt_duration)->default_value(60),
+        ("duration", po::value<unsigned>(&opt_duration)->default_value(0),
             "Run benchmark for the given number of seconds (overrides the \
             trxs option)")
         ("threads,t", po::value<int>(&opt_num_threads)->default_value(4),
@@ -58,6 +58,12 @@ void KitsCommand::setupOptions()
         ("quota", po::value<unsigned>(&opt_quota)
             ->default_value(12097512),
             "Maximum size of device (in KB) (default 12GB)")
+        ("eager", po::value<bool>(&opt_eager)->default_value(true)
+            ->implicit_value(true),
+            "Run log archiving in eager mode")
+        ("cleanShutdown", po::value<bool>(&opt_cleanShutdown)->default_value(true)
+            ->implicit_value(true),
+            "Shutdown SM cleanly when done (flush pages and take checkpoint)")
     ;
 }
 
@@ -67,7 +73,11 @@ void KitsCommand::run()
     if (opt_load) {
         shoreEnv->load();
     }
-    runBenchmark();
+
+    if (opt_num_trxs > 0 || opt_duration > 0) {
+        runBenchmark();
+    }
+
     finish();
 }
 
@@ -265,6 +275,7 @@ void KitsCommand::loadOptions(sm_options& options)
     if (!archdir.empty()) {
         options.set_bool_option("sm_archiving", true);
         options.set_string_option("sm_archdir", archdir);
+        options.set_bool_option("sm_archiver_eager", opt_eager);
         mkdirs(archdir);
     }
 
@@ -280,6 +291,8 @@ void KitsCommand::loadOptions(sm_options& options)
         opt_bufsize = 8192; // 8 MB
     }
     options.set_int_option("sm_bufpoolsize", opt_bufsize);
+
+    options.set_bool_option("sm_shutdown_clean", opt_cleanShutdown);
 }
 
 void KitsCommand::finish()
