@@ -32,6 +32,7 @@ protected:
     unsigned opt_quota;
     bool opt_eager;
     bool opt_cleanShutdown;
+    bool opt_truncateLog;
 
     bool opt_spread;
 

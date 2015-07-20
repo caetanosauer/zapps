@@ -64,6 +64,9 @@ void KitsCommand::setupOptions()
         ("cleanShutdown", po::value<bool>(&opt_cleanShutdown)->default_value(true)
             ->implicit_value(true),
             "Shutdown SM cleanly when done (flush pages and take checkpoint)")
+        ("truncateLog", po::value<bool>(&opt_truncateLog)->default_value(false)
+            ->implicit_value(true),
+            "Truncate log until last checkpoint after loading")
     ;
 }
 
@@ -293,6 +296,7 @@ void KitsCommand::loadOptions(sm_options& options)
     options.set_int_option("sm_bufpoolsize", opt_bufsize);
 
     options.set_bool_option("sm_shutdown_clean", opt_cleanShutdown);
+    options.set_bool_option("sm_truncate_log", opt_truncateLog);
 }
 
 void KitsCommand::finish()
