@@ -75,12 +75,12 @@ private:
 
 class MergeScanner : public BaseScanner {
 public:
-    MergeScanner();
+    MergeScanner(string archdir);
     virtual ~MergeScanner() {};
 
     virtual void run();
 private:
-    ArchiveMerger* archiveMerger;
+    string archdir;
 };
 
 /*

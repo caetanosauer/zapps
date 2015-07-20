@@ -245,39 +245,60 @@ void LogArchiveScanner::run()
                     directory
             );
 
+        lsn_t prevLSN = lsn_t::null;
+        lpid_t prevPid = lpid_t::null;
+
         logrec_t* lr;
         while (rs->next(lr)) {
+            w_assert1(lr->pid() >= prevPid);
+            w_assert1(lr->pid() != prevPid ||
+                    lr->page_prev_lsn() == lsn_t::null ||
+                    lr->page_prev_lsn() == prevLSN);
+            w_assert1(lr->lsn_ck() >= runBegin);
+            w_assert1(lr->lsn_ck() < runEnd);
+
             handle(lr);
+
+            prevLSN = lr->lsn_ck();
+            prevPid = lr->pid();
         };
 
         delete rs;
     }
+
+    BaseScanner::finalize();
 }
 
-MergeScanner::MergeScanner()
+MergeScanner::MergeScanner(string archdir)
+    : archdir(archdir)
 {
-    archiveMerger = smlevel_0::archiveMerger;
-    if (!archiveMerger) {
-        throw runtime_error("Archive merger was not initialized!");
-    }
 }
 
 void MergeScanner::run()
 {
-    ArchiveMerger::MergeOutput* m = archiveMerger->offlineMerge(false);
-    char* lrbuf = new char[sizeof(logrec_t)];
+    LogArchiver::ArchiveDirectory* directory = new
+        LogArchiver::ArchiveDirectory(archdir, 1024 * 1024);
+    LogArchiver::ArchiveScanner logScan(directory);
 
-    //lsn_t prev_lsn = lsn_t::null;
-    //lpid_t prev_pid = lpid_t::null;
-    //ulong count = 0;
+    LogArchiver::ArchiveScanner::RunMerger* merger =
+        logScan.open(lpid_t::null, lpid_t::null, lsn_t::null);
 
-    while (m->copyNext(lrbuf)) {
-        logrec_t* lr = (logrec_t*) lrbuf;
+    logrec_t* lr;
+
+    lsn_t prevLSN = lsn_t::null;
+    lpid_t prevPid = lpid_t::null;
+
+    while (merger->next(lr)) {
+        w_assert1(lr->pid() >= prevPid);
+        w_assert1(lr->pid() != prevPid ||
+                lr->page_prev_lsn() == lsn_t::null ||
+                lr->page_prev_lsn() == prevLSN);
+
         handle(lr);
-    }
 
-    delete lrbuf;
-    delete m;
+        prevLSN = lr->lsn_ck();
+        prevPid = lr->pid();
+    }
 
     BaseScanner::finalize();
 }

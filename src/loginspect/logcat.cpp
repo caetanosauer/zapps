@@ -21,34 +21,21 @@ void LogCat::setupOptions()
         ("archive,a", po::value<bool>(&isArchive)->default_value(false)
          ->implicit_value(true),
             "Scan log archive files isntead of normal recovery log")
+        ("merge,m", po::value<bool>(&merge)->default_value(false)
+         ->implicit_value(true),
+            "Merge archiver input so that global sort order is produced")
     ;
 }
 
 void LogCat::run()
 {
     PrintHandler* h = new PrintHandler();
-    BaseScanner* s = isArchive ? getLogArchiveScanner() : getScanner();
+    BaseScanner* s = isArchive ?
+        (merge ? getMergeScanner() : getLogArchiveScanner())
+        : getScanner();
 
     if (!filename.empty()) {
         s->setRestrictFile(logdir + "/" + filename);
-
-        //DEBUG
-    LogArchiver::ArchiveDirectory* directory = new
-        // CS TODO -- fix block size bug (Issue #9)
-        LogArchiver::ArchiveDirectory(logdir, 1024 * 1024);
-
-        LogArchiver::ArchiveScanner::RunScanner* rs =
-            new LogArchiver::ArchiveScanner::RunScanner(
-                    lsn_t(1,322914768),
-                    lsn_t(1,323974984),
-                    lpid_t(1,2458), // first PID
-                    lpid_t(1,2476), // last PID
-                    25165824,            // file offset
-                    directory
-            );
-
-        LogArchiver::ArchiveScanner::MergeHeapEntry r(rs);
-        std::cout << r.active << std::endl;
     }
 
     s->type_handlers.resize(logrec_t::t_max_logrec);

@@ -102,7 +102,7 @@ BaseScanner* LogScannerCommand::getLogArchiveScanner()
 
 BaseScanner* LogScannerCommand::getMergeScanner()
 {
-    return new MergeScanner();
+    return new MergeScanner(logdir);
 }
 
 void LogScannerCommand::setupOptions()

@@ -11,6 +11,7 @@ public:
 
 private:
     bool isArchive;
+    bool merge;
     string filename;
     size_t number;
 };
