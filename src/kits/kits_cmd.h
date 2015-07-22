@@ -9,6 +9,7 @@ class sm_options;
 
 class KitsCommand : public Command
 {
+	using Command::setupOptions;
 public:
     KitsCommand();
     virtual ~KitsCommand() {}

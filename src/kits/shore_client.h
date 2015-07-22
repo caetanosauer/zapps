@@ -151,6 +151,11 @@ protected:
     int _id; // thread id
     int _rv;
 
+
+
+    boost::program_options::variables_map optionValues;
+
+
 public:
 
     base_client_t()

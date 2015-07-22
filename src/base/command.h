@@ -30,6 +30,11 @@ protected:
 
     string commandString;
 
+    //Setup Options that can be used in every command instance i.e. are independent of executed benchmark or test -> Mostly shore config options
+    void setupSMOptions();
+
+    void helpOption();
+
 private:
     typedef map<string, Command*(*)()> ConstructorMap;
     static ConstructorMap constructorMap;

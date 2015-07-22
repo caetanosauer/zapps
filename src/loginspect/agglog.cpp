@@ -3,12 +3,14 @@
 void AggLog::setupOptions()
 {
     LogScannerCommand::setupOptions();
-    options.add_options()
+    boost::program_options::options_description agglog("AggLog Options");
+    agglog.add_options()
         ("type,t", po::value<vector<string> >(&typeStrings)->multitoken(),
             "Log record types to be considered by the aggregator")
         ("interval,i", po::value<int>(&interval)->default_value(1),
             "Size of the aggregation groups in number of ticks (default 1)")
     ;
+    options.add(agglog);
 }
 
 void AggLog::run()

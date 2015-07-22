@@ -17,7 +17,6 @@ set(kits_SRCS
 
     # UTILITIES
     ${CMAKE_CURRENT_SOURCE_DIR}/mersenne.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/envvar.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/trace.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/stl_pool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/random_input.cpp
