@@ -33,6 +33,15 @@ set(kits_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/tpcb/tpcb_xct.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tpcb/templates.cpp
 
+    # TPC-C
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/tpcc_client.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/tpcc_env.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/tpcc_input.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/tpcc_schema.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/tpcc_schema_man.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/tpcc_xct.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/templates.cpp
+
     # KITS ZAPPS INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/kits_cmd.cpp
     )
