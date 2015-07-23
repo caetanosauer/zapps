@@ -1040,7 +1040,7 @@ w_rc_t ShoreTPCCEnv::xct_payment(const int xct_id,
 	int count = 0;
 	bool eof;
 
-	W_DO(c_iter->next(_pssm, eof, *prcust));
+	W_DO(c_iter->next(eof, *prcust));
 	while (!eof) {
 	    // push the retrieved customer id to the vector
 	    ++count;
@@ -1048,7 +1048,7 @@ w_rc_t ShoreTPCCEnv::xct_payment(const int xct_id,
 	    v_c_id.push_back(a_c_id);
 	    TRACE( TRACE_TRX_FLOW, "App: %d PAY:cust-iter-next (%d)\n",
 		   xct_id, a_c_id);
-	    W_DO(c_iter->next(_pssm, eof, *prcust));
+	    W_DO(c_iter->next(eof, *prcust));
 	}
 	assert (count);
 
@@ -1267,7 +1267,7 @@ w_rc_t ShoreTPCCEnv::xct_order_status(const int xct_id,
     lowrep.set(_pcustomer_desc->maxsize());
     highrep.set(_pcustomer_desc->maxsize());
 
-    // 1a. select customer based on name //
+    // 1a. if id not given, select customer based on last name //
     if (pstin._c_id == 0) {
 
 	/* SELECT  c_id, c_first
@@ -1276,6 +1276,7 @@ w_rc_t ShoreTPCCEnv::xct_order_status(const int xct_id,
 	 * ORDER BY c_first
 	 *
 	 * plan: index only scan on "C_NAME_IDX"
+         *   index fields: C_W_ID, C_D_ID, C_LAST, C_FIRST, C_ID
 	 */
 
 	assert (pstin._c_select <= 60);
@@ -1298,18 +1299,19 @@ w_rc_t ShoreTPCCEnv::xct_order_status(const int xct_id,
 	int  count = 0;
 	bool eof;
 
-	W_DO(c_iter->next(_pssm, eof, *prcust));
+	W_DO(c_iter->next(eof, *prcust));
 	while (!eof) {
 	    // push the retrieved customer id to the vector
 	    ++count;
 	    prcust->get_value(0, id);
 	    c_id_list.push_back(id);
 	    TRACE( TRACE_TRX_FLOW, "App: %d ORDST:cust-iter-next\n", xct_id);
-	    W_DO(c_iter->next(_pssm, eof, *prcust));
+	    W_DO(c_iter->next(eof, *prcust));
 	}
 	assert (count);
 
 	// find the customer id in the middle of the list
+        // CS TODO: shouldn't we pick randomly from this list?
 	pstin._c_id = c_id_list[(count+1)/2-1];
     }
     assert (pstin._c_id>0);
@@ -1357,13 +1359,13 @@ w_rc_t ShoreTPCCEnv::xct_order_status(const int xct_id,
     tpcc_order_tuple aorder;
     bool eof;
 
-    W_DO(o_iter->next(_pssm, eof, *prord));
+    W_DO(o_iter->next(eof, *prord));
     while (!eof) {
 	prord->get_value(0, aorder.O_ID);
 	prord->get_value(4, aorder.O_ENTRY_D);
 	prord->get_value(5, aorder.O_CARRIER_ID);
 	prord->get_value(6, aorder.O_OL_CNT);
-	W_DO(o_iter->next(_pssm, eof, *prord));
+	W_DO(o_iter->next(eof, *prord));
     }
 
     // we should have retrieved a valid id and ol_cnt for the order
@@ -1393,7 +1395,7 @@ w_rc_t ShoreTPCCEnv::xct_order_status(const int xct_id,
     porderlines = new tpcc_orderline_tuple[aorder.O_OL_CNT];
     int i=0;
 
-    W_DO(ol_iter->next(_pssm, eof, *prol));
+    W_DO(ol_iter->next(eof, *prol));
     while (!eof) {
 	prol->get_value(4, porderlines[i].OL_I_ID);
 	prol->get_value(5, porderlines[i].OL_SUPPLY_W_ID);
@@ -1401,7 +1403,7 @@ w_rc_t ShoreTPCCEnv::xct_order_status(const int xct_id,
 	prol->get_value(7, porderlines[i].OL_QUANTITY);
 	prol->get_value(8, porderlines[i].OL_AMOUNT);
 	i++;
-	W_DO(ol_iter->next(_pssm, eof, *prol));
+	W_DO(ol_iter->next(eof, *prol));
     }
 
 #ifdef PRINT_TRX_RESULTS
@@ -1518,14 +1520,14 @@ w_rc_t ShoreTPCCEnv::_xct_delivery_helper(const int xct_id,
 	    W_DO(_pnew_order_man->no_get_iter_by_index(_pssm, tmp_no_iter,
 						       prno, lowrep, highrep,
 						       w_id, d_id,
-						       EX, false));
+						       false));
 	    no_iter = tmp_no_iter;
 	}
 
 	bool eof;
 
 	// iterate over all new_orders and load their no_o_ids to sort buffer
-	W_DO(no_iter->next(_pssm, eof, *prno));
+	W_DO(no_iter->next(eof, *prno));
 
 	if (eof) continue; // skip this district
 
@@ -1597,7 +1599,7 @@ w_rc_t ShoreTPCCEnv::_xct_delivery_helper(const int xct_id,
 	}
 
 	// iterate over all the orderlines for the particular order
-	W_DO(ol_iter->next(_pssm, eof, *prol));
+	W_DO(ol_iter->next(eof, *prol));
 	while (!eof) {
 	    // update the total amount
 	    int current_amount;
@@ -1607,7 +1609,7 @@ w_rc_t ShoreTPCCEnv::_xct_delivery_helper(const int xct_id,
 	    prol->set_value(6, ts_start);
 	    W_DO(_porder_line_man->update_tuple(_pssm, prol));
 	    // go to the next orderline
-	    W_DO(ol_iter->next(_pssm, eof, *prol));
+	    W_DO(ol_iter->next(eof, *prol));
 	}
 
 	// 5. Update balance of the customer of the order
@@ -1757,7 +1759,7 @@ w_rc_t ShoreTPCCEnv::xct_stock_level(const int xct_id,
 
     // iterate over all selected orderlines and add them to the sorted buffer
     bool eof;
-    W_DO(ol_iter->next(_pssm, eof, *prol));
+    W_DO(ol_iter->next(eof, *prol));
     while (!eof) {
 	int temp_oid, temp_iid;
 	int temp_wid, temp_did;
@@ -1770,7 +1772,7 @@ w_rc_t ShoreTPCCEnv::xct_stock_level(const int xct_id,
 	rsb.set_value(2, temp_did);
 	rsb.set_value(3, temp_oid);
 	ol_sorter.add_tuple(rsb);
-	W_DO(ol_iter->next(_pssm, eof, *prol));
+	W_DO(ol_iter->next(eof, *prol));
     }
     assert (ol_sorter.count());
 

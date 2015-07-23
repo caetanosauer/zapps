@@ -32,7 +32,7 @@
 #ifndef __SHORE_TPCC_SCHEMA_MANAGER_H
 #define __SHORE_TPCC_SCHEMA_MANAGER_H
 
-
+#include "scan.h"
 #include "tpcc_struct.h"
 #include "tpcc_schema.h"
 

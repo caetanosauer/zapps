@@ -391,23 +391,6 @@ public:
         table_man_t<bench::table##_t>::pcache_link::tls_get() \
             { return bench##_##table##_cache; }
 
-/******************************************************************
- *
- *  class table_desc_t methods
- *
- ******************************************************************/
-
-template<class T>
-class table_scan_iter_impl
-{
-public:
-    table_scan_iter_impl(T* desc);
-    rc_t next(ss_m* db, bool& eof, table_row_t& tuple);
-
-private:
-    bt_cursor_t* btcursor;
-    stid_t stid;
-};
 
 #if 0 // CS: disabled for now -- should be moved to other file anyway
 
