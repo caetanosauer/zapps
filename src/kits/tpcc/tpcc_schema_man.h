@@ -64,20 +64,12 @@ public:
                                     warehouse_tuple* ptuple,
                                     const int w_id);
 
-    w_rc_t wh_index_probe_nl(ss_m* db,
-                             warehouse_tuple* ptuple,
-                             const int w_id);
-
 
     // --- update a retrieved tuple --- //
     w_rc_t wh_update_ytd(ss_m* db,
                          warehouse_tuple* ptuple,
                          const double h_amount
                          );
-
-    w_rc_t wh_update_ytd_nl(ss_m* db,
-                            warehouse_tuple* ptuple,
-                            const double h_amount);
 
 }; // EOF: warehouse_man_impl
 
@@ -106,29 +98,16 @@ public:
                                       const int w_id,
                                       const int d_id);
 
-    w_rc_t dist_index_probe_nl(ss_m* db,
-                               district_tuple* ptuple,
-                               const int w_id,
-                               const int d_id);
-
 
     // --- update a retrieved tuple --- //
     w_rc_t dist_update_ytd(ss_m* db,
                            district_tuple* ptuple,
                            const double h_amount);
 
-    w_rc_t dist_update_ytd_nl(ss_m* db,
-                              district_tuple* ptuple,
-                              const double h_amount);
-
 
     w_rc_t dist_update_next_o_id(ss_m* db,
                                  district_tuple* ptuple,
                                  const int  next_o_id);
-
-    w_rc_t dist_update_next_o_id_nl(ss_m* db,
-                                    district_tuple* ptuple,
-                                    const int  next_o_id);
 
 }; // EOF: district_man_impl
 
@@ -159,15 +138,6 @@ public:
                                   const char* c_last,
                                   bool need_tuple = false);
 
-    w_rc_t cust_get_iter_by_index_nl(ss_m* db,
-                                     customer_index_iter* &iter,
-                                     customer_tuple* ptuple,
-                                     rep_row_t &replow,
-                                     rep_row_t &rephigh,
-                                     const int w_id,
-                                     const int d_id,
-                                     const char* c_last,
-                                     bool need_tuple = false);
 
     // --- access specific tuples --- //
     w_rc_t cust_index_probe(ss_m* db,
@@ -188,12 +158,6 @@ public:
                                       const int w_id,
                                       const int d_id,
                                       const int c_id);
-    w_rc_t cust_index_probe_nl(ss_m* db,
-                               customer_tuple* ptuple,
-                               const int w_id,
-                               const int d_id,
-                               const int c_id);
-
 
     // --- update a retrieved tuple --- //
     w_rc_t cust_update_tuple(ss_m* db,
@@ -202,22 +166,11 @@ public:
                              const char* adata1 = NULL,
                              const char* adata2 = NULL);
 
-    w_rc_t cust_update_tuple_nl(ss_m* db,
-                                customer_tuple* ptuple,
-                                const tpcc_customer_tuple& acustomer,
-                                const char* adata1 = NULL,
-                                const char* adata2 = NULL);
-
-
     w_rc_t cust_update_discount_balance(ss_m* db,
                                         customer_tuple* ptuple,
                                         const decimal discount,
                                         const decimal balance);
 
-    w_rc_t cust_update_discount_balance_nl(ss_m* db,
-                                           customer_tuple* ptuple,
-                                           const decimal discount,
-                                           const decimal balance);
 
 }; // EOF: customer_man_impl
 
@@ -266,27 +219,12 @@ public:
                                 const int d_id,
                                 bool need_tuple = false);
 
-    w_rc_t no_get_iter_by_index_nl(ss_m* db,
-                                   new_order_index_iter* &iter,
-                                   new_order_tuple* ptuple,
-                                   rep_row_t &replow,
-                                   rep_row_t &rephigh,
-                                   const int w_id,
-                                   const int d_id,
-                                   bool need_tuple = false);
-
     // --- update a retrieved tuple --- //
     w_rc_t no_delete_by_index(ss_m* db,
                               new_order_tuple* ptuple,
                               const int w_id,
                               const int d_id,
                               const int o_id);
-
-    w_rc_t no_delete_by_index_nl(ss_m* db,
-                                 new_order_tuple* ptuple,
-                                 const int w_id,
-                                 const int d_id,
-                                 const int o_id);
 
 }; // EOF: new_order_man_impl
 
@@ -319,24 +257,12 @@ public:
                                  const int c_id,
                                  bool need_tuple = true);
 
-    w_rc_t ord_get_iter_by_index_nl(ss_m* db,
-                                    order_index_iter* &iter,
-                                    order_tuple* ptuple,
-                                    rep_row_t &replow,
-                                    rep_row_t &rephigh,
-                                    const int w_id,
-                                    const int d_id,
-                                    const int c_id,
-                                    bool need_tuple = true);
 
     // --- update a retrieved tuple --- //
     w_rc_t ord_update_carrier_by_index(ss_m* db,
                                        order_tuple* ptuple,
                                        const int carrier_id);
 
-    w_rc_t ord_update_carrier_by_index_nl(ss_m* db,
-                                          order_tuple* ptuple,
-                                          const int carrier_id);
 
 }; // EOF: order_man_impl
 
@@ -371,17 +297,6 @@ public:
                                       const int high_o_id,
                                       bool need_tuple = true);
 
-    w_rc_t ol_get_range_iter_by_index_nl(ss_m* db,
-                                         order_line_index_iter* &iter,
-                                         order_line_tuple* ptuple,
-                                         rep_row_t &replow,
-                                         rep_row_t &rephigh,
-                                         const int w_id,
-                                         const int d_id,
-                                         const int low_o_id,
-                                         const int high_o_id,
-                                         bool need_tuple = true);
-
     w_rc_t ol_get_probe_iter_by_index(ss_m* db,
                                       order_line_index_iter* &iter,
                                       order_line_tuple* ptuple,
@@ -391,16 +306,6 @@ public:
                                       const int d_id,
                                       const int o_id,
                                       bool need_tuple = true);
-
-    w_rc_t ol_get_probe_iter_by_index_nl(ss_m* db,
-                                         order_line_index_iter* &iter,
-                                         order_line_tuple* ptuple,
-                                         rep_row_t &replow,
-                                         rep_row_t &rephigh,
-                                         const int w_id,
-                                         const int d_id,
-                                         const int o_id,
-                                         bool need_tuple = true);
 
 }; // EOF: order_line_man_impl
 
@@ -431,10 +336,6 @@ public:
     w_rc_t it_index_probe_forupdate(ss_m* db,
                                     item_tuple* ptuple,
                                     const int i_id);
-
-    w_rc_t it_index_probe_nl(ss_m* db,
-                             item_tuple* ptuple,
-                             const int i_id);
 
 }; // EOF: item_man_impl
 
@@ -468,19 +369,10 @@ public:
                                     const int w_id,
                                     const int i_id);
 
-    w_rc_t st_index_probe_nl(ss_m* db,
-                             stock_tuple* ptuple,
-                             const int w_id,
-                             const int i_id);
-
     /* --- update a retrieved tuple --- */
     w_rc_t st_update_tuple(ss_m* db,
                            stock_tuple* ptuple,
                            const tpcc_stock_tuple* pstock);
-
-    w_rc_t st_update_tuple_nl(ss_m* db,
-                              stock_tuple* ptuple,
-                              const tpcc_stock_tuple* pstock);
 
 }; // EOF: stock_man_impl
 
