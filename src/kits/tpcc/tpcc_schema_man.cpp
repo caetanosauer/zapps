@@ -30,14 +30,9 @@
  *
  */
 
-#include "workload/tpcc/shore_tpcc_schema_man.h"
+#include "tpcc_schema_man.h"
 
-using namespace shore;
-
-
-ENTER_NAMESPACE(tpcc);
-
-
+namespace tpcc {
 
 /*********************************************************************
  *
@@ -782,4 +777,4 @@ w_rc_t  stock_man_impl::st_update_tuple_nl(ss_m* db,
 }
 
 
-EXIT_NAMESPACE(tpcc);
+};

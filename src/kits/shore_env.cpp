@@ -365,7 +365,6 @@ void ShoreEnv::set_crash_delay(int crash_delay)
  ********************************************************************/
 void ShoreEnv::set_skew(int area, int load, int start_imbalance, int skew_type)
 {
-    // CS TODO -- not used
     (void) area;
     (void) load;
     assert ((load>=0) && (load<=100));

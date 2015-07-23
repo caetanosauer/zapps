@@ -31,7 +31,6 @@
  */
 
 #include "tpcb_env.h"
-// #include "sm/shore/shore_helper_loader.h"
 
 #include "lock.h"
 
