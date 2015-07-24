@@ -75,12 +75,12 @@ struct tpcc_customer_tuple {
     char    C_DATA_1   [STRSIZE(250)];
     char    C_DATA_2   [STRSIZE(250)];
 
-    c_str tuple_to_str() {
-        return(c_str("CUST = %d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%.2f|%s -",
-                     C_C_ID, C_D_ID, C_W_ID, C_FIRST, C_MIDDLE, C_LAST,
-                     C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP,
-                     C_PHONE, C_SINCE, C_CREDIT));
-    }
+    // c_str tuple_to_str() {
+    //     return(c_str("CUST = %d|%d|%d|%s|%s|%s|%s|%s|%s|%s|%s|%s|%.2f|%s -",
+    //                  C_C_ID, C_D_ID, C_W_ID, C_FIRST, C_MIDDLE, C_LAST,
+    //                  C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP,
+    //                  C_PHONE, C_SINCE, C_CREDIT));
+    // }
 
 
 };
@@ -147,12 +147,12 @@ struct tpcc_district_tuple {
     int D_NEXT_O_ID;
 
 
-    c_str tuple_to_str() {
-        return(c_str("DISTR = %d|%d|%s|%s|%s|%s|%s|%s|%.2f|%.2f|%d",
-                     D_ID, D_W_ID, D_NAME, D_STREET_1, D_STREET_2,
-                     D_CITY, D_STATE, D_ZIP,
-                     D_TAX.to_double(), D_YTD.to_double(), D_NEXT_O_ID));
-    }
+    // c_str tuple_to_str() {
+    //     return(c_str("DISTR = %d|%d|%s|%s|%s|%s|%s|%s|%.2f|%.2f|%d",
+    //                  D_ID, D_W_ID, D_NAME, D_STREET_1, D_STREET_2,
+    //                  D_CITY, D_STATE, D_ZIP,
+    //                  D_TAX.to_double(), D_YTD.to_double(), D_NEXT_O_ID));
+    // }
 
 };
 
@@ -176,12 +176,12 @@ struct tpcc_history_tuple {
     decimal H_AMOUNT;
     char    H_DATA [STRSIZE(25)];
 
-    c_str tuple_to_str() {
-        return(c_str("HIST = %d|%d|%d|%d|%d|%.2f|%.2f|%s",
-                     H_C_ID, H_C_D_ID, H_C_W_ID, H_D_ID,
-                     H_W_ID, H_DATE, H_AMOUNT.to_double(),
-                     H_DATA));
-    }
+    // c_str tuple_to_str() {
+    //     return(c_str("HIST = %d|%d|%d|%d|%d|%.2f|%.2f|%s",
+    //                  H_C_ID, H_C_D_ID, H_C_W_ID, H_D_ID,
+    //                  H_W_ID, H_DATE, H_AMOUNT.to_double(),
+    //                  H_DATA));
+    // }
 };
 
 
@@ -372,12 +372,12 @@ struct tpcc_warehouse_tuple {
     decimal W_TAX;
     decimal W_YTD;
 
-    c_str tuple_to_str() {
-        return(c_str("WH= %d|%s|%s|%s|%s|%s|%s|%.2f|%.2f",
-                     W_ID, W_NAME, W_STREET_1, W_STREET_2,
-                     W_CITY, W_STATE, W_ZIP,
-                     W_TAX.to_double(), W_YTD.to_double()));
-    }
+    // c_str tuple_to_str() {
+    //     return(c_str("WH= %d|%s|%s|%s|%s|%s|%s|%.2f|%.2f",
+    //                  W_ID, W_NAME, W_STREET_1, W_STREET_2,
+    //                  W_CITY, W_STATE, W_ZIP,
+    //                  W_TAX.to_double(), W_YTD.to_double()));
+    // }
 };
 
 struct tpcc_warehouse_tuple_key {

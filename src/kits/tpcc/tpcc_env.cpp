@@ -59,7 +59,7 @@ class ShoreTPCCEnv::table_builder_t : public thread_t
     int* _cids;
 public:
     table_builder_t(ShoreTPCCEnv* env, const int id, long start, long count, int* cids)
-	: thread_t(c_str("LD-%d",id)),
+	: thread_t(string("LD-%d", id)),
           _env(env), _start(start), _count(count), _cids(cids) { }
     virtual void work();
 };

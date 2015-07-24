@@ -301,7 +301,7 @@ payment_input_t::operator= (const payment_input_t& rhs)
     _h_amount = rhs._h_amount;
 
     if (rhs._c_last) {
-        store_string(_c_last, rhs._c_last);
+        strcpy(_c_last, rhs._c_last);
     }
 
     return (*this);
@@ -418,7 +418,7 @@ order_status_input_t::operator= (const order_status_input_t& rhs)
     _o_ol_cnt = rhs._o_ol_cnt;
 
     if (rhs._c_last) {
-        store_string(_c_last, rhs._c_last);
+        strcpy(_c_last, rhs._c_last);
     }
 
     return (*this);
