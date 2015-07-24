@@ -336,19 +336,6 @@ struct tpcc_stock_tuple {
 
     char S_DIST[10][STRSIZE(24)];
 
-#if 0
-    char S_DIST_01 [STRSIZE(24)];
-    char S_DIST_02 [STRSIZE(24)];
-    char S_DIST_03 [STRSIZE(24)];
-    char S_DIST_04 [STRSIZE(24)];
-    char S_DIST_05 [STRSIZE(24)];
-    char S_DIST_06 [STRSIZE(24)];
-    char S_DIST_07 [STRSIZE(24)];
-    char S_DIST_08 [STRSIZE(24)];
-    char S_DIST_09 [STRSIZE(24)];
-    char S_DIST_10 [STRSIZE(24)];
-#endif
-
     char S_DATA    [STRSIZE(50)];
 };
 

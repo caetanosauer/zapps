@@ -106,7 +106,7 @@ void ShoreTPCCEnv::print_throughput(const double iQueriedSF,
                                     const int iSpread,
                                     const int iNumOfThreads,
                                     const double delay,
-                                    const ulong_t mioch,
+                                    const unsigned long mioch,
                                     const double avgcpuusage)
 {
     CRITICAL_SECTION(last_stats_cs, _last_stats_mutex);
@@ -492,7 +492,7 @@ w_rc_t ShoreTPCCEnv::xct_populate_one_unit(const int /* xct_id */,
 	int stock_num = stock_base + i;
 	int qty = rand_integer(10, 100);
 	create_a_string_with_original(stock_data, 26, 50, 10);
-	for(uint_t j=0; j < sizeof(stock_dist)/sizeof(stock_dist[0]); j++) {
+	for(size_t j=0; j < sizeof(stock_dist)/sizeof(stock_dist[0]); j++) {
 	    create_random_a_string(stock_dist[j], 24, 24);
 	}
 	// insert stock
@@ -861,11 +861,12 @@ w_rc_t ShoreTPCCEnv::xct_new_order(const int xct_id,
 	prst->get_value(6+pnoin._d_id, astock.S_DIST[pnoin._d_id], 25);
 	prst->get_value(16, astock.S_DATA, 51);
 
-	char c_s_brand_generic;
-	if (strstr(aitem.I_DATA, "ORIGINAL") != NULL &&
-	    strstr(astock.S_DATA, "ORIGINAL") != NULL)
-	    c_s_brand_generic = 'B';
-	else c_s_brand_generic = 'G';
+        // CS: not used
+	// char c_s_brand_generic;
+	// if (strstr(aitem.I_DATA, "ORIGINAL") != NULL &&
+	//     strstr(astock.S_DATA, "ORIGINAL") != NULL)
+	//     c_s_brand_generic = 'B';
+	// else c_s_brand_generic = 'G';
 
 	prst->get_value(4, astock.S_ORDER_CNT);
 	astock.S_ORDER_CNT++;
@@ -1442,10 +1443,10 @@ w_rc_t ShoreTPCCEnv::xct_delivery(const int xct_id,
     std::vector<int> dlist(DISTRICTS_PER_WAREHOUSE);
     int d_id;
     w_rc_t e = _xct_delivery_helper(xct_id, pdin, dlist, d_id, SPLIT_TRX);
-    while(SPLIT_TRX && e.is_error() && e.err_num() == smlevel_0::eDEADLOCK) {
+    while(SPLIT_TRX && e.is_error() && e.err_num() == eDEADLOCK) {
 	W_COERCE(_pssm->abort_xct());
 	W_DO(_pssm->begin_xct());
-	atomic_inc_32(&delivery_abort_ctr);
+        lintel::unsafe::atomic_fetch_add(&delivery_abort_ctr, 1);
 	dlist.push_back(d_id); // retry the failed trx
 	e = _xct_delivery_helper(xct_id, pdin, dlist, d_id, SPLIT_TRX);
     }
@@ -1492,7 +1493,7 @@ w_rc_t ShoreTPCCEnv::_xct_delivery_helper(const int xct_id,
     lowrep.set(_porder_line_desc->maxsize());
     highrep.set(_porder_line_desc->maxsize());
 
-    for(uint_t i=0; i < dlist.size(); i++) {
+    for(size_t i=0; i < dlist.size(); i++) {
         dlist[i] = i+1;
     }
     if(SPLIT_TRX) {
@@ -1651,6 +1652,7 @@ w_rc_t ShoreTPCCEnv::_xct_delivery_helper(const int xct_id,
     prcust->print_tuple();
 #endif
 
+    return RCOK;
 }
 
 
