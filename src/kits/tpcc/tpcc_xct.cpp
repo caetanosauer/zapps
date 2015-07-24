@@ -30,6 +30,7 @@
 
 #include "tpcc_env.h"
 #include "tpcc_random.h"
+#include "sort.h"
 
 #include <vector>
 #include <numeric>
@@ -1777,12 +1778,12 @@ w_rc_t ShoreTPCCEnv::xct_stock_level(const int xct_id,
     assert (ol_sorter.count());
 
     // 2b. Sort orderline tuples on i_id
-    asc_sort_iter_impl ol_list_sort_iter(_pssm, &ol_list, &ol_sorter);
+    asc_sort_iter_impl ol_list_sort_iter(&ol_list, &ol_sorter);
     int last_i_id = -1;
     int count = 0;
 
     // 2c. Nested loop join order_line with stock
-    W_DO(ol_list_sort_iter.next(_pssm, eof, rsb));
+    W_DO(ol_list_sort_iter.next(eof, rsb));
     while (!eof) {
 	// use the index to find the corresponding stock tuple
 	int i_id;
@@ -1811,7 +1812,7 @@ w_rc_t ShoreTPCCEnv::xct_stock_level(const int xct_id,
 		   xct_id, count, i_id, quantity);
 
 	}
-	W_DO(ol_list_sort_iter.next(_pssm, eof, rsb));
+	W_DO(ol_list_sort_iter.next(eof, rsb));
     }
 
 #ifdef PRINT_TRX_RESULTS

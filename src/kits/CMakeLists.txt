@@ -23,6 +23,7 @@ set(kits_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/random_input.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/confparser.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shore_worker.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sort.cpp
 
     # TPC-B
     ${CMAKE_CURRENT_SOURCE_DIR}/tpcb/tpcb_client.cpp
