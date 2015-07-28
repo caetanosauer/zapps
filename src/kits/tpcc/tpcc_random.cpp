@@ -30,11 +30,12 @@
  */
 
 
-#include "workload/tpcc/tpcc_random.h"
-#include "workload/tpcc/tpcc_const.h"
+#include "tpcc_random.h"
+#include "tpcc_const.h"
+#include "util/randgen.h"
+#include "thread.h"
 
-
-ENTER_NAMESPACE(tpcc);
+namespace tpcc {
 
 
 /** Terminology
@@ -204,7 +205,8 @@ int random_xct_type(int selected)
     sum+=PROB_STOCK_LEVEL;
     if (random_type < sum)
 	return XCT_STOCK_LEVEL;
+
+    return 0;
 }
 
-
-EXIT_NAMESPACE(tpcc);
+};

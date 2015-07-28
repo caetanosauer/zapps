@@ -26,6 +26,8 @@
 
 #include "MersenneTwisterRandom.hpp"
 
+#include <cassert>
+
 class randgen_t
 {
     MersenneTwisterRandom rng;

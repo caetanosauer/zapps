@@ -1,13 +1,15 @@
+#include "tls.h"
 #include "util/random_input.h"
+
+// Random number generator stored in TLS
+DECLARE_TLS(randgen_t, randgen_tls);
 
 const char CAPS_CHAR_ARRAY[]  = { "ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
 const char NUMBERS_CHAR_ARRAY[] = { "012345789" };
 
 int URand(const int low, const int high)
 {
-  thread_t* self = thread_get_self();
-  assert (self);
-  randgen_t* randgenp = self->randgen();
+  randgen_t* randgenp = randgen_tls.get();
   assert (randgenp);
 
   int d = high - low + 1;

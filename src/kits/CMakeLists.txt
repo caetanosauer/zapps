@@ -41,6 +41,7 @@ set(kits_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/tpcc_schema.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/tpcc_schema_man.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/tpcc_xct.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/tpcc_random.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tpcc/templates.cpp
 
     # KITS ZAPPS INTERFACE
