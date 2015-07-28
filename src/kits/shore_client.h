@@ -105,7 +105,11 @@ int close_test_env();
 
 const int DF_WARMUP_INTERVAL = 2; // 2 secs
 
-enum MeasurementType { MT_UNDEF, MT_NUM_OF_TRXS, MT_TIME_DUR };
+enum MeasurementType {
+    MT_UNDEF,
+    MT_NUM_OF_TRXS,
+    MT_TIME_DUR
+};
 
 
 /********************************************************************

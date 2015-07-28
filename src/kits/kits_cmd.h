@@ -2,6 +2,7 @@
 #define KITS_CMD_H
 
 #include "command.h"
+#include "shore_client.h"
 
 class ShoreEnv;
 class sm_options;
@@ -9,6 +10,9 @@ class sm_options;
 class KitsCommand : public Command
 {
 public:
+    KitsCommand();
+    virtual ~KitsCommand() {}
+
     virtual void setupOptions();
     virtual void run();
 protected:
@@ -33,14 +37,21 @@ protected:
     bool opt_eager;
     bool opt_cleanShutdown;
     bool opt_truncateLog;
-
+    unsigned opt_archWorkspace;
+    bool opt_skew;
     bool opt_spread;
+
+    MeasurementType mtype;
 
     // overridden in sub-commands to set their own options
     virtual void loadOptions(sm_options& opt);
 
     template<class Client, class Environment> void runBenchmarkSpec();
     void runBenchmark();
+
+    virtual void doWork();
+    void forkClients();
+    void joinClients();
 
     template <class Environment> void initShoreEnv();
     void init();
@@ -49,6 +60,10 @@ protected:
     // Filesystem functions
     void mkdirs(string);
     void ensureEmptyPath(string);
+
+private:
+    std::vector<base_client_t*> clients;
+    bool clientsForked;
 };
 
 #endif

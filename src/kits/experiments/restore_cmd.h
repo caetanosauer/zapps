@@ -18,10 +18,15 @@ protected:
     unsigned opt_failDelay;
     bool opt_crash;
     int opt_crashDelay;
-    float opt_postRestoreWorkFactor;
-    bool opt_concurrentArchiving;
+    bool opt_waitForRestore;
+    bool opt_offline;
+    bool opt_onDemand;
+    bool opt_randomOrder;
+
+    bool hasFailed;
 
     virtual void loadOptions(sm_options& opt);
+    virtual void doWork();
 
     void archiveLog();
 };

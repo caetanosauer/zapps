@@ -36,7 +36,7 @@ void KitsCommand::setupOptions()
             "If set, log and archive folders are emptied, database files \
             and backups are deleted, and dataset is loaded from scratch")
         ("bufsize", po::value<int>(&opt_bufsize)->default_value(0),
-            "Size of buffer pool in Kbytes")
+            "Size of buffer pool in MB")
         ("trxs", po::value<int>(&opt_num_trxs)->default_value(0),
             "Number of transactions to execute")
         ("duration", po::value<unsigned>(&opt_duration)->default_value(0),
@@ -52,14 +52,14 @@ void KitsCommand::setupOptions()
             ->implicit_value(true),
             "Attach each worker thread to a fixed core for improved concurrency")
         ("logsize", po::value<unsigned>(&opt_logsize)
-            ->default_value(10485760),
-            "Maximum size of log (in KB) (default 10GB)")
+            ->default_value(10000),
+            "Maximum size of log (in MB) (default 10GB)")
         ("logbufsize", po::value<unsigned>(&opt_logbufsize)
-            ->default_value(81920),
-            "Size of log buffer (in KB) (default 80MB)")
+            ->default_value(80),
+            "Size of log buffer (in MB) (default 80)")
         ("quota", po::value<unsigned>(&opt_quota)
-            ->default_value(12097512),
-            "Maximum size of device (in KB) (default 12GB)")
+            ->default_value(12000),
+            "Maximum size of device (in MB) (default 12GB)")
         ("eager", po::value<bool>(&opt_eager)->default_value(true)
             ->implicit_value(true),
             "Run log archiving in eager mode")
@@ -69,8 +69,50 @@ void KitsCommand::setupOptions()
         ("truncateLog", po::value<bool>(&opt_truncateLog)->default_value(false)
             ->implicit_value(true),
             "Truncate log until last checkpoint after loading")
+        ("archWorkspace", po::value<unsigned>(&opt_archWorkspace)
+            ->default_value(100),
+            "Size of log archiver sort workspace in MB")
+        ("skew", po::value<bool>(&opt_skew)->default_value(false)
+            ->implicit_value(true),
+            "Activate skew on transaction inputs (currently only 80:20 skew \
+            is supported, i.e., 80% of access to 20% of data")
     ;
 }
+
+KitsCommand::KitsCommand()
+    : mtype(MT_UNDEF), clientsForked(false)
+{
+}
+
+/*
+ * Thread object usied for the simple purpose of setting the skew parameters.
+ * This is required because the random number generator is available as a
+ * member of the Kits thread_t class. Thus, calling URand from a non-Kits
+ * thread causes a failure.
+ *
+ * TODO: Get rid of this nonsense design and decouple random number generation
+ * from thread objetcs. In fact, we could try to get rid of thread_t completely
+ */
+class skew_setter_thread : public thread_t
+{
+public:
+    skew_setter_thread(ShoreEnv* shoreEnv)
+        : thread_t("skew_setter"), shoreEnv(shoreEnv)
+    {}
+
+    virtual ~skew_setter_thread()
+    {}
+
+    virtual void work()
+    {
+        // area, load, start_imbalance, skew_type
+        shoreEnv->set_skew(20, 80, 1, 1);
+        shoreEnv->start_load_imbalance();
+    }
+
+private:
+    ShoreEnv* shoreEnv;
+};
 
 void KitsCommand::run()
 {
@@ -120,8 +162,6 @@ void KitsCommand::runBenchmarkSpec()
     int current_prs_id = -1;
     int wh_id = 0;
 
-    Client* testers[MAX_NUM_OF_THR];
-
     shoreEnv->reset_stats();
 
     // reset monitor stats
@@ -131,38 +171,30 @@ void KitsCommand::runBenchmarkSpec()
 
     // set measurement state to measure - start counting everything
     TRACE(TRACE_ALWAYS, "begin measurement\n");
-    shoreEnv->set_measure(MST_MEASURE);
     stopwatch_t timer;
-
-    // kick-off checkpoint thread
-    // checkpointer_t * chkpter = NULL;
-    // if (shoreEnv->get_chkpt_freq() > 0) {
-    //     TRACE(TRACE_ALWAYS, "Starting checkpoint thread\n");
-    //     chkpter = new checkpointer_t(shoreEnv);
-    //     chkpter->fork();
-    // }
 
     if (opt_queried_sf <= 0) {
         opt_queried_sf = shoreEnv->get_sf();
     }
 
-    MeasurementType mtype = opt_duration > 0 ? MT_TIME_DUR : MT_NUM_OF_TRXS;
-
-    // 1. create and fork client clients
-    int trxsPerThread = opt_duration > 0 ?  0 : opt_num_trxs / opt_num_threads;
+    // 1. create client threads
+    mtype = opt_duration > 0 ? MT_TIME_DUR : MT_NUM_OF_TRXS;
+    int trxsPerThread = opt_num_trxs / opt_num_threads;
     for (int i = 0; i < opt_num_threads; i++) {
         // create & fork testing threads
         if (opt_spread) {
             wh_id = (i%(int)opt_queried_sf)+1;
         }
 
-        testers[i] = new Client("client-" + std::to_string(i), i,
+        Client* client = new Client(
+                "client-" + std::to_string(i), i,
                 (Environment*) shoreEnv,
-                mtype, opt_select_trx, trxsPerThread,
+                mtype, opt_select_trx,
+                trxsPerThread,
                 current_prs_id /* cpu id -- see below */,
                 wh_id, opt_queried_sf);
-        assert (testers[i]);
-        testers[i]->fork();
+        w_assert0(client);
+        clients.push_back(client);
 
         // CS: 1st arg is binding type, which I don't know what it is for
         // It seems like it is a way to specify what the next CPU id is.
@@ -171,13 +203,7 @@ void KitsCommand::runBenchmarkSpec()
         // current_prs_id = next_cpu(BT_NONE, current_prs_id);
     }
 
-    // If running for a time duration, wait specified number of seconds
-    if (mtype == MT_TIME_DUR) {
-        int remaining = opt_duration;
-        while (remaining > 0) {
-            remaining = ::sleep(remaining);
-        }
-    }
+    doWork();
 
     double delay = timer.time();
     //xct_stats stats = shell_get_xct_stats();
@@ -193,17 +219,44 @@ void KitsCommand::runBenchmarkSpec()
     shoreEnv->print_throughput(opt_queried_sf, opt_spread, opt_num_threads, delay,
             miochs, usage);
 
+    joinClients();
+}
+
+void KitsCommand::forkClients()
+{
+    for (size_t i = 0; i < clients.size(); i++) {
+        clients[i]->fork();
+    }
+    clientsForked = true;
+    shoreEnv->set_measure(MST_MEASURE);
+}
+
+void KitsCommand::joinClients()
+{
     shoreEnv->set_measure(MST_DONE);
 
-    // 2. join the tester threads
-    for (int i=0; i<opt_num_threads; i++) {
-        testers[i]->join();
-        if (testers[i]->rv()) {
-            TRACE( TRACE_ALWAYS, "Error in testing...\n");
-            TRACE( TRACE_ALWAYS, "Exiting...\n");
-            assert (false);
+    if (clientsForked) {
+        for (size_t i = 0; i < clients.size(); i++) {
+            clients[i]->join();
+            if (clients[i]->rv()) {
+                throw runtime_error("Client thread reported error");
+            }
+            delete (clients[i]);
         }
-        delete (testers[i]);
+        clientsForked = false;
+    }
+}
+
+void KitsCommand::doWork()
+{
+    forkClients();
+
+    // If running for a time duration, wait specified number of seconds
+    if (mtype == MT_TIME_DUR) {
+        int remaining = opt_duration;
+        while (remaining > 0) {
+            remaining = ::sleep(remaining);
+        }
     }
 }
 
@@ -231,7 +284,8 @@ void KitsCommand::initShoreEnv()
 
     shoreEnv->set_clobber(opt_load);
     shoreEnv->set_device(opt_dbfile);
-    shoreEnv->set_quota(opt_quota);
+    // SM expects quota in KB
+    shoreEnv->set_quota(opt_quota * 1024);
 
     shoreEnv->start();
 }
@@ -279,13 +333,15 @@ void KitsCommand::loadOptions(sm_options& options)
     options.set_string_option("sm_logdir", logdir);
     mkdirs(logdir);
 
-    options.set_int_option("sm_logsize", opt_logsize);
-    options.set_int_option("sm_logbufsize", opt_logbufsize);
+    options.set_int_option("sm_logsize", opt_logsize * 1024);
+    options.set_int_option("sm_logbufsize", opt_logbufsize * 1024);
 
     if (!archdir.empty()) {
         options.set_bool_option("sm_archiving", true);
         options.set_string_option("sm_archdir", archdir);
         options.set_bool_option("sm_archiver_eager", opt_eager);
+        options.set_int_option("sm_archiver_workspace_size",
+                opt_archWorkspace * 1048576);
         mkdirs(archdir);
     }
 
@@ -298,9 +354,9 @@ void KitsCommand::loadOptions(sm_options& options)
 
     if (opt_bufsize <= 0) {
         // TODO: default size for buffer pool may depend on SF and benchmark
-        opt_bufsize = 8192; // 8 MB
+        opt_bufsize = 8; // 8 MB
     }
-    options.set_int_option("sm_bufpoolsize", opt_bufsize);
+    options.set_int_option("sm_bufpoolsize", opt_bufsize * 1024);
 
     options.set_bool_option("sm_shutdown_clean", opt_cleanShutdown);
     options.set_bool_option("sm_truncate_log", opt_truncateLog);

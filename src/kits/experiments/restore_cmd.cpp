@@ -6,9 +6,9 @@
 class FailureThread : public smthread_t
 {
 public:
-    FailureThread(vid_t vid, unsigned delay, bool evict)
+    FailureThread(vid_t vid, unsigned delay, bool evict, bool* flag)
         : smthread_t(t_regular, "FailureThread"),
-        vid(vid), delay(delay), evict(evict)
+        vid(vid), delay(delay), evict(evict), flag(flag)
     {
     }
 
@@ -21,12 +21,16 @@ public:
         vol_t* vol = smlevel_0::vol->get(vid);
         w_assert0(vol);
         vol->mark_failed(evict);
+
+        *flag = true;
+        lintel::atomic_thread_fence(lintel::memory_order_release);
     }
 
 private:
     vid_t vid;
     unsigned delay;
     bool evict;
+    bool* flag;
 };
 
 void RestoreCmd::setupOptions()
@@ -44,6 +48,16 @@ void RestoreCmd::setupOptions()
         ("instant", po::value<bool>(&opt_instant)->default_value(true)
             ->implicit_value(true),
             "Use instant restore (i.e., access data before restore is done)")
+        ("ondemand", po::value<bool>(&opt_onDemand)->default_value(true)
+            ->implicit_value(true),
+            "Support on-demand restore scheduling")
+        ("offline", po::value<bool>(&opt_offline)->default_value(false)
+            ->implicit_value(true),
+            "Perform restore offline (i.e., without concurrent transactions)")
+        ("randomOrder", po::value<bool>(&opt_randomOrder)->default_value(false)
+            ->implicit_value(true),
+            "Single-pass policy of scheduler proceeds in random order among \
+            segments, instead of sequential")
         ("evict", po::value<bool>(&opt_evict)->default_value(false)
             ->implicit_value(true),
             "Evict all pages from buffer pool when failure happens")
@@ -56,20 +70,9 @@ void RestoreCmd::setupOptions()
             "Number of seconds passed between media and system failure. \
             If <= 0, system comes back up with device failed, i.e., \
             volume is marked failed immediately after log analysis.")
-        ("postRestoreWorkFactor", po::value<float>(&opt_postRestoreWorkFactor)
-            ->default_value(5.0),
-            "Numer of transactions to execute after media failure is the \
-            number executed before failure times this factor")
-        ("concurrentArchiving", po::value<bool>(&opt_concurrentArchiving)
-            ->default_value(false)
-            ->implicit_value(true),
-            "Run log archiving concurrently with benchmark execution and \
-            restore, instead of generating log archive \"offline\" when \
-            marking the volume as failed")
-        // further options to add:
-        // fail volume again while it is being restored
-        // fail and restore multiple times in a loop
-        //
+        ("waitForRestore", po::value<bool>(&opt_waitForRestore)
+            ->default_value(false)->implicit_value(true),
+            "Finish benchmark only when restore is finished")
     ;
 }
 
@@ -87,8 +90,15 @@ void RestoreCmd::archiveLog()
 void RestoreCmd::loadOptions(sm_options& options)
 {
     KitsCommand::loadOptions(options);
+
+    if (opt_offline) {
+        opt_singlePass = true;
+    }
     options.set_int_option("sm_restore_segsize", opt_segmentSize);
     options.set_bool_option("sm_restore_instant", opt_instant);
+    options.set_bool_option("sm_restore_sched_singlepass", opt_singlePass);
+    options.set_bool_option("sm_restore_sched_ondemand", opt_onDemand);
+    options.set_bool_option("sm_restore_sched_random", opt_randomOrder);
 }
 
 void RestoreCmd::run()
@@ -123,8 +133,13 @@ void RestoreCmd::run()
     }
 
     // STEP 2 - spawn failure thread and run benchmark
-    FailureThread* t = new FailureThread(vid, opt_failDelay, opt_evict);
-    t->fork();
+    FailureThread* t = NULL;
+    if (!opt_offline) {
+        hasFailed = false;
+        t = new FailureThread(vid, opt_failDelay, opt_evict,
+                &hasFailed);
+        t->fork();
+    }
 
     // TODO if crash is on, move runBenchmark into a separate thread
     // and crash after specified delay. To crash, look at the restart
@@ -134,11 +149,43 @@ void RestoreCmd::run()
     // Meanwhile, the thread running the benchmark will accumulate
     // errors, which should be ok (see trx_worker_t::_serve_action).
 
-    // opt_num_trxs *= opt_postRestoreWorkFactor;
+    // This will call doWork()
     runBenchmark();
 
-    t->join();
-    delete t;
+    if (t) {
+        t->join();
+        delete t;
+    }
 
     finish();
+}
+
+void RestoreCmd::doWork()
+{
+    vid_t vid(1);
+    vol_t* vol = smlevel_0::vol->get(vid);
+    w_assert0(vol);
+
+    if (opt_offline) {
+        // run benchmark until end and then mark failed
+        if (opt_num_trxs > 0 || opt_duration > 0) {
+            KitsCommand::doWork();
+            joinClients();
+        }
+        vol->mark_failed(opt_evict);
+    }
+    else {
+        // Wait for failure thread to mark device failed
+        sleep(opt_failDelay);
+        while (!hasFailed) {
+            sleep(1);
+            lintel::atomic_thread_fence(lintel::memory_order_consume);
+        }
+    }
+
+    // Now wait for device to be restored -- check every 5 seconds
+    while (vol->is_failed()) {
+        sleep(5);
+        vol->check_restore_finished();
+    }
 }
