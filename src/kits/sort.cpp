@@ -34,6 +34,16 @@
 
 const int MIN_TUPLES_FOR_SORT = 250;
 
+// Copied from macro DEFINE_ROW_CACHE_TLS
+// Required for every table_man_t instance
+DECLARE_TLS(row_cache_t<asc_sort_buffer_t>, asc_sort_buffer_cache);
+
+template<> row_cache_t<asc_sort_buffer_t>*
+table_man_t<asc_sort_buffer_t>::pcache_link::tls_get()
+{
+    return asc_sort_buffer_cache;
+}
+
 
 /**********************************************************************
  *
