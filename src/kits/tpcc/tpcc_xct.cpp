@@ -736,9 +736,11 @@ w_rc_t ShoreTPCCEnv::xct_new_order(const int xct_id,
     tuple_guard<order_line_man_impl> prol(_porder_line_man);
 
     rep_row_t areprow(_pcustomer_man->ts());
+    rep_row_t areprowkey(_pcustomer_man->ts());
 
     // allocate space for the biggest of the 8 table representations
     areprow.set(_pcustomer_desc->maxsize());
+    areprowkey.set(_pcustomer_desc->maxsize());
 
     prwh->_rep = &areprow;
     prdist->_rep = &areprow;
@@ -748,6 +750,15 @@ w_rc_t ShoreTPCCEnv::xct_new_order(const int xct_id,
     pritem->_rep = &areprow;
     prst->_rep = &areprow;
     prol->_rep = &areprow;
+
+    prwh->_rep_key = &areprowkey;
+    prdist->_rep_key = &areprowkey;
+    prcust->_rep_key = &areprowkey;
+    prno->_rep_key = &areprowkey;
+    prord->_rep_key = &areprowkey;
+    pritem->_rep_key = &areprowkey;
+    prst->_rep_key = &areprowkey;
+    prol->_rep_key = &areprowkey;
 
 
     /* SELECT c_discount, c_last, c_credit, w_tax
@@ -979,15 +990,24 @@ w_rc_t ShoreTPCCEnv::xct_payment(const int xct_id,
     tuple_guard<customer_man_impl> prcust(_pcustomer_man);
     tuple_guard<history_man_impl> prhist(_phistory_man);
 
+    // CS TODO -- as in TPC-B, this makes no sense!
+    // Change allocation mechanism!
     rep_row_t areprow(_pcustomer_man->ts());
+    rep_row_t areprowkey(_pcustomer_man->ts());
 
     // allocate space for the biggest of the 4 table representations
     areprow.set(_pcustomer_desc->maxsize());
+    areprowkey.set(_pcustomer_desc->maxsize());
 
     prwh->_rep = &areprow;
     prdist->_rep = &areprow;
     prcust->_rep = &areprow;
     prhist->_rep = &areprow;
+
+    prwh->_rep_key = &areprowkey;
+    prdist->_rep_key = &areprowkey;
+    prcust->_rep_key = &areprowkey;
+    prhist->_rep_key = &areprowkey;
 
     // 1. retrieve warehouse for update
     TRACE( TRACE_TRX_FLOW, "App: %d PAY:wh-idx-upd (%d)\n",
@@ -1251,13 +1271,19 @@ w_rc_t ShoreTPCCEnv::xct_order_status(const int xct_id,
     tuple_guard<order_line_man_impl> prol(_porder_line_man);
 
     rep_row_t areprow(_pcustomer_man->ts());
+    rep_row_t areprowkey(_pcustomer_man->ts());
 
     // allocate space for the biggest of the 3 table representations
     areprow.set(_pcustomer_desc->maxsize());
+    areprowkey.set(_pcustomer_desc->maxsize());
 
     prcust->_rep = &areprow;
     prord->_rep = &areprow;
     prol->_rep = &areprow;
+
+    prcust->_rep_key = &areprowkey;
+    prord->_rep_key = &areprowkey;
+    prol->_rep_key = &areprowkey;
 
     rep_row_t lowrep(_pcustomer_man->ts());
     rep_row_t highrep(_pcustomer_man->ts());
@@ -1476,14 +1502,20 @@ w_rc_t ShoreTPCCEnv::_xct_delivery_helper(const int xct_id,
     tuple_guard<customer_man_impl> prcust(_pcustomer_man);
 
     rep_row_t areprow(_pcustomer_man->ts());
+    rep_row_t areprowkey(_pcustomer_man->ts());
 
     // allocate space for the biggest of the 4 table representations
-    areprow.set(_pcustomer_desc->maxsize());
+    areprowkey.set(_pcustomer_desc->maxsize());
 
     prno->_rep = &areprow;
     prord->_rep = &areprow;
     prol->_rep = &areprow;
     prcust->_rep = &areprow;
+
+    prno->_rep_key = &areprowkey;
+    prord->_rep_key = &areprowkey;
+    prol->_rep_key = &areprowkey;
+    prcust->_rep_key = &areprowkey;
 
     rep_row_t lowrep(_porder_line_man->ts());
     rep_row_t highrep(_porder_line_man->ts());
@@ -1683,13 +1715,19 @@ w_rc_t ShoreTPCCEnv::xct_stock_level(const int xct_id,
     tuple_guard<stock_man_impl> prst(_pstock_man);
 
     rep_row_t areprow(_pdistrict_man->ts());
+    rep_row_t areprowkey(_pdistrict_man->ts());
 
     // allocate space for the biggest of the 3 table representations
     areprow.set(_pdistrict_desc->maxsize());
+    areprowkey.set(_pdistrict_desc->maxsize());
 
     prdist->_rep = &areprow;
     prol->_rep = &areprow;
     prst->_rep = &areprow;
+
+    prdist->_rep_key = &areprowkey;
+    prol->_rep_key = &areprowkey;
+    prst->_rep_key = &areprowkey;
 
     // 1. get next_o_id from the district
 
@@ -1859,11 +1897,14 @@ w_rc_t ShoreTPCCEnv::xct_mbench_wh(const int xct_id,
     tuple_guard<warehouse_man_impl> prwh(_pwarehouse_man);
 
     rep_row_t areprow(_pwarehouse_man->ts());
+    rep_row_t areprowkey(_pwarehouse_man->ts());
 
     // allocate space for the biggest of the 4 table representations
     areprow.set(_pwarehouse_desc->maxsize());
+    areprowkey.set(_pwarehouse_desc->maxsize());
 
     prwh->_rep = &areprow;
+    prwh->_rep_key = &areprowkey;
 
     // 1. retrieve warehouse for update
     TRACE( TRACE_TRX_FLOW, "App: %d MBWH:wh-idx-upd (%d)\n",
@@ -1925,12 +1966,15 @@ w_rc_t ShoreTPCCEnv::xct_mbench_cust(const int xct_id,
 
     tuple_guard<customer_man_impl> prcust(_pcustomer_man);
 
-    rep_row_t areprow(_pcustomer_man->ts());
+    rep_row_t areprow(_pwarehouse_man->ts());
+    rep_row_t areprowkey(_pwarehouse_man->ts());
 
-    // allocate space for the table representation
-    areprow.set(_pcustomer_desc->maxsize());
+    // allocate space for the biggest of the 4 table representations
+    areprow.set(_pwarehouse_desc->maxsize());
+    areprowkey.set(_pwarehouse_desc->maxsize());
 
     prcust->_rep = &areprow;
+    prcust->_rep_key = &areprowkey;
 
     // 1. retrieve customer for update
 
