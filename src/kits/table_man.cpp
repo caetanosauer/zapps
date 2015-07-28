@@ -984,7 +984,7 @@ w_rc_t table_man_t<T>::fetch_table(ss_m* /* db */, lock_mode_t /* alm */)
 
     // W_DO(db->commit_xct());
 
-    return (RCOK);
+    return RC(eNOTIMPLEMENTED);
 }
 
 #if 0 // CS -- TODO migrate to other file

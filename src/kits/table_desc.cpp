@@ -117,13 +117,13 @@ w_rc_t table_desc_t::create_physical_index(ss_m* db, index_desc_t* index)
 
     // Add entry on catalog
     w_keystr_t kstr;
-    kstr.construct_regularkey(_name.c_str(), _name.length());
+    kstr.construct_regularkey(index->name().c_str(), index->name().length());
     W_DO(db->create_assoc(get_catalog_stid(), kstr,
                 vec_t(&stid, sizeof(stid_t))));
 
     // Print info
     TRACE( TRACE_STATISTICS, "%s %d (%s) (%s) (%s) (%s)\n",
-           index->name(), stid.store,
+           index->name().c_str(), stid.store,
            (index->is_latchless() ? "no latch" : "latch"),
            (index->is_relaxed() ? "relaxed" : "no relaxed"),
            (index->is_unique() ? "unique" : "no unique"));

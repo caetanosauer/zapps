@@ -99,7 +99,7 @@ public:
 
     ~index_desc_t();
 
-    const char*  name() const { return _name.c_str(); }
+    string  name() const { return _name; }
     unsigned field_count() const { return _field_count; }
     table_desc_t* table() const { return _table; }
 
