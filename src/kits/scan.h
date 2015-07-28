@@ -41,17 +41,16 @@ public:
         assert (_pmanager);
         if (!btcursor) open_scan();
 
+        W_DO(btcursor->next());
+
         if (btcursor->eof()) {
             eof = true;
             return RCOK;
         }
 
-        W_DO(btcursor->next());
-        bool loaded;
-
         // Load key
         btcursor->key().serialize_as_nonkeystr(tuple._rep_key->_dest);
-        loaded = _pmanager->load_key(tuple._rep_key->_dest,
+        bool loaded = _pmanager->load_key(tuple._rep_key->_dest,
                 _pmanager->table()->primary_idx(), &tuple);
         w_assert0(loaded);
 
@@ -116,17 +115,16 @@ public:
         assert (_pmanager);
         assert (btcursor);
 
+        W_DO(btcursor->next());
+
         if (btcursor->eof()) {
             eof = true;
             return RCOK;
         }
 
-        W_DO(btcursor->next());
-        bool loaded;
-
         // Load key
         btcursor->key().serialize_as_nonkeystr(tuple._rep_key->_dest);
-        loaded = _pmanager->load_key(tuple._rep_key->_dest,
+        bool loaded = _pmanager->load_key(tuple._rep_key->_dest,
                 _pindex, &tuple);
         w_assert0(loaded);
 
