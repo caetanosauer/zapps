@@ -108,9 +108,9 @@ void ShoreTPCCEnv::table_creator_t::work()
     W_COERCE(_env->db()->begin_xct());
     W_COERCE(_env->xct_populate_baseline(0, in));
 
-    W_COERCE(_env->db()->begin_xct());
-    W_COERCE(_env->_post_init_impl());
-    W_COERCE(_env->db()->commit_xct());
+    // W_COERCE(_env->db()->begin_xct());
+    // W_COERCE(_env->_post_init_impl());
+    // W_COERCE(_env->db()->commit_xct());
 
 #if 0
     /*
@@ -578,20 +578,23 @@ int ShoreTPCCEnv::post_init()
 
     // If the database is set to be padded
     if (get_pd() == PD_PADDED) {
+        // CS: not supported
+        // We should probably pad it by default at creation (TODO)
+        w_assert0(false);
         TRACE( TRACE_ALWAYS, "Checking for WH record padding...\n");
 
-        W_COERCE(db()->begin_xct());
-        w_rc_t rc = _post_init_impl();
-        if(rc.is_error()) {
-            cerr << "-> WH padding failed with: " << rc << endl;
-            rc = db()->abort_xct();
-            return (rc.err_num());
-        }
-        else {
-            TRACE( TRACE_ALWAYS, "-> Done\n");
-            rc = db()->commit_xct();
-            return (0);
-        }
+        // W_COERCE(db()->begin_xct());
+        // w_rc_t rc = _post_init_impl();
+        // if(rc.is_error()) {
+        //     cerr << "-> WH padding failed with: " << rc << endl;
+        //     rc = db()->abort_xct();
+        //     return (rc.err_num());
+        // }
+        // else {
+        //     TRACE( TRACE_ALWAYS, "-> Done\n");
+        //     rc = db()->commit_xct();
+        //     return (0);
+        // }
     }
 
     return (0);

@@ -10,6 +10,8 @@ namespace fs = boost::filesystem;
 #include "shore_env.h"
 #include "tpcb/tpcb_env.h"
 #include "tpcb/tpcb_client.h"
+#include "tpcc/tpcc_env.h"
+#include "tpcc/tpcc_client.h"
 
 #include "util/stopwatch.h"
 #include "envvar.h"
@@ -86,9 +88,12 @@ void KitsCommand::run()
 
 void KitsCommand::init()
 {
-    // just TPC-B for now
+    // just TPC-B and TPC-C for now
     if (opt_benchmark == "tpcb") {
         initShoreEnv<tpcb::ShoreTPCBEnv>();
+    }
+    else if (opt_benchmark == "tpcc") {
+        initShoreEnv<tpcc::ShoreTPCCEnv>();
     }
     else {
         throw runtime_error("Unknown benchmark string");
@@ -97,9 +102,11 @@ void KitsCommand::init()
 
 void KitsCommand::runBenchmark()
 {
-    // just TPC-B for now
     if (opt_benchmark == "tpcb") {
         runBenchmarkSpec<tpcb::baseline_tpcb_client_t, tpcb::ShoreTPCBEnv>();
+    }
+    else if (opt_benchmark == "tpcc") {
+        runBenchmarkSpec<tpcc::baseline_tpcc_client_t, tpcc::ShoreTPCCEnv>();
     }
     else {
         throw runtime_error("Unknown benchmark string");
