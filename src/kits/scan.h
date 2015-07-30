@@ -3,42 +3,73 @@
 
 #include "table_man.h"
 
-template <class TableDesc>
-class table_scan_iter_impl
+class base_scan_t
 {
-private:
-    table_man_t<TableDesc>* _pmanager;
+protected:
+    index_desc_t* _pindex;
     bt_cursor_t* btcursor;
-
-    static const slotid_t max_slot;
-
 public:
-
-    table_scan_iter_impl(TableDesc* ptable,
-                         table_man_t<TableDesc>* pmanager)
-        : _pmanager(pmanager), btcursor(NULL)
+    base_scan_t(index_desc_t* pindex)
+        : _pindex(pindex), btcursor(NULL)
     {
-        assert (_pmanager);
-        W_COERCE(open_scan());
+        w_assert1(_pindex);
     }
 
-    ~table_scan_iter_impl() {
-        delete btcursor;
-    }
+    virtual ~base_scan_t() {
+        if (btcursor) delete btcursor;
+    };
 
-
-    w_rc_t open_scan() {
+    w_rc_t open_scan(bool forward = true) {
         if (!btcursor) {
-            btcursor = new bt_cursor_t(
-                    _pmanager->table()->primary_idx()->stid(),
-                    true /* forward */);
+            btcursor = new bt_cursor_t(_pindex->stid(), forward);
         }
         return (RCOK);
     }
 
-    w_rc_t next(bool& eof, table_row_t& tuple)
+    w_rc_t open_scan(char* bound, int bsz, bool incl, bool forward = true)
     {
-        assert (_pmanager);
+        if (!btcursor) {
+            w_keystr_t kstr;
+            kstr.construct_regularkey(bound, bsz);
+            btcursor = new bt_cursor_t(_pindex->stid(), kstr, incl, forward);
+        }
+
+        return (RCOK);
+    }
+
+    w_rc_t open_scan(char* lower, int lowsz, bool lower_incl,
+                     char* upper, int upsz, bool upper_incl,
+                     bool forward = true)
+    {
+        if (!btcursor) {
+            w_keystr_t kup, klow;
+            kup.construct_regularkey(upper, upsz);
+            klow.construct_regularkey(lower, lowsz);
+            btcursor = new bt_cursor_t(
+                    _pindex->stid(),
+                    klow, lower_incl, kup, upper_incl, forward);
+        }
+
+        return (RCOK);
+    }
+
+    virtual w_rc_t next(bool& eof, table_row_t& tuple) = 0;
+
+};
+
+template <class T>
+class table_scan_iter_impl : public base_scan_t
+{
+public:
+
+    table_scan_iter_impl(table_man_t<T>* pmanager)
+        : base_scan_t(pmanager->table()->primary_idx())
+    {}
+
+    virtual ~table_scan_iter_impl() {}
+
+    virtual w_rc_t next(bool& eof, table_row_t& tuple)
+    {
         if (!btcursor) open_scan();
 
         W_DO(btcursor->next());
@@ -50,69 +81,39 @@ public:
 
         // Load key
         btcursor->key().serialize_as_nonkeystr(tuple._rep_key->_dest);
-        bool loaded = _pmanager->load_key(tuple._rep_key->_dest,
-                _pmanager->table()->primary_idx(), &tuple);
-        w_assert0(loaded);
+        tuple.load_key(tuple._rep_key->_dest, _pindex);
 
         // Load element
         char* elem = btcursor->elem();
-        loaded = _pmanager->load(&tuple, elem, _pmanager->table()->primary_idx());
-        w_assert0(loaded);
+        tuple.load_value(elem, _pindex);
 
         return (RCOK);
     }
 
 };
 
-template <class TableDesc>
-class index_scan_iter_impl
+template <class T>
+class index_scan_iter_impl : public base_scan_t
 {
 private:
-    table_man_t<TableDesc>* _pmanager;
-    index_desc_t* _pindex;
-    bt_cursor_t* btcursor;
-    bool           _need_tuple;
+    index_desc_t* _primary_idx;
+    bool          _need_tuple;
 
 public:
-
-    /* -------------------- */
-    /* --- construction --- */
-    /* -------------------- */
-
     index_scan_iter_impl(index_desc_t* pindex,
-                         table_man_t<TableDesc>* pmanager,
+                         table_man_t<T>* pmanager,
                          bool need_tuple = false)
-          : _pmanager(pmanager), _pindex(pindex), btcursor(NULL),
-          _need_tuple(need_tuple)
+          : base_scan_t(pindex), _need_tuple(need_tuple)
     {
-        assert (_pmanager);
         assert (_pindex);
+        assert (pmanager);
+        _primary_idx = pmanager->table()->primary_idx();
     }
 
-    ~index_scan_iter_impl() {
-        if (btcursor) {
-            delete btcursor;
-        }
-    };
+    virtual ~index_scan_iter_impl() { };
 
-    w_rc_t open_scan(char* lower, int lowsz, bool lower_incl,
-                     char* upper, int upsz, bool upper_incl)
+    virtual w_rc_t next(bool& eof, table_row_t& tuple)
     {
-        if (!btcursor) {
-            w_keystr_t kup, klow;
-            kup.construct_regularkey(upper, upsz);
-            klow.construct_regularkey(lower, lowsz);
-            btcursor = new bt_cursor_t(
-                    _pindex->stid(),
-                    klow, lower_incl, kup, upper_incl, true /*forward*/);
-        }
-
-        return (RCOK);
-    }
-
-    w_rc_t next(bool& eof, table_row_t& tuple)
-    {
-        assert (_pmanager);
         assert (btcursor);
 
         W_DO(btcursor->next());
@@ -122,29 +123,37 @@ public:
             return RCOK;
         }
 
-        // Load key
-        btcursor->key().serialize_as_nonkeystr(tuple._rep_key->_dest);
-        bool loaded = _pmanager->load_key(tuple._rep_key->_dest,
-                _pindex, &tuple);
-        w_assert0(loaded);
+        bool loaded = false;
 
-        if (_need_tuple) {
-            // Fetch tuple from primary index
-            char* fkey = btcursor->elem();
+        if (!_need_tuple) {
+            // Load only fields of secondary key (index key)
+            btcursor->key().serialize_as_nonkeystr(tuple._rep_key->_dest);
+            tuple.load_key(tuple._rep_key->_dest, _pindex);
+        }
+        else {
+            // Fetch complete tuple from primary index
+            index_desc_t* prim_idx = _primary_idx;
+            char* pkey = btcursor->elem();
             smsize_t elen = btcursor->elen();
-            w_keystr_t fkeystr;
-            fkeystr.construct_regularkey(fkey, elen);
 
-            ss_m::find_assoc(_pmanager->table()->primary_idx()->stid(),
-                    fkeystr, tuple._rep->_dest, elen, loaded);
+            // load primary key fields
+            tuple.load_key(pkey, prim_idx);
+            cout << "Fetching from primary with key: ";
+            tuple.print_values(cout);
+
+            // fetch and load other fields
+            w_keystr_t pkeystr;
+            pkeystr.construct_regularkey(pkey, elen);
+            ss_m::find_assoc(prim_idx->stid(), pkeystr, tuple._rep->_dest,
+                    elen, loaded);
             w_assert0(loaded);
 
-            loaded = _pmanager->load(&tuple, tuple._rep->_dest);
-            w_assert0(loaded);
+            tuple.load_value(tuple._rep->_dest, prim_idx);
+            cout << "Fetched from primary: ";
+            tuple.print_values(cout);
         }
         return (RCOK);
     }
-
 };
 
 #endif
