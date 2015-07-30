@@ -492,6 +492,7 @@ w_rc_t ShoreTPCCEnv::xct_populate_one_unit(const int /* xct_id */,
 	prord->set_value(5, carrier);
 	prord->set_value(6, olines);
 	prord->set_value(7, all_local);
+
 	W_DO(_porder_man->add_tuple(_pssm, prord));
 	// insert new order
 	if(is_new) {
@@ -1062,6 +1063,9 @@ w_rc_t ShoreTPCCEnv::xct_payment(const int xct_id,
 
 	rep_row_t lowrep(_pcustomer_man->ts());
 	rep_row_t highrep(_pcustomer_man->ts());
+
+        lowrep.set(_pcustomer_desc->maxsize());
+        highrep.set(_pcustomer_desc->maxsize());
 
 	guard< index_scan_iter_impl<customer_t> > c_iter;
 	{
@@ -1735,12 +1739,12 @@ w_rc_t ShoreTPCCEnv::xct_stock_level(const int xct_id,
     tuple_guard<order_line_man_impl> prol(_porder_line_man);
     tuple_guard<stock_man_impl> prst(_pstock_man);
 
-    rep_row_t areprow(_pdistrict_man->ts());
-    rep_row_t areprowkey(_pdistrict_man->ts());
+    rep_row_t areprow(_pcustomer_man->ts());
+    rep_row_t areprowkey(_pcustomer_man->ts());
 
     // allocate space for the biggest of the 3 table representations
-    areprow.set(_pdistrict_desc->maxsize());
-    areprowkey.set(_pdistrict_desc->maxsize());
+    areprow.set(_pcustomer_desc->maxsize());
+    areprowkey.set(_pcustomer_desc->maxsize());
 
     prdist->_rep = &areprow;
     prol->_rep = &areprow;

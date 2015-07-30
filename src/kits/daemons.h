@@ -182,6 +182,8 @@ public:
  *
  ******************************************************************/
 
+#if 0 // CS TODO
+
 template <class TableDesc>
 class index_loading_smt_t : public thread_t
 {
@@ -485,6 +487,7 @@ public:
 
 }; // EOF: dump_smt_t
 
+#endif
 
 
 /******************************************************************

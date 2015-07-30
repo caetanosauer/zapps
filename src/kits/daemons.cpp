@@ -77,6 +77,7 @@ int db_init_smt_t::rv()
 }
 
 
+#if 0 // CS TODO
 
 void close_smt_t::work()
 {
@@ -96,6 +97,8 @@ void dump_smt_t::work()
     _env->dump();
     _rv = 0;
 }
+
+#endif
 
 
 
