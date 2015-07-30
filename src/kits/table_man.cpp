@@ -473,50 +473,64 @@ w_rc_t table_man_t<T>::update_tuple(ss_m* db,
     // return (rc);
 }
 
-
-
-/*********************************************************************
- *
- *  @fn:    read_tuple
- *
- *  @brief: Access a tuple directly through its RID
- *
- *  @note:  This function should be called in the context of a trx
- *          The passed RID should be valid.
- *          No index probe its involved that's why it does not get
- *          any hint about the starting root pid.
- *
- *********************************************************************/
-
 template<class T>
-w_rc_t table_man_t<T>::read_tuple(table_row_t* /* ptuple */,
-                               lock_mode_t /* lock_mode */,
-			       latch_mode_t /* heap_latch_mode */)
+w_rc_t table_man_t<T>::print_table(ostream& os, int num_lines)
 {
-    // CS TODO
-    // assert (_ptable);
-    // assert (ptuple);
+    table_row_t* row = get_tuple();
+    rep_row_t rep(ts());
+    rep_row_t repkey(ts());
+    rep.set(table()->maxsize());
+    repkey.set(table()->maxsize());
+    row->_rep = &rep;
+    row->_rep_key = &repkey;
 
-    // if (!ptuple->is_rid_valid()) return RC(se_NO_CURRENT_TUPLE);
+    table_scan_iter_impl<T> scanner(this);
+    scanner.open_scan();
+    bool eof = false;
+    size_t i = 0;
 
-    // uint32_t system_mode = _ptable->get_pd();
-    // if (system_mode & ( PD_MRBT_LEAF | PD_MRBT_PART) ) {
-    //     heap_latch_mode = LATCH_NLS;
-	// lock_mode = NL;
-    // }
+    while (true) {
+        scanner.next(eof, *row);
+        if (eof) break;
+        if (num_lines > 0 && i++ > num_lines) break;
+        row->print_values(os);
+    }
 
-    // pin_i  pin;
-    // W_DO(pin.pin(ptuple->rid(), 0, lock_mode, heap_latch_mode));
-    // if (!load(ptuple, pin.body())) {
-    //     pin.unpin();
-    //     return RC(se_WRONG_DISK_DATA);
-    // }
-    // pin.unpin();
+    give_tuple(row);
 
-    return RC(eNOTIMPLEMENTED);
+    return RCOK;
 }
 
+template<class T>
+w_rc_t table_man_t<T>::print_index(unsigned ind, ostream& os,
+        int num_lines, bool need_tuple)
+{
+    table_row_t* row = get_tuple();
+    rep_row_t rep(ts());
+    rep_row_t repkey(ts());
+    rep.set(table()->maxsize());
+    repkey.set(table()->maxsize());
+    row->_rep = &rep;
+    row->_rep_key = &repkey;
 
+    index_desc_t* pindex = table()->get_indexes()[ind];
+    w_assert0(pindex);
+    index_scan_iter_impl<T> scanner(pindex, this, need_tuple);
+    scanner.open_scan();
+    bool eof = false;
+    size_t i = 0;
+
+    while (true) {
+        scanner.next(eof, *row);
+        if (eof) break;
+        if (num_lines > 0 && i++ > num_lines) break;
+        row->print_values(os);
+    }
+
+    give_tuple(row);
+
+    return RCOK;
+}
 
 
 /* ---------------- */

@@ -396,6 +396,21 @@ w_rc_t ShoreTPCCEnv::xct_populate_baseline(const int /* xct_id */,
     return RCOK;
 }
 
+void test_serialization(table_row_t* prol)
+{
+    // test
+    size_t size = 8192;
+    char buffer[size];
+    cout << "Tuple is "; prol->print_values(cout);
+    prol->store_key(buffer, size, prol->_ptable->primary_idx());
+    prol->load_key(buffer, prol->_ptable->primary_idx());
+    cout << "After store_key: "; prol->print_values(cout);
+    size = 8192;
+    prol->store_value(buffer, size, prol->_ptable->primary_idx());
+    prol->load_value(buffer, prol->_ptable->primary_idx());
+    cout << "After store_value: "; prol->print_values(cout);
+
+}
 
 w_rc_t ShoreTPCCEnv::xct_populate_one_unit(const int /* xct_id */,
                                            populate_one_unit_input_t& pbuin)

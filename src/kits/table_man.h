@@ -302,10 +302,10 @@ public:
 
     /*
      * print the table on screen or to files
-     * @note: PIN: right now it prints to files,
-     *             with slight modification it can print to the screen as well
      */
-    // virtual w_rc_t print_table(ss_m* db, int num_lines)=0;
+    virtual w_rc_t print_table(ostream& os, int num_lines = 0);
+    virtual w_rc_t print_index(unsigned i, ostream& os,
+            int num_lines = 0, bool need_tuple = false);
 
 
     /* --------------- */
