@@ -27,9 +27,9 @@ void KitsCommand::setupOptions()
         //     "Path to configuration file")
         ("dbfile,d", po::value<string>(&opt_dbfile)->default_value("db"),
             "Path to database file (non-empty)")
-        ("logdir,l", po::value<string>(&logdir)->required(),
+        ("logdir,l", po::value<string>(&logdir)->default_value("log"),
             "Directory containing log to be scanned")
-        ("archdir,a", po::value<string>(&archdir)->default_value(""),
+        ("archdir,a", po::value<string>(&archdir)->default_value("archive"),
             "Directory in which to store the log archive")
         ("load", po::value<bool>(&opt_load)->default_value(false)
             ->implicit_value(true),
