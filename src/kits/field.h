@@ -1,19 +1,19 @@
 /* -*- mode:C++; c-basic-offset:4 -*-
      Shore-kits -- Benchmark implementations for Shore-MT
-   
+
                        Copyright (c) 2007-2009
       Data Intensive Applications and Systems Labaratory (DIAS)
                Ecole Polytechnique Federale de Lausanne
-   
+
                          All Rights Reserved.
-   
+
    Permission to use, copy, modify and distribute this software and
    its documentation is hereby granted, provided that both the
    copyright notice and this permission notice appear in all copies of
    the software, derivative works or modified versions, and any
    portions thereof, and that both notices appear in supporting
    documentation.
-   
+
    This code is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. THE AUTHORS
@@ -54,11 +54,11 @@
  *
  * @brief: Helper for the SQL_TIME type. Value for timestamp field.
  *
- * @note:  Deprecated  
+ * @note:  Deprecated
  *
  *--------------------------------------------------------------------*/
 
-class timestamp_t 
+class timestamp_t
 {
 private:
     time_t _time;
@@ -85,14 +85,14 @@ public:
 
 
 /*---------------------------------------------------------------------
- * 
+ *
  * @enum:  sql_type_t
  *
  * @brief: Enumuration of the supported sql types
  *
  *--------------------------------------------------------------------*/
 
-enum  sqltype_t 
+enum  sqltype_t
 {
     SQL_BIT,        /* BIT == BOOL */
     SQL_SMALLINT,   /* SMALLINT */
@@ -140,15 +140,15 @@ public:
     /* -------------------- */
 
     field_desc_t()
-	:  _type(SQL_SMALLINT), _size(0), 
+	:  _type(SQL_SMALLINT), _size(0),
           _allow_null(true), _is_setup(false)
-    { 
+    {
         memset(_name, 0, MAX_FIELDNAME_LEN);
         memset(_keydesc, 0, MAX_KEYDESC_LEN);
     }
-    
-    ~field_desc_t() 
-    { 
+
+    ~field_desc_t()
+    {
     }
 
 
@@ -156,33 +156,33 @@ public:
     /* --- access methods --- */
     /* ---------------------- */
 
-    const char* name() const { 
-        //assert (_is_setup); 
-        return (_name); 
-    }
-
-    inline bool is_variable_length(sqltype_t type) const { 
+    const char* name() const {
         //assert (_is_setup);
-        return (type == SQL_VARCHAR); 
+        return (_name);
     }
 
-    inline bool is_variable_length() const { 
-        return (is_variable_length(_type)); 
-    }
-
-    inline unsigned fieldmaxsize() const { 
+    inline bool is_variable_length(sqltype_t type) const {
         //assert (_is_setup);
-        return (_size); 
+        return (type == SQL_VARCHAR);
     }
 
-    inline sqltype_t type() const { 
-        //assert (_is_setup);
-        return (_type); 
+    inline bool is_variable_length() const {
+        return (is_variable_length(_type));
     }
 
-    inline bool allow_null() const { 
+    inline unsigned fieldmaxsize() const {
         //assert (_is_setup);
-        return (_allow_null); 
+        return (_size);
+    }
+
+    inline sqltype_t type() const {
+        //assert (_is_setup);
+        return (_type);
+    }
+
+    inline bool allow_null() const {
+        //assert (_is_setup);
+        return (_allow_null);
     }
 
     /* return key description for index creation */
@@ -210,12 +210,12 @@ public:
  * @struct:  field_value_t
  *
  * @brief:   Value of a table field
- * 
+ *
  * @warning: !!! NOT-THREAD SAFE !!!
  *
  *********************************************************************/
 
-struct field_value_t 
+struct field_value_t
 {
     /** if set it shows that the field_value is setup */
     field_desc_t* _pfield_desc; /* pointer to the description of the field */
@@ -231,7 +231,7 @@ struct field_value_t
 	long long    _long;     /* LONG */
 	timestamp_t* _time;     /* TIME or DATE */
 	char*        _string;   /* FIXCHAR, VARCHAR, NUMERIC */
-    }   _value;   
+    }   _value;
 
     char* _data;      /* buffer for _value._time or _value._string */
     unsigned   _data_size; /* allocated size of the data buffer (watermark) */
@@ -243,17 +243,17 @@ struct field_value_t
     /* --- construction --- */
     /* -------------------- */
 
-    field_value_t() 
-        :  _pfield_desc(NULL), _null_flag(true), _data(NULL), 
+    field_value_t()
+        :  _pfield_desc(NULL), _null_flag(true), _data(NULL),
            _data_size(0), _real_size(0), _max_size(0)
-    { 
+    {
     }
 
 
-    field_value_t(field_desc_t* pfd) 
-        : _pfield_desc(pfd), _null_flag(true), _data(NULL), 
+    field_value_t(field_desc_t* pfd)
+        : _pfield_desc(pfd), _null_flag(true), _data(NULL),
           _data_size(0), _real_size(0), _max_size(0)
-    { 
+    {
         setup(pfd); /* It will assert if pfd = NULL */
     }
 
@@ -280,19 +280,19 @@ struct field_value_t
 
     /* access field description */
     inline field_desc_t* field_desc() { return (_pfield_desc); }
-    inline void set_field_desc(field_desc_t* fd) { 
-        assert (fd); 
-        _pfield_desc = fd; 
+    inline void set_field_desc(field_desc_t* fd) {
+        assert (fd);
+        _pfield_desc = fd;
     }
 
     /* return realsize of value */
-    inline unsigned realsize() const { 
+    inline unsigned realsize() const {
         assert (_pfield_desc);
         return (_real_size);
     }
 
     /* return maxsize of value */
-    inline unsigned maxsize() const { 
+    inline unsigned maxsize() const {
         assert (_pfield_desc);
         return (_max_size);
     }
@@ -302,18 +302,18 @@ struct field_value_t
     /* --- value related functions --- */
     /* ------------------------------- */
 
-   
+
     /* allocate the space for _data */
     void alloc_space(const unsigned size);
 
     /* set min/max allowed value */
     void set_min_value();
-    void set_max_value();    
+    void set_max_value();
 
     /* null field */
-    inline bool is_null() const { 
+    inline bool is_null() const {
         assert (_pfield_desc);
-        return (_null_flag); 
+        return (_null_flag);
     }
 
     inline void set_null() { 
@@ -323,9 +323,9 @@ struct field_value_t
     }
 
     /* var length */
-    inline bool is_variable_length() { 
-        assert (_pfield_desc); 
-        return (_pfield_desc->is_variable_length()); 
+    inline bool is_variable_length() {
+        assert (_pfield_desc);
+        return (_pfield_desc->is_variable_length());
     }
 
     /* copy current value out */
@@ -421,7 +421,7 @@ inline void field_desc_t::setup(sqltype_t type,
         break;
     case SQL_TIME:
         _size = sizeof(timestamp_t);
-        break;    
+        break;
     case SQL_FIXCHAR:
     case SQL_NUMERIC:
     case SQL_SNUMERIC:
@@ -448,7 +448,7 @@ inline void field_desc_t::setup(sqltype_t type,
  *
  *  @brief: Private function. Returns a string with the key description
  *
- *  @note:  Private function, it does not lock the key desc lock. The 
+ *  @note:  Private function, it does not lock the key desc lock. The
  *          public function only locks.
  *
  *********************************************************************/
@@ -460,19 +460,19 @@ inline const char* field_desc_t::_set_keydesc()
 
     // else construct the _keydesc
     //if (!_keydesc) _keydesc = (char*)malloc( MAX_KEYDESC_LEN );
-  
+
     switch (_type) {
     case SQL_BIT:
-    case SQL_SMALLINT:  
-    case SQL_CHAR:  
-    case SQL_INT:       
+    case SQL_SMALLINT:
+    case SQL_CHAR:
+    case SQL_INT:
         sprintf(_keydesc, "i%d", _size); break;
 
-    case SQL_FLOAT:     
-    case SQL_LONG:     
+    case SQL_FLOAT:
+    case SQL_LONG:
         sprintf(_keydesc, "f%d", _size); break;
-    
-    case SQL_VARCHAR:   
+
+    case SQL_VARCHAR:
         sprintf(_keydesc, "b*%d", _size); break;
 
     case SQL_TIME:
@@ -534,19 +534,19 @@ inline void field_value_t::setup(field_desc_t* pfd)
     case SQL_TIME:
         sz = sizeof(timestamp_t);
         _data_size = sz;
-        _real_size = sz; 
+        _real_size = sz;
         _max_size = sz;
         if (_data)
             free (_data);
         _data = (char*)malloc(sz);
         _value._time = (timestamp_t*)_data;
-        break;    
+        break;
     case SQL_VARCHAR:
         _max_size  = _pfield_desc->fieldmaxsize();
-        /* real_size is re-set at runtime, at the set_value() function */       
+        /* real_size is re-set at runtime, at the set_value() function */
         _real_size = 0;
         /* we don't know how much space is already allocated for data
-         * thus, we are not changing its value 
+         * thus, we are not changing its value
          */
         _value._string = _data;
         break;
@@ -573,7 +573,7 @@ inline void field_value_t::setup(field_desc_t* pfd)
 
         _value._string = _data;
         break;
-    }    
+    }
 }
 
 
@@ -606,10 +606,10 @@ inline void field_value_t::reset()
         break;
     case SQL_FLOAT:
         _value._float = 0;
-        break;    
+        break;
     case SQL_LONG:
         _value._long = 0;
-        break;    
+        break;
     case SQL_TIME:
     case SQL_VARCHAR:
     case SQL_FIXCHAR:
@@ -624,12 +624,12 @@ inline void field_value_t::reset()
 /*********************************************************************
  *
  *  @fn:     alloc_space
- * 
+ *
  *  @brief:  Allocates the requested space (param len). If it has already
  *           allocated enough returns immediately.
  *
  *  @note:   It will asserts if the requested space is larger than the
- *           realsize. 
+ *           realsize.
  *
  *********************************************************************/
 
@@ -640,11 +640,11 @@ inline void field_value_t::alloc_space(const unsigned len)
     assert (len <= _real_size);
 
     // check if already enough space
-    if (_data_size >= len) 
+    if (_data_size >= len)
         return;
 
     // if not, release previously allocated space and allocate new
-    if (_data) { 
+    if (_data) {
 	free(_data);
     }
     _data = (char*)malloc(len);
@@ -680,13 +680,13 @@ inline void field_value_t::set_value(const void* data,
     case SQL_INT:
     case SQL_FLOAT:
     case SQL_LONG:
-	memcpy(&_value, data, _max_size); 
+	memcpy(&_value, data, _max_size);
         break;
     case SQL_TIME:
-	memcpy(_value._time, data, MIN(length, _real_size)); 
+	memcpy(_value._time, data, MIN(length, _real_size));
         break;
     case SQL_VARCHAR:
-	set_var_string_value((const char*)data, length); 
+	set_var_string_value((const char*)data, length);
         break;
     case SQL_FIXCHAR:
     case SQL_NUMERIC:
@@ -842,7 +842,7 @@ inline bool field_value_t::copy_value(void* data) const
  *
  *  @fn:    set_XXX_value
  *
- *  @brief: Type-specific set of value 
+ *  @brief: Type-specific set of value
  *
  *********************************************************************/
 
@@ -880,7 +880,7 @@ inline void field_value_t::set_char_value(const char data)
 }
 
 inline void field_value_t::set_float_value(const double data)
-{ 
+{
     assert (_pfield_desc);
     assert (_pfield_desc->type() == SQL_FLOAT);
     _null_flag = false;
@@ -888,7 +888,7 @@ inline void field_value_t::set_float_value(const double data)
 }
 
 inline void field_value_t::set_long_value(const long long data)
-{ 
+{
     assert (_pfield_desc);
     assert (_pfield_desc->type() == SQL_LONG);
     _null_flag = false;
@@ -896,7 +896,7 @@ inline void field_value_t::set_long_value(const long long data)
 }
 
 inline void field_value_t::set_decimal_value(const decimal data)
-{ 
+{
     assert (_pfield_desc);
     assert (_pfield_desc->type() == SQL_FLOAT);
     _null_flag = false;
@@ -904,7 +904,7 @@ inline void field_value_t::set_decimal_value(const decimal data)
 }
 
 inline void field_value_t::set_time_value(const time_t data)
-{ 
+{
     assert (_pfield_desc);
     assert (_pfield_desc->type() == SQL_FLOAT);
     _null_flag = false;
@@ -932,10 +932,10 @@ inline void field_value_t::set_fixed_string_value(const char* string,
                                                   const uint len)
 {
     assert (_pfield_desc);
-    assert (_pfield_desc->type() == SQL_FIXCHAR || 
-            _pfield_desc->type() == SQL_NUMERIC || 
+    assert (_pfield_desc->type() == SQL_FIXCHAR ||
+            _pfield_desc->type() == SQL_NUMERIC ||
             _pfield_desc->type() == SQL_SNUMERIC);
-    /** if fixed length string then the data buffer has already 
+    /** if fixed length string then the data buffer has already
      *  at least _data_size bits allocated */
     _real_size = MIN(len, _max_size);
     assert (_data_size >= _real_size);
@@ -974,7 +974,7 @@ inline void field_value_t::set_var_string_value(const char* string,
  *
  *  @fn:    get_XXX_value
  *
- *  @brief: Type-specific return of value 
+ *  @brief: Type-specific return of value
  *
  *********************************************************************/
 
@@ -1011,9 +1011,9 @@ inline void field_value_t::get_string_value(char* buffer,
                                             const uint bufsize) const
 {
     assert (_pfield_desc);
-    assert (_pfield_desc->type() == SQL_FIXCHAR || 
+    assert (_pfield_desc->type() == SQL_FIXCHAR ||
             _pfield_desc->type() == SQL_VARCHAR ||
-            _pfield_desc->type() == SQL_NUMERIC || 
+            _pfield_desc->type() == SQL_NUMERIC ||
             _pfield_desc->type() == SQL_SNUMERIC);
     memset(buffer, '\0', bufsize);
     memcpy(buffer, _value._string, MIN(bufsize, _real_size));
