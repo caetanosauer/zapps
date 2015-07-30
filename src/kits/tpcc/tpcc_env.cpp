@@ -90,19 +90,6 @@ void ShoreTPCCEnv::table_creator_t::work()
     W_COERCE(_env->_pstock_desc->create_physical_table(_env->db()));
     W_COERCE(_env->db()->commit_xct());
 
-
-    // After they obtained their fid, register managers
-    _env->_pwarehouse_man->register_table_man();
-    _env->_pdistrict_man->register_table_man();
-    _env->_pcustomer_man->register_table_man();
-    _env->_phistory_man->register_table_man();
-    _env->_pnew_order_man->register_table_man();
-    _env->_porder_man->register_table_man();
-    _env->_porder_line_man->register_table_man();
-    _env->_pitem_man->register_table_man();
-    _env->_pstock_man->register_table_man();
-
-
     // do the first transaction
     populate_baseline_input_t in = {_sf};
     W_COERCE(_env->db()->begin_xct());

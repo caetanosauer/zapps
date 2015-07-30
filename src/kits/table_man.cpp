@@ -55,7 +55,6 @@ w_rc_t table_man_t<T>::load_and_register_fid(ss_m* db)
     // fetch stid of all indexes from catalog index
     W_DO(_ptable->load_stids());
 
-    register_table_man();
     return (RCOK);
 }
 

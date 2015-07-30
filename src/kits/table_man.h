@@ -143,10 +143,6 @@ public:
 
     virtual ~table_man_t() {}
 
-    static srwlock_t register_table_lock;
-    void register_table_man();
-    // static std::map<stid_t, table_man_t*> stid_to_tableman;
-
     T* table() { return (_ptable); }
 
     // loads store id values in fid field for this table and its indexes
