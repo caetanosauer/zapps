@@ -196,7 +196,6 @@ class new_order_man_impl : public table_man_t<new_order_t>
 {
     typedef table_row_t new_order_tuple;
     typedef table_scan_iter_impl<new_order_t> new_order_table_iter;
-    typedef index_scan_iter_impl<new_order_t> new_order_index_iter;
 
 public:
 
@@ -211,7 +210,7 @@ public:
 
     // --- access tuples with iterator --- //
     w_rc_t no_get_iter_by_index(ss_m* db,
-                                new_order_index_iter* &iter,
+                                new_order_table_iter* &iter,
                                 new_order_tuple* ptuple,
                                 rep_row_t &replow,
                                 rep_row_t &rephigh,
@@ -272,7 +271,6 @@ class order_line_man_impl : public table_man_t<order_line_t>
 {
     typedef table_row_t order_line_tuple;
     typedef table_scan_iter_impl<order_line_t> order_line_table_iter;
-    typedef index_scan_iter_impl<order_line_t> order_line_index_iter;
 
 public:
 
@@ -287,7 +285,7 @@ public:
 
     // --- access tuple with iterator --- //
     w_rc_t ol_get_range_iter_by_index(ss_m* db,
-                                      order_line_index_iter* &iter,
+                                      order_line_table_iter* &iter,
                                       order_line_tuple* ptuple,
                                       rep_row_t &replow,
                                       rep_row_t &rephigh,
@@ -298,7 +296,7 @@ public:
                                       bool need_tuple = true);
 
     w_rc_t ol_get_probe_iter_by_index(ss_m* db,
-                                      order_line_index_iter* &iter,
+                                      order_line_table_iter* &iter,
                                       order_line_tuple* ptuple,
                                       rep_row_t &replow,
                                       rep_row_t &rephigh,
@@ -315,7 +313,6 @@ class item_man_impl : public table_man_t<item_t>
 {
     typedef table_row_t item_tuple;
     typedef table_scan_iter_impl<item_t> item_table_iter;
-    typedef index_scan_iter_impl<item_t> item_index_iter;
 
 public:
 
@@ -345,7 +342,6 @@ class stock_man_impl : public table_man_t<stock_t>
 {
     typedef table_row_t stock_tuple;
     typedef table_scan_iter_impl<stock_t> stock_table_iter;
-    typedef index_scan_iter_impl<stock_t> stock_index_iter;
 
 public:
 

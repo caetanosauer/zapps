@@ -1383,12 +1383,15 @@ w_rc_t ShoreTPCCEnv::xct_order_status(const int xct_id,
 	TRACE( TRACE_TRX_FLOW, "App: %d ORDST:ord-iter-by-idx\n", xct_id);
 	W_DO(_porder_man->ord_get_iter_by_index(_pssm, tmp_o_iter, prord,
 						lowrep, highrep,
-						w_id, d_id, pstin._c_id));
+						w_id, d_id, pstin._c_id,
+                                                true /* need_tuple */));
 	o_iter = tmp_o_iter;
     }
 
     tpcc_order_tuple aorder;
     bool eof;
+
+    aorder.O_OL_CNT = 0;
 
     W_DO(o_iter->next(eof, *prord));
     while (!eof) {
@@ -1412,9 +1415,9 @@ w_rc_t ShoreTPCCEnv::xct_order_status(const int xct_id,
      * plan: index scan on "OL_IDX"
      */
 
-    guard<index_scan_iter_impl<order_line_t> > ol_iter;
+    guard<table_scan_iter_impl<order_line_t> > ol_iter;
     {
-	index_scan_iter_impl<order_line_t>* tmp_ol_iter;
+	table_scan_iter_impl<order_line_t>* tmp_ol_iter;
 	TRACE( TRACE_TRX_FLOW, "App: %d ORDST:ol-iter-by-idx\n", xct_id);
 	W_DO(_porder_line_man->ol_get_probe_iter_by_index(_pssm, tmp_ol_iter,
 							  prol, lowrep, highrep,
@@ -1551,9 +1554,9 @@ w_rc_t ShoreTPCCEnv::_xct_delivery_helper(const int xct_id,
 
 	TRACE( TRACE_TRX_FLOW, "App: %d DEL:nord-iter-by-idx (%d) (%d)\n",
 	       xct_id, w_id, d_id);
-	guard<index_scan_iter_impl<new_order_t> > no_iter;
+	guard<table_scan_iter_impl<new_order_t> > no_iter;
 	{
-	    index_scan_iter_impl<new_order_t>* tmp_no_iter;
+	    table_scan_iter_impl<new_order_t>* tmp_no_iter;
 	    W_DO(_pnew_order_man->no_get_iter_by_index(_pssm, tmp_no_iter,
 						       prno, lowrep, highrep,
 						       w_id, d_id,
@@ -1623,9 +1626,9 @@ w_rc_t ShoreTPCCEnv::_xct_delivery_helper(const int xct_id,
 	       xct_id, w_id, d_id, no_o_id);
 
 	int total_amount = 0;
-	guard<index_scan_iter_impl<order_line_t> > ol_iter;
+	guard<table_scan_iter_impl<order_line_t> > ol_iter;
 	{
-	    index_scan_iter_impl<order_line_t>* tmp_ol_iter;
+	    table_scan_iter_impl<order_line_t>* tmp_ol_iter;
 	    W_DO(_porder_line_man->ol_get_probe_iter_by_index(_pssm,
 							      tmp_ol_iter,
 							      prol,
@@ -1781,9 +1784,9 @@ w_rc_t ShoreTPCCEnv::xct_stock_level(const int xct_id,
     highrep.set(_porder_line_desc->maxsize());
     sortrep.set(_porder_line_desc->maxsize());
 
-    guard<index_scan_iter_impl<order_line_t> > ol_iter;
+    guard<table_scan_iter_impl<order_line_t> > ol_iter;
     {
-	index_scan_iter_impl<order_line_t>* tmp_ol_iter;
+	table_scan_iter_impl<order_line_t>* tmp_ol_iter;
 	W_DO(_porder_line_man->ol_get_range_iter_by_index(_pssm, tmp_ol_iter,
 							  prol, lowrep, highrep,
 							  pslin._wh_id,
