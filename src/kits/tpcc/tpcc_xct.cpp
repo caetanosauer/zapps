@@ -221,6 +221,9 @@ static int create_random_a_string( char *out_buffer, int length_lo, int length_h
     for (i = 0; i < actual_length; i++ ) {
 	out_buffer[i] = alnum[rand_integer( 0, 61 )] ;
     }
+    // CS TODO -- BUG?
+    // If buffer comes from a fixed-size string (CHAR), and actual_length ==
+    // length_hi, we may be writing to invalid memory here (segfault)
     out_buffer[actual_length] = '\0' ;
 
     return (actual_length);

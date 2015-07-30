@@ -316,10 +316,10 @@ struct field_value_t
         return (_null_flag);
     }
 
-    inline void set_null() { 
+    inline void set_null(bool v = true) {
         assert (_pfield_desc);
-        assert (_pfield_desc->allow_null()); 
-        _null_flag = true; 
+        assert (_pfield_desc->allow_null());
+        _null_flag = v;
     }
 
     /* var length */
@@ -515,22 +515,28 @@ inline void field_value_t::setup(field_desc_t* pfd)
     switch (_pfield_desc->type()) {
     case SQL_BIT:
         _max_size = sizeof(bool);
+        _real_size = _max_size;
         break;
     case SQL_SMALLINT:
         _max_size = sizeof(short);
+        _real_size = _max_size;
         break;
     case SQL_CHAR:
         _max_size = sizeof(char);
+        _real_size = _max_size;
         break;
     case SQL_INT:
         _max_size = sizeof(int);
+        _real_size = _max_size;
         break;
     case SQL_FLOAT:
         _max_size = sizeof(double);
-        break;    
+        _real_size = _max_size;
+        break;
     case SQL_LONG:
         _max_size = sizeof(long long);
-        break;    
+        _real_size = _max_size;
+        break;
     case SQL_TIME:
         sz = sizeof(timestamp_t);
         _data_size = sz;
@@ -553,7 +559,8 @@ inline void field_value_t::setup(field_desc_t* pfd)
     case SQL_FIXCHAR:
     case SQL_NUMERIC:
     case SQL_SNUMERIC:
-        sz = _pfield_desc->fieldmaxsize(); 
+        // +1 byte for zero terminating char
+        sz = _pfield_desc->fieldmaxsize() + 1;
         _real_size = sz;
         _max_size = sz;
 
@@ -566,6 +573,7 @@ inline void field_value_t::setup(field_desc_t* pfd)
             // else allocate the buffer
             if (_data)
                 free (_data);
+            // CS TODO -- why are we using malloc here?
             _data = (char*)malloc(sz);
             memset(_data, 0, sz);
             _data_size = sz;
@@ -693,8 +701,8 @@ inline void field_value_t::set_value(const void* data,
     case SQL_SNUMERIC:
 	_real_size = MIN(length, _max_size);
 	assert(_data_size >= _real_size);
-        //	memset(_data, '\0', _data_size);
-	memcpy(_value._string, data, _real_size); 
+        memset(_data, '\0', _data_size);
+	memcpy(_value._string, data, _real_size);
         break;
     }
 }
@@ -937,10 +945,10 @@ inline void field_value_t::set_fixed_string_value(const char* string,
             _pfield_desc->type() == SQL_SNUMERIC);
     /** if fixed length string then the data buffer has already
      *  at least _data_size bits allocated */
-    _real_size = MIN(len, _max_size);
+    _real_size = MIN(len + 1, _data_size);
     assert (_data_size >= _real_size);
     _null_flag = false;
-    //    memset(_value._string, '\0', _data_size);
+    memset(_value._string, '\0', _data_size);
     memcpy(_value._string, string, _real_size);
 }
 
@@ -961,11 +969,14 @@ inline void field_value_t::set_var_string_value(const char* string,
 {
     assert (_pfield_desc);
     assert (_pfield_desc->type() == SQL_VARCHAR);
-    _real_size = MIN(len, _max_size);
+    // +1 byte for zero terminating char
+    _real_size = MIN(len + 1, _max_size);
     alloc_space(_real_size);
     assert (_data_size >= _real_size);
     _null_flag = false;
     memcpy(_value._string, string, _real_size);
+    // enforce last char to be \0
+    _value._string[_real_size - 1] = 0;
 }
 
 

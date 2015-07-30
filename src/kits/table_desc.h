@@ -396,6 +396,8 @@ inline unsigned table_desc_t::maxsize()
 
     // atomic_swap_uint(&_maxsize, size);
     _maxsize = size;
+    // add an offset for each field, which is used to serialize
+    _maxsize += sizeof(offset_t) * _field_count;
     return (*&_maxsize);
 }
 

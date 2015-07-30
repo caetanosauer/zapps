@@ -91,6 +91,7 @@
 #include "field.h"
 #include "block_alloc.h"
 
+class index_desc_t;
 
 
 /* ---------------------------------------------------------------
@@ -145,14 +146,14 @@ struct rep_row_t
 
 class table_desc_t;
 
-struct table_row_t
+class table_row_t
 {
+public:
     table_desc_t*  _ptable;       /* pointer back to the table description */
 
     unsigned       _field_cnt;    /* number of fields */
     bool           _is_setup;     /* flag if already setup */
 
-    rid_t          _rid;          /* record id */
     field_value_t* _pvalues;      /* set of values */
 
     // pre-calculated offsets
@@ -161,8 +162,23 @@ struct table_row_t
     offset_t _var_offset;
     unsigned     _null_count;
 
+    // CS TODO -- get rid of these
+    // But think about whether we should maintain the general principle,
+    // which is to maintain a buffer for the serialized format of the tuple.
+    // This could be useful to avoid repeated conversions, but it relies on
+    // the caller to know whether the tuple changed since the last conversion
+    // or not.
     rep_row_t*     _rep;          /* a pointer to a row representation struct */
     rep_row_t*     _rep_key;
+
+    /*
+     * CS: New methods for serialization and deserialization
+     * (a.k.a. conversion between disk and memory format)
+     */
+    void load_key(char* data, index_desc_t* pindex = NULL);
+    void load_value(char* data, index_desc_t* pindex = NULL);
+    void store_key(char* data, size_t& length, index_desc_t* pindex = NULL);
+    void store_value(char* data, size_t& length, index_desc_t* pindex = NULL);
 
 
     /* -------------------- */
@@ -173,7 +189,7 @@ struct table_row_t
     table_row_t(table_desc_t* ptd)
 	: _ptable(NULL),
 	  _field_cnt(0), _is_setup(false),
-	  _rid(rid_t::null), _pvalues(NULL),
+	  _pvalues(NULL),
 	  _fixed_offset(0),_var_slot_offset(0),_var_offset(0),_null_count(0),
 	  _rep(NULL), _rep_key(NULL)
     {
@@ -197,10 +213,6 @@ struct table_row_t
     /* ---------------------- */
     /* --- access methods --- */
     /* ---------------------- */
-
-    inline rid_t rid() const { return (_rid); }
-    inline void  set_rid(const rid_t& rid) { _rid = rid; }
-    inline bool  is_rid_valid() const { return (_rid != rid_t::null); }
 
     inline offset_t get_fixed_offset() const { return (_fixed_offset); }
     inline offset_t get_var_slot_offset() const { return (_var_slot_offset); }

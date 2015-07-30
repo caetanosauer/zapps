@@ -257,43 +257,10 @@ public:
 				 const lock_mode_t lock_mode = okvl_mode::X,
 				 const lpid_t& primary_root = lpid_t::null);
 
-
-    // Direct access through the rid
     w_rc_t    update_tuple(ss_m* db,
                            table_row_t* ptuple,
                            const lock_mode_t lock_mode = okvl_mode::X);
 
-    // Direct access through the rid
-    w_rc_t    read_tuple(table_row_t* ptuple,
-                         lock_mode_t lock_mode = okvl_mode::S,
-			 latch_mode_t heap_latch_mode = LATCH_SH);
-
-
-
-    /* ----------------------------- */
-    /* --- formatting operations --- */
-    /* ----------------------------- */
-
-    // format tuple
-    int  format(table_row_t* ptuple, rep_row_t &arep,
-            index_desc_t* pindex = NULL);
-
-    // load tuple from input buffer
-    bool load(table_row_t* ptuple, const char* string,
-            index_desc_t* index = NULL);
-
-    // disk space needed for tuple
-    int  size(table_row_t* ptuple) const;
-
-    // format the key value
-    int  format_key(index_desc_t* pindex,
-                    table_row_t* ptuple,
-                    rep_row_t &arep);
-
-    // load key index from input buffer
-    bool load_key(const char* string,
-                  index_desc_t* pindex,
-                  table_row_t* ptuple);
 
     // set indexed fields of the row to minimum
     int  min_key(index_desc_t* pindex,

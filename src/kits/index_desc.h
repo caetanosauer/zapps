@@ -128,6 +128,14 @@ public:
         lintel::unsafe::atomic_exchange(&_maxkeysize, sz);
     }
 
+    bool is_key_index(unsigned i)
+    {
+        for (unsigned j = 0; j < _field_count; j++) {
+            if (_key[j] == i) return true;
+        }
+        return false;
+    }
+
     // find the index_desc_t by name
     bool matches_name(const char* name);
 
