@@ -215,8 +215,8 @@ void asc_sort_man_impl::add_tuple(table_row_t& atuple)
     }
 
     /* add the current tuple to the end of the buffer */
-    format(&atuple, *_preprow);
-    assert (_preprow->_dest);
+    size_t ksz = _preprow->_bufsz;
+    atuple.store_key(_preprow->_dest, ksz);
     memcpy(_sort_buf+(_tuple_count*_tuple_size), _preprow->_dest, _tuple_size);
     _tuple_count++;
     _is_sorted = false;
@@ -358,7 +358,8 @@ bool asc_sort_man_impl::get_sorted(const int index, table_row_t* ptuple)
 
     if (_is_sorted) {
         if (index >=0 && index < _tuple_count) {
-            return (load(ptuple, _sort_buf + (index*_tuple_size)));
+            ptuple->load_key(_sort_buf + (index * _tuple_size));
+            return true;
         }
         //TRACE( TRACE_DEBUG, "out of bounds index...\n");
         return (false);

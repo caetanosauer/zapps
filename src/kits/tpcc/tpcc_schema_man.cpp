@@ -173,16 +173,16 @@ w_rc_t customer_man_impl::cust_get_iter_by_index(ss_m* /*db*/,
     ptuple->set_value(3, "");
     ptuple->set_value(5, c_last);
 
-    int lowsz = format_key(pindex, ptuple, replow);
-    assert (replow._dest);
+    size_t lowsz = replow._bufsz;
+    ptuple->store_key(replow._dest, lowsz, pindex);
 
     char   temp[2];
     temp[0] = MAX('z', 'Z')+1;
     temp[1] = '\0';
     ptuple->set_value(3, temp);
 
-    int highsz = format_key(pindex, ptuple, rephigh);
-    assert (rephigh._dest);
+    size_t highsz = replow._bufsz;
+    ptuple->store_key(rephigh._dest, highsz, pindex);
 
     /* index only access */
     iter = new customer_index_iter(pindex, this, need_tuple);
@@ -292,14 +292,14 @@ w_rc_t new_order_man_impl::no_get_iter_by_index(ss_m* /*db*/,
     ptuple->set_value(1, d_id);
     ptuple->set_value(2, w_id);
 
-    int lowsz = format_key(pindex, ptuple, replow);
-    assert (replow._dest);
+    size_t lowsz = replow._bufsz;
+    ptuple->store_key(replow._dest, lowsz, pindex);
 
     /* get the highest key value */
     ptuple->set_value(1, d_id+1);
 
-    int highsz = format_key(pindex, ptuple, rephigh);
-    assert (rephigh._dest);
+    size_t highsz = rephigh._bufsz;
+    ptuple->store_key(rephigh._dest, highsz, pindex);
 
     iter = new new_order_index_iter(pindex, this, need_tuple);
     W_DO(iter->open_scan(replow._dest, lowsz, true,
@@ -357,14 +357,14 @@ w_rc_t order_man_impl::ord_get_iter_by_index(ss_m* /*db*/,
     ptuple->set_value(2, d_id);
     ptuple->set_value(3, w_id);
 
-    int lowsz = format_key(pindex, ptuple, replow);
-    assert (replow._dest);
+    size_t lowsz = replow._bufsz;
+    ptuple->store_key(replow._dest, lowsz, pindex);
 
     /* get the highest key value */
     ptuple->set_value(1, c_id+1);
 
-    int highsz  = format_key(pindex, ptuple, rephigh);
-    assert (rephigh._dest);
+    size_t highsz = rephigh._bufsz;
+    ptuple->store_key(rephigh._dest, highsz, pindex);
 
     iter = new order_index_iter(pindex, this, need_tuple);
     W_DO(iter->open_scan(replow._dest, lowsz, true,
@@ -422,14 +422,14 @@ w_rc_t order_line_man_impl::ol_get_range_iter_by_index(ss_m* /*db*/,
     ptuple->set_value(2, w_id);
     ptuple->set_value(3, (int)0);  /* assuming that ol_number starts from 1 */
 
-    int lowsz = format_key(pindex, ptuple, replow);
-    assert (replow._dest);
+    size_t lowsz = replow._bufsz;
+    ptuple->store_key(replow._dest, lowsz, pindex);
 
     // get the highest key value
     ptuple->set_value(0, high_o_id+1);
 
-    int highsz = format_key(pindex, ptuple, rephigh);
-    assert (rephigh._dest);
+    size_t highsz = replow._bufsz;
+    ptuple->store_key(rephigh._dest, highsz, pindex);
 
     // get the tuple iterator (not index only scan)
     iter = new order_line_index_iter(pindex, this, need_tuple);
@@ -463,14 +463,14 @@ w_rc_t order_line_man_impl::ol_get_probe_iter_by_index(ss_m* /*db*/,
     ptuple->set_value(2, w_id);
     ptuple->set_value(3, (int)0);
 
-    int lowsz = format_key(pindex, ptuple, replow);
-    assert (replow._dest);
+    size_t lowsz = replow._bufsz;
+    ptuple->store_key(replow._dest, lowsz, pindex);
 
     /* get the highest key value */
     ptuple->set_value(0, o_id+1);
 
-    int highsz = format_key(pindex, ptuple, rephigh);
-    assert (rephigh._dest);
+    size_t highsz = rephigh._bufsz;
+    ptuple->store_key(rephigh._dest, highsz, pindex);
 
     iter = new order_line_index_iter(pindex, this, need_tuple);
     W_DO(iter->open_scan(replow._dest, lowsz, true,

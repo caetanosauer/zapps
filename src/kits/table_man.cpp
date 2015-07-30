@@ -94,7 +94,8 @@ w_rc_t table_man_t<T>::index_probe(ss_m* db,
     // }
 
     // extract serialized key into _rep_key
-    int key_sz = format_key(pindex, ptuple, *ptuple->_rep_key);
+    size_t key_sz = ptuple->_rep_key->_bufsz;
+    ptuple->store_key(ptuple->_rep_key->_dest, key_sz, pindex);
     assert (ptuple->_rep_key->_dest); // if NULL invalid key
     w_keystr_t kstr;
     kstr.construct_regularkey(ptuple->_rep_key->_dest, key_sz);
@@ -105,20 +106,25 @@ w_rc_t table_man_t<T>::index_probe(ss_m* db,
         int fields_sz = ptuple->_ptable->maxsize();
         ptuple->_rep->set(fields_sz);
 
-        smsize_t len;
+        smsize_t len = ptuple->_rep->_bufsz;
         W_DO(db->find_assoc(pindex->stid(), kstr, ptuple->_rep->_dest, len,
                     found));
         if (!found) return RC(se_TUPLE_NOT_FOUND);
 
         // load the non-key fields into the tuple
-        load(ptuple, ptuple->_rep->_dest, pindex);
+        ptuple->load_value(ptuple->_rep->_dest, pindex);
     }
     else {
         // get (max) length of the reference key
         // place ref key into tuple buffer, overwriting previous key
-        smsize_t len;
-        int ref_sz = key_size(ptuple->_ptable->primary_idx());
-        ptuple->_rep_key->set(ref_sz);
+        // CS TODO -- here we assume that there is enough space in the buffer
+        // for the value. Otherwise, db returns eWONTFIT and we must expand
+        // the buffer. However, this should never happen because the benchmarks
+        // always allocate space for the maximum possible tuple. This stupid
+        // design should be changed at some point, but it works for now.
+        smsize_t len = ptuple->_rep_key->_bufsz;
+        // int ref_sz = key_size(ptuple->_ptable->primary_idx());
+        // ptuple->_rep_key->set(ref_sz);
         W_DO(db->find_assoc(pindex->stid(), kstr, ptuple->_rep_key->_dest, len,
                     found));
 
@@ -165,6 +171,7 @@ w_rc_t table_man_t<T>::add_tuple(ss_m* db,
     assert (_ptable);
     assert (ptuple);
     assert (ptuple->_rep);
+    assert (ptuple->_rep_key);
     // uint32_t system_mode = _ptable->get_pd();
 
     // figure out what mode will be used
@@ -174,25 +181,27 @@ w_rc_t table_man_t<T>::add_tuple(ss_m* db,
     index_desc_t* pindex = _ptable->primary_idx();
 
     // build tuple data without index fields
-    int tsz = format(ptuple, *ptuple->_rep, pindex);
+    size_t tsz = ptuple->_rep->_bufsz;
+    ptuple->store_value(ptuple->_rep->_dest, tsz, pindex);
     assert (ptuple->_rep->_dest); // if NULL invalid
 
     // build key data
     w_keystr_t kstr;
-    int ksz = format_key(pindex, ptuple, *ptuple->_rep_key);
-    assert (ptuple->_rep_key->_dest); // if NULL invalid
+    size_t ksz = ptuple->_rep_key->_bufsz;
+    ptuple->store_key(ptuple->_rep_key->_dest, ksz, pindex);
     kstr.construct_regularkey(ptuple->_rep_key->_dest, ksz);
+
     W_DO(db->create_assoc(pindex->stid(), kstr, vec_t(ptuple->_rep->_dest, tsz)));
 
     // update the indexes
     const std::vector<index_desc_t*>& indexes = _ptable->get_indexes();
     for (size_t i = 0; i < indexes.size(); i++) {
-        int sec_ksz = format_key(indexes[i], ptuple, *ptuple->_rep);
-        assert (ptuple->_rep->_dest); // if dest == NULL there is invalid key
-
-        // primary key value (i.e., pointer) is stored in _rep_key
+        size_t sec_ksz = ptuple->_rep->_bufsz;
+        ptuple->store_key(ptuple->_rep->_dest, sec_ksz, indexes[i]);
         w_keystr_t sec_kstr;
         sec_kstr.construct_regularkey(ptuple->_rep->_dest, sec_ksz);
+
+        // primary key value (i.e., pointer) is stored in _rep_key
         W_DO(db->create_assoc(indexes[i]->stid(),
                     sec_kstr,
                     vec_t(ptuple->_rep_key->_dest, ksz)
@@ -238,12 +247,13 @@ w_rc_t table_man_t<T>::add_index_entry(ss_m* db,
     // if (lock_mode==NL) bIgnoreLocks = true;
 
     // build primary key value (i.e., pointer)
-    int ksz = format_key(_ptable->primary_idx(), ptuple, *ptuple->_rep_key);
-    assert(ptuple->_rep_key->_dest);
+    size_t ksz = ptuple->_rep_key->_bufsz;
+    ptuple->store_key(ptuple->_rep_key->_dest, ksz,
+            ptuple->_ptable->primary_idx());
 
     // update the index
-    int sec_ksz = format_key(pindex, ptuple, *ptuple->_rep);
-    assert (ptuple->_rep->_dest); // if dest == NULL there is invalid key
+    size_t sec_ksz = ptuple->_rep->_bufsz;
+    ptuple->store_key(ptuple->_rep->_dest, ksz, pindex);
     w_keystr_t sec_kstr;
     sec_kstr.construct_regularkey(ptuple->_rep->_dest, sec_ksz);
     W_DO(db->create_assoc(pindex->stid(),
@@ -287,8 +297,8 @@ w_rc_t table_man_t<T>::delete_tuple(ss_m* db,
     // delete all the corresponding index entries
     std::vector<index_desc_t*>& indexes = _ptable->get_indexes();
     for (size_t i = 0; i < indexes.size(); i++) {
-        int key_sz = format_key(indexes[i], ptuple, *ptuple->_rep);
-        assert (ptuple->_rep->_dest); // if NULL invalid key
+        size_t ksz = ptuple->_rep->_bufsz;
+        ptuple->store_key(ptuple->_rep->_dest, ksz, indexes[i]);
 
         // TODO BUG??
         // This is deleting the whole entry in the secondary index instead
@@ -296,12 +306,12 @@ w_rc_t table_man_t<T>::delete_tuple(ss_m* db,
         // multiple tuples, all tuples will be deleted instead of just one!
 
         w_keystr_t kstr;
-        kstr.construct_regularkey(ptuple->_rep->_dest, key_sz);
+        kstr.construct_regularkey(ptuple->_rep->_dest, ksz);
         W_DO(db->destroy_assoc(indexes[i]->stid(), kstr));
     }
 
-    int ksz = format_key(_ptable->primary_idx(), ptuple, *ptuple->_rep_key);
-    assert(ptuple->_rep_key->_dest);
+    size_t ksz = ptuple->_rep_key->_bufsz;
+    ptuple->store_key(ptuple->_rep_key->_dest, ksz, _ptable->primary_idx());
     w_keystr_t kstr;
     kstr.construct_regularkey(ptuple->_rep_key->_dest, ksz);
     W_DO(db->destroy_assoc(_ptable->primary_idx()->stid(), kstr));
@@ -349,11 +359,12 @@ w_rc_t table_man_t<T>::delete_index_entry(ss_m* db,
     // if (lock_mode==NL) bIgnoreLocks = true;
 
     // delete the index entry
-    int key_sz = format_key(pindex, ptuple, *ptuple->_rep);
+    size_t ksz = ptuple->_rep->_bufsz;
+    ptuple->store_key(ptuple->_rep->_dest, ksz, pindex);
     assert (ptuple->_rep->_dest); // if NULL invalid key
 
     w_keystr_t kstr;
-    kstr.construct_regularkey(ptuple->_rep->_dest, key_sz);
+    kstr.construct_regularkey(ptuple->_rep->_dest, ksz);
     W_DO(db->destroy_assoc(pindex->stid(), kstr));
 
     return (RCOK);
@@ -393,10 +404,10 @@ w_rc_t table_man_t<T>::update_tuple(ss_m* db,
     // CS TODO (performance) -- most xcts call this after an index probe,
     // where all this format/load was already done. So there is a lot of
     // repeated work.
-    int key_sz = format_key(table()->primary_idx(), ptuple, *ptuple->_rep_key);
-    assert (ptuple->_rep_key->_dest); // if NULL invalid key
+    size_t ksz = ptuple->_rep_key->_bufsz;
+    ptuple->store_key(ptuple->_rep_key->_dest, ksz, table()->primary_idx());
     w_keystr_t kstr;
-    kstr.construct_regularkey(ptuple->_rep_key->_dest, key_sz);
+    kstr.construct_regularkey(ptuple->_rep_key->_dest, ksz);
     W_DO(db->overwrite_assoc(table()->primary_idx()->stid(),
                 kstr, ptuple->_rep->_dest, 0, 0));
 
