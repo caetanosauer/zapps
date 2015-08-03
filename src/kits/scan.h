@@ -138,8 +138,6 @@ public:
 
             // load primary key fields
             tuple.load_key(pkey, prim_idx);
-            cout << "Fetching from primary with key: ";
-            tuple.print_values(cout);
 
             // fetch and load other fields
             w_keystr_t pkeystr;
@@ -149,8 +147,6 @@ public:
             w_assert0(loaded);
 
             tuple.load_value(tuple._rep->_dest, prim_idx);
-            cout << "Fetched from primary: ";
-            tuple.print_values(cout);
         }
         return (RCOK);
     }
