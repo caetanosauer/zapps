@@ -163,7 +163,7 @@ private:
 
 public:
 
-    ShoreTPCCEnv();
+    ShoreTPCCEnv(boost::program_options::variables_map map);
     virtual ~ShoreTPCCEnv();
 
 

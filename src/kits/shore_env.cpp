@@ -781,37 +781,22 @@ int ShoreEnv::configure_sm()
 //    		continue;
     	try{
     		_popts->set_int_option(key.substr(3,5), optionValues[key].as<int>());
-    		cerr<<"\t\t\t"+key+" = "<< optionValues[key].as<int>()<<endl;
     	}catch(boost::bad_any_cast const& e) {
     		try{
     			_popts->set_bool_option(key, optionValues[key].as<bool>());
-        		cerr<<"\t\t\t"+key+" = "<< optionValues[key].as<bool>()<<endl;
     		}catch(boost::bad_any_cast const& e){
     			try{
     				_popts->set_string_option(key, optionValues[key].as<string>());
-    	    		cerr<<"\t\t\t"+key+" = "<< optionValues[key].as<string>()<<endl;
     			}catch(boost::bad_any_cast const& e){
-    				continue;
+    				try{
+    				   _popts->set_int_option(key, optionValues[key].as<uint>());
+    				}catch(boost::bad_any_cast const& e){
+    				    continue;
+    				}
     			}
     		}
     	}
-    	/**Doesnt work like that :(
-    	if(boost::starts_with(key,"shore")){
-    		key = "sm_"+ key.substr(6,key.length());
-    	}**/
     };
-
-
-
-    //Whatabout Renaming? shore as prefix?
-    /**
-    _popts->set_int_option("sm_errlog", optionValues["shore-errlog"].as<int>());
-    _popts->set_int_option("sm_num_page_writers", optionValues["shore-pagecleaners"].as<int>());
-    _popts->set_int_option("sm_chkpt_flush_interval", optionValues["shore-chkpt_flush_interval"].as<int>());
-    _popts->set_int_option("sm_backgroundflush", optionValues["shore-backgroundflush"].as<int>());
-    _popts->set_int_option("sm_log_page_flushes", optionValues["shore-log_page_flushes"].as<int>());
-    _popts->set_int_option("sm_preventive_chkpt", optionValues["shore-preventive_chkpt"].as<int>());
-	**/
     upd_worker_cnt();
 
     // If we reached this point the sm is configured correctly
@@ -1080,15 +1065,23 @@ int ShoreEnv::conf()
     BOOST_FOREACH(const po::variables_map::value_type& pair, optionValues){
     		const std::string& key = pair.first;
     		try{
-    		    cout<< "[" << key << "] = ["<< optionValues[key].as<int>()<<"]"<<endl;
+    		    cout<< "[" << key << "] = "<< optionValues[key].as<int>()<<endl;
     		}catch(boost::bad_any_cast const& e){
         		try{
-            	    cout<< "[" << key << "] = ["<< optionValues[key].as<bool>()<<"]"<<endl;
+            	    cout<< "[" << key << "] = "<< optionValues[key].as<bool>()<<endl;
         		}catch(boost::bad_any_cast const& e){
             		try{
-            		    cout<< "[" << key << "] = ["<< optionValues[key].as<string>()<<"]"<<endl;
+            		    cout<< "[" << key << "] = "<< optionValues[key].as<string>()<<endl;
             		}catch(boost::bad_any_cast const& e){
-            			continue;
+            			try{
+            			            		    cout<< "[" << key << "] = "<< optionValues[key].as<unsigned>()<<endl;
+            			            		}catch(boost::bad_any_cast const& e){
+            			            			try{
+            			            			            		    cout<< "[" << key << "] = "<< optionValues[key].as<uint>()<<endl;
+            			            			            		}catch(boost::bad_any_cast const& e){
+            			            			            			continue;
+            			            			            		}
+            			            		}
             		}
         		}
     		}

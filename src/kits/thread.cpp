@@ -195,19 +195,15 @@ thread_t* thread_get_self(void)
 pthread_t thread_create(thread_t* t, thread_pool* pool)
 {
     pthread_t tid;
-    int err;
     pthread_attr_t pattr;
 
     // create a new kernel schedulable thread
-    err = pthread_attr_init( &pattr );
-    THROW_IF(ThreadException, err);
-
-    err = pthread_attr_setscope( &pattr, PTHREAD_SCOPE_SYSTEM );
-    THROW_IF(ThreadException, err);
-
-    err = pthread_create(&tid, &pattr, start_thread, new thread_args(t, pool));
-    THROW_IF(ThreadException, err);
-
+    if(pthread_attr_init( &pattr ))
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "\t During attribute initialization");
+    if(pthread_attr_setscope( &pattr, PTHREAD_SCOPE_SYSTEM ))
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "\t During setting of attribute scope");
+    if(pthread_create(&tid, &pattr, start_thread, new thread_args(t, pool)))
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "\t During creation of pthread");
     return (tid);
 }
 
@@ -217,19 +213,18 @@ pthread_mutex_t thread_mutex_create(const pthread_mutexattr_t* attr)
 {
     pthread_mutexattr_t        mutex_attr;
     const pthread_mutexattr_t* ptr_mutex_attr;
-    int err;
 
     if (attr == NULL)
     {
 #if 0
-        err = pthread_mutexattr_init(&mutex_attr);
-        THROW_IF(ThreadException, err);
+       	if(pthread_mutexattr_init(&mutex_attr))
+       		throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 
-        err = pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK);
-        THROW_IF(ThreadException, err);
+        if(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK))
+        	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 
-        err = pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_PRIVATE);
-        THROW_IF(ThreadException, err);
+        if(pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_PRIVATE))
+        	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 
         ptr_mutex_attr = &mutex_attr;
 #else
@@ -242,8 +237,7 @@ pthread_mutex_t thread_mutex_create(const pthread_mutexattr_t* attr)
     }
 
     pthread_mutex_t mutex;
-    err = pthread_mutex_init(&mutex, ptr_mutex_attr);
-    THROW_IF(ThreadException, err);
+    if( pthread_mutex_init(&mutex, ptr_mutex_attr)) throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
     return mutex;
 }
 
@@ -256,7 +250,7 @@ void thread_mutex_lock(pthread_mutex_t &mutex)
 	if(!err)
 	    return;
 	if(err != EBUSY)
-	    THROW_IF(ThreadException, err);
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
     }
 
     thread_pool* pool = THREAD_POOL;
@@ -264,23 +258,25 @@ void thread_mutex_lock(pthread_mutex_t &mutex)
     pool->stop();
     int err = pthread_mutex_lock(&mutex);
     pool->start();
-    THROW_IF(ThreadException, err);
+    if(err)
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 }
 
 
 
 void thread_mutex_unlock(pthread_mutex_t &mutex)
 {
-    int err = pthread_mutex_unlock(&mutex);
-    THROW_IF(ThreadException, err);
+    if(pthread_mutex_unlock(&mutex))
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
+
 }
 
 
 
 void thread_mutex_destroy(pthread_mutex_t &mutex)
 {
-    int err = pthread_mutex_destroy(&mutex);
-    THROW_IF(ThreadException, err);
+    if(pthread_mutex_destroy(&mutex))
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 }
 
 
@@ -288,8 +284,8 @@ void thread_mutex_destroy(pthread_mutex_t &mutex)
 pthread_cond_t thread_cond_create(const pthread_condattr_t* attr)
 {
     pthread_cond_t cond;
-    int err = pthread_cond_init(&cond, attr);
-    THROW_IF(ThreadException, err);
+    if(pthread_cond_init(&cond, attr))
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
     return cond;
 }
 
@@ -297,24 +293,24 @@ pthread_cond_t thread_cond_create(const pthread_condattr_t* attr)
 
 void thread_cond_destroy(pthread_cond_t &cond)
 {
-    int err = pthread_cond_destroy(&cond);
-    THROW_IF(ThreadException, err);
+    if(pthread_cond_destroy(&cond))
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 }
 
 
 
 void thread_cond_signal(pthread_cond_t &cond)
 {
-    int err = pthread_cond_signal(&cond);
-    THROW_IF(ThreadException, err);
+    if(pthread_cond_signal(&cond))
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 }
 
 
 
 void thread_cond_broadcast(pthread_cond_t &cond)
 {
-    int err = pthread_cond_broadcast(&cond);
-    THROW_IF(ThreadException, err);
+    if(pthread_cond_broadcast(&cond))
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 }
 
 
@@ -326,7 +322,8 @@ void thread_cond_wait(pthread_cond_t &cond, pthread_mutex_t &mutex)
     pool->stop();
     int err = pthread_cond_wait(&cond, &mutex);
     pool->start();
-    THROW_IF(ThreadException, err);
+    if(err)
+    	throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 }
 
 bool thread_cond_wait(pthread_cond_t &cond, pthread_mutex_t &mutex,
@@ -341,7 +338,7 @@ bool thread_cond_wait(pthread_cond_t &cond, pthread_mutex_t &mutex,
     switch(err) {
     case 0: return true;
     case ETIMEDOUT: return false;
-    default: THROW_IF(ThreadException, err);
+    default: throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");;
     }
 
     unreachable();
@@ -410,28 +407,23 @@ void* start_thread(void* thread_object)
 void thread_pool::start()
 {
 #ifndef DISABLE_THREAD_POOL
-    int err = pthread_mutex_lock(&_lock);
-    THROW_IF(ThreadException, err);
+    if(pthread_mutex_lock(&_lock)) throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
     while(_active == _max_active) {
-	err = pthread_cond_wait(&_cond, &_lock);
-	THROW_IF(ThreadException, err);
+	if(pthread_cond_wait(&_cond, &_lock)) throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
     }
     assert(_active < _max_active);
     _active++;
-    err = pthread_mutex_unlock(&_lock);
-    THROW_IF(ThreadException, err);
+    if(pthread_mutex_unlock(&_lock)) throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 #endif
 }
 
 void thread_pool::stop()
 {
 #ifndef DISABLE_THREAD_POOL
-    int err = pthread_mutex_lock(&_lock);
-    THROW_IF(ThreadException, err);
+    if(pthread_mutex_lock(&_lock)) throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
     _active--;
     thread_cond_signal(_cond);
-    err = pthread_mutex_unlock(&_lock);
-    THROW_IF(ThreadException, err);
+    if(pthread_mutex_unlock(&_lock)) throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 #endif
 }
 
