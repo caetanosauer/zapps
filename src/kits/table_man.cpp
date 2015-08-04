@@ -405,10 +405,14 @@ w_rc_t table_man_t<T>::update_tuple(ss_m* db,
     // repeated work.
     size_t ksz = ptuple->_rep_key->_bufsz;
     ptuple->store_key(ptuple->_rep_key->_dest, ksz, table()->primary_idx());
+
+    size_t elen = ptuple->_rep->_bufsz;
+    ptuple->store_value(ptuple->_rep->_dest, elen, table()->primary_idx());
+
     w_keystr_t kstr;
     kstr.construct_regularkey(ptuple->_rep_key->_dest, ksz);
     W_DO(db->overwrite_assoc(table()->primary_idx()->stid(),
-                kstr, ptuple->_rep->_dest, 0, 0));
+                kstr, ptuple->_rep->_dest, 0, elen));
 
     return RCOK;
 
