@@ -37,8 +37,6 @@ void RestoreCmd::setupOptions()
 {
     KitsCommand::setupOptions();
     options.add_options()
-        ("backup", po::value<string>(&opt_backup)->default_value(""),
-            "Path on which to store backup file")
         ("segmentSize", po::value<unsigned>(&opt_segmentSize)
             ->default_value(1024),
             "Size of restore segment in number of pages")
@@ -74,17 +72,6 @@ void RestoreCmd::setupOptions()
             ->default_value(false)->implicit_value(true),
             "Finish benchmark only when restore is finished")
     ;
-}
-
-void RestoreCmd::archiveLog()
-{
-    // archive whole log
-    smlevel_0::logArchiver->activate(smlevel_0::log->curr_lsn(), true);
-    while (smlevel_0::logArchiver->getNextConsumedLSN() < smlevel_0::log->curr_lsn()) {
-        usleep(1000);
-    }
-    smlevel_0::logArchiver->shutdown();
-    smlevel_0::logArchiver->join();
 }
 
 void RestoreCmd::loadOptions(sm_options& options)

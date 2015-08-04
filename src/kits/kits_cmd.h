@@ -21,6 +21,7 @@ protected:
     string logdir;
     string archdir;
     string opt_dbfile;
+    string opt_backup;
 
     bool opt_load;
     string opt_benchmark;
@@ -60,6 +61,8 @@ protected:
     // Filesystem functions
     void mkdirs(string);
     void ensureEmptyPath(string);
+
+    void archiveLog();
 
 private:
     std::vector<base_client_t*> clients;

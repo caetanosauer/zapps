@@ -10,7 +10,6 @@ public:
     virtual void run();
 
 protected:
-    string opt_backup;
     unsigned opt_segmentSize;
     bool opt_singlePass;
     bool opt_instant;
@@ -27,8 +26,6 @@ protected:
 
     virtual void loadOptions(sm_options& opt);
     virtual void doWork();
-
-    void archiveLog();
 };
 
 #endif

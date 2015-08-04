@@ -27,6 +27,8 @@ void KitsCommand::setupOptions()
         //     "Path to configuration file")
         ("dbfile,d", po::value<string>(&opt_dbfile)->default_value("db"),
             "Path to database file (non-empty)")
+        ("backup", po::value<string>(&opt_backup)->default_value(""),
+            "Path on which to store backup file")
         ("logdir,l", po::value<string>(&logdir)->default_value("log"),
             "Directory containing log to be scanned")
         ("archdir,a", po::value<string>(&archdir)->default_value("archive"),
@@ -123,6 +125,18 @@ void KitsCommand::run()
 
     if (opt_num_trxs > 0 || opt_duration > 0) {
         runBenchmark();
+    }
+
+    if (!opt_backup.empty()) {
+        ensureEmptyPath(opt_backup);
+        vid_t vid(1);
+        vol_t* vol = smlevel_0::vol->get(vid);
+
+        if (!opt_eager) {
+            archiveLog();
+        }
+
+        W_COERCE(vol->take_backup(opt_backup));
     }
 
     finish();
@@ -360,6 +374,17 @@ void KitsCommand::loadOptions(sm_options& options)
 
     options.set_bool_option("sm_shutdown_clean", opt_cleanShutdown);
     options.set_bool_option("sm_truncate_log", opt_truncateLog);
+}
+
+void KitsCommand::archiveLog()
+{
+    // archive whole log
+    smlevel_0::logArchiver->activate(smlevel_0::log->curr_lsn(), true);
+    while (smlevel_0::logArchiver->getNextConsumedLSN() < smlevel_0::log->curr_lsn()) {
+        usleep(1000);
+    }
+    smlevel_0::logArchiver->shutdown();
+    smlevel_0::logArchiver->join();
 }
 
 void KitsCommand::finish()
