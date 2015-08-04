@@ -116,8 +116,13 @@ void RestoreCmd::run()
     }
 
     if (!opt_backup.empty()) {
-        vol->take_backup(opt_backup);
+        W_COERCE(vol->take_backup(opt_backup));
     }
+
+    // print load stats and reset them
+    cout << "BEGIN LOAD STATS" << endl;
+    shoreEnv->gatherstats_sm();
+    cout << "END LOAD STATS" << endl;
 
     // STEP 2 - spawn failure thread and run benchmark
     FailureThread* t = NULL;
@@ -137,7 +142,12 @@ void RestoreCmd::run()
     // errors, which should be ok (see trx_worker_t::_serve_action).
 
     // This will call doWork()
-    runBenchmark();
+    if (opt_num_trxs > 0 || opt_duration > 0) {
+        runBenchmark();
+    }
+    else {
+        cerr << "WARNING: no transactions to run during restore!" << endl;
+    }
 
     if (t) {
         t->join();
