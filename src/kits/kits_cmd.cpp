@@ -229,11 +229,12 @@ void KitsCommand::runBenchmarkSpec()
     unsigned long miochs = 0;
     double usage = 0;
 #endif
+    joinClients();
     TRACE(TRACE_ALWAYS, "end measurement\n");
     shoreEnv->print_throughput(opt_queried_sf, opt_spread, opt_num_threads, delay,
             miochs, usage);
 
-    joinClients();
+
 }
 
 void KitsCommand::forkClients()

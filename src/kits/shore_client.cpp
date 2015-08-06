@@ -107,13 +107,11 @@ w_rc_t base_client_t::run_xcts(int xct_type, int num_xct)
 {
     int i=0;
     int batchsz=1;
-
     client_ready();
     optionValues = _env->get_optionValues();
     // retrieve the default batch size and think time
     batchsz = optionValues["db-cl-batchsz"].as<int>();
     _think_time = optionValues["db-cl-thinktime"].as<int>();
-    cerr<< batchsz << " " << _think_time;
     if ((_think_time>0) && (batchsz>1)) {
         TRACE( TRACE_ALWAYS, "error: Batchsz=%d && ThinkTime=%d\n",
                batchsz, _think_time);
