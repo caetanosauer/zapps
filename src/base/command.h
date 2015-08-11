@@ -1,7 +1,6 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#include "zapps-config.h"
 
 #include "sm_base.h"
 

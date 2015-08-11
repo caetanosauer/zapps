@@ -1,7 +1,6 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-#include "zapps-config.h"
 
 #include "sm_base.h"
 #include "lsn.h"
