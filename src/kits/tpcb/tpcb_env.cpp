@@ -47,8 +47,8 @@ namespace tpcb {
  *
  ********************************************************************/
 
-ShoreTPCBEnv::ShoreTPCBEnv()
-    : ShoreEnv()
+ShoreTPCBEnv::ShoreTPCBEnv(boost::program_options::variables_map vm)
+    : ShoreEnv(vm)
 {
 }
 

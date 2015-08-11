@@ -14,13 +14,13 @@ namespace fs = boost::filesystem;
 #include "tpcc/tpcc_client.h"
 
 #include "util/stopwatch.h"
-#include "envvar.h"
 
 int MAX_THREADS = 1000;
 
 void KitsCommand::setupOptions()
 {
-    options.add_options()
+    boost::program_options::options_description kits("Kits Options");
+    kits.add_options()
         ("benchmark,b", po::value<string>(&opt_benchmark)->required(),
             "Benchmark to execute. Possible values: tpcb, tpcc")
         // ("config,c", po::value<string>(&opt_conffile)->required(),
@@ -79,6 +79,8 @@ void KitsCommand::setupOptions()
             "Activate skew on transaction inputs (currently only 80:20 skew \
             is supported, i.e., 80% of access to 20% of data")
     ;
+    options.add(kits);
+    setupSMOptions();
 }
 
 KitsCommand::KitsCommand()
@@ -278,7 +280,7 @@ void KitsCommand::doWork()
 template<class Environment>
 void KitsCommand::initShoreEnv()
 {
-    shoreEnv = new Environment();
+    shoreEnv = new Environment(optionValues);
 
     loadOptions(shoreEnv->get_opts());
 

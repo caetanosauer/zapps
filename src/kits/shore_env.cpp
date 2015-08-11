@@ -437,7 +437,7 @@ uint ShoreEnv::upd_worker_cnt()
 {
     // update worker thread cnt
 
-    _worker_cnt = optionValues["db-workers"].as<uint>();
+    _worker_cnt = optionValues["threads"].as<int>();
     return (_worker_cnt);
 }
 

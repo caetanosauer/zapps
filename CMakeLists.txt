@@ -73,8 +73,8 @@ ADD_DEFINITIONS(${ALL_FLAGS})
 #############################################################
 
 # options and configurations
-CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/config/zapps-config.h.in
-    ${CMAKE_BINARY_DIR}/config/zapps-config.h )
+#CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/config/zapps-config.h.in
+#    ${CMAKE_BINARY_DIR}/config/zapps-config.h )
 
 
 #############################################################
