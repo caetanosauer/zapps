@@ -460,7 +460,8 @@ void base_worker_t::create_trace_dir(string dir)
 }
 void base_worker_t::open_trace_file()
 {
-    string dir = envVar::instance()->getVar("dir-trace","RAT");
+	boost::program_options::variables_map optionValues = _env->get_optionValues();
+    string dir = optionValues["dir-trace"].as<string>();
     create_trace_dir(dir);
     time_t second = time(NULL);
     stringstream st;

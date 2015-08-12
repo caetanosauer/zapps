@@ -1,7 +1,6 @@
 #ifndef BASETHREAD_H
 #define BASETHREAD_H
 
-#include "zapps-config.h"
 
 #include "sm_base.h"
 #include "vol.h"

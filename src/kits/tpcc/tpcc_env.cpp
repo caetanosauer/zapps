@@ -186,8 +186,8 @@ void ShoreTPCCEnv::table_builder_t::work()
  *
  ********************************************************************/
 
-ShoreTPCCEnv::ShoreTPCCEnv()
-    : ShoreEnv()
+ShoreTPCCEnv::ShoreTPCCEnv(boost::program_options::variables_map map)
+    : ShoreEnv(map)
 {
 }
 

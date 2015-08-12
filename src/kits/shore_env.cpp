@@ -31,13 +31,19 @@
 
 // #include "util/confparser.h"
 #include "shore_env.h"
-#include "envvar.h"
 #include "trx_worker.h"
 #include "daemons.h"
 #include "util/random_input.h"
+
+
+#include <boost/algorithm/string.hpp>
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/program_options.hpp>
 // #include "sm/shore/shore_flusher.h"
 // #include "sm/shore/shore_helper_loader.h"
 
+using namespace boost;
 
 // #warning IP: TODO pass arbitrary -sm_* options from shore.conf to shore
 
@@ -83,7 +89,7 @@ void env_stats_t::print_env_stats() const
  *
  ********************************************************************/
 
-ShoreEnv::ShoreEnv()
+ShoreEnv::ShoreEnv(po::variables_map& vm)
     : db_iface(),
       _pssm(NULL),
       _initialized(false), _init_mutex(thread_mutex_create()),
@@ -110,33 +116,24 @@ ShoreEnv::ShoreEnv()
       _bUseFlusher(false)
       // _logger(NULL)
 {
+	optionValues = vm;
     _popts = new sm_options();
     _vid = vid_t(1);
 
     pthread_mutex_init(&_scaling_mutex, NULL);
     pthread_mutex_init(&_queried_mutex, NULL);
+    optionValues= vm;
 
-    // Read configuration
-    envVar* ev = envVar::instance();
 
-    string physical = ev->getSysDesign();
-
-    if (physical.compare("normal")==0) {
-        _pd = PD_NORMAL;
+    string physical = optionValues["db-config-design"].as<string>();
+    if(physical.compare("normal")==0){
+    	set_pd(PD_NORMAL);
     }
-
-    // Check about the hacks option
-    check_hacks_enabled();
-    if (is_hacks_enabled()) {
-        _pd |= PD_PADDED;
-    }
-
-
-    _bUseSLI = ev->getVarInt("db-worker-sli",0);
-    fprintf(stdout, "SLI= %s\n", (_bUseSLI ? "enabled" : "disabled"));
-
-    // Used by some benchmarks
-    _rec_to_acc = ev->getVarInt("records-to-access",1);
+	if(optionValues["physical-hacks-enable"].as<int>()){
+		add_pd(PD_PADDED);
+	}
+	setSLIEnabled(optionValues["db-worker-sli"].as<bool>());
+	set_rec_to_access(optionValues["records-to-access"].as<uint>());
 }
 
 
@@ -169,6 +166,7 @@ bool ShoreEnv::is_loaded()
 
 w_rc_t ShoreEnv::load()
 {
+
     // 1. lock the loading status and the scaling factor
     CRITICAL_SECTION(load_cs, _load_mutex);
     if (_loaded) {
@@ -178,6 +176,8 @@ w_rc_t ShoreEnv::load()
     }
     CRITICAL_SECTION(scale_cs, _scaling_mutex);
     time_t tstart = time(NULL);
+
+    _loaders_to_use = optionValues["threads"].as<int>();
 
     // 2. Invoke benchmark-specific table creator
     W_DO(create_tables());
@@ -289,7 +289,7 @@ void ShoreEnv::print_sf() const
 /********************************************************************
  *
  *  @fn:    Related to physical design
- *
+
  ********************************************************************/
 
 uint4_t ShoreEnv::get_pd() const
@@ -314,7 +314,7 @@ uint4_t ShoreEnv::add_pd(const physical_design_t& apd)
 bool ShoreEnv::check_hacks_enabled()
 {
     // enable hachs by default
-    int he = envVar::instance()->getVarInt("physical-hacks-enable",0);
+    int he = optionValues["physical-hacks-enable"].as<int>();
     _enable_hacks = (he == 1 ? true : false);
     return (_enable_hacks);
 }
@@ -436,9 +436,8 @@ void ShoreEnv::reset_skew()
 uint ShoreEnv::upd_worker_cnt()
 {
     // update worker thread cnt
-    uint workers = envVar::instance()->getVarInt("db-workers",0);
-    assert (workers);
-    _worker_cnt = workers;
+
+    _worker_cnt = optionValues["threads"].as<int>();
     return (_worker_cnt);
 }
 
@@ -475,11 +474,6 @@ int ShoreEnv::init()
         TRACE( TRACE_ALWAYS, "Already initialized\n");
         return (0);
     }
-
-    // Read configuration options
-    // We do not pass the configuration file name anymore.
-    // Instead, this should have been setup at envVar (the global environment)
-    readconfig();
 
     // Set sys params
     if (_set_sys_params()) {
@@ -554,7 +548,7 @@ int ShoreEnv::start()
     info();
 
     // read from env params the loopcnt
-    int lc = envVar::instance()->getVarInt("db-worker-queueloops",0);
+    int lc = optionValues["db-worker-queueloops"].as<int>();
 
 #ifdef CFG_FLUSHER
     _start_flusher();
@@ -562,8 +556,10 @@ int ShoreEnv::start()
 
     WorkerPtr aworker;
     for (uint i=0; i<_worker_cnt; i++) {
+
         aworker = new Worker(this,std::string("work-%d", i), -1,_bUseSLI);
         _workers.push_back(aworker);
+
         aworker->init(lc);
         aworker->start();
         aworker->fork();
@@ -779,39 +775,28 @@ void ShoreEnv::gatherstats_sm()
 int ShoreEnv::configure_sm()
 {
     TRACE( TRACE_DEBUG, "Configuring Shore...\n");
-
-    for (map<string,string>::iterator sm_iter = _sm_opts.begin();
-         sm_iter != _sm_opts.end(); sm_iter++)
-    {
-        // the "+1" is a hack to remove the preceding "-" from options
-        // e.g., -sm_logsize -> sm_logsize
-        string key = sm_iter->first.c_str() + 1;
-        string value = sm_iter->second.c_str();
-
-        // In Zero, we have to call the specific method depending on the
-        // type of the option, so we attempt casts to determine that
-        if (value.compare("yes") == 0 || value.compare("no") == 0)
-        {
-            // boolean options are set with yes/no in shore.conf
-            // TODO: is true/false or 1/0 allowed?
-            bool bvalue = (value.compare("yes") == 0);
-            _popts->set_bool_option(key, bvalue);
-        }
-        else {
-            std::istringstream iss(value);
-            int ivalue = 0;
-
-            if (!(iss >> ivalue).fail()) {
-                // if conversion succeeds, option is integer
-                _popts->set_int_option(key, ivalue);
-            }
-            else {
-                // otherwise it must be string
-                _popts->set_string_option(key, value);
-            }
-        }
-    }
-
+    BOOST_FOREACH(const po::variables_map::value_type& pair, optionValues){
+    	const std::string& key = pair.first;
+//    	if(!boost::starts_with(key,"sm"))
+//    		continue;
+    	try{
+    		_popts->set_int_option(key.substr(3,5), optionValues[key].as<int>());
+    	}catch(boost::bad_any_cast const& e) {
+    		try{
+    			_popts->set_bool_option(key, optionValues[key].as<bool>());
+    		}catch(boost::bad_any_cast const& e){
+    			try{
+    				_popts->set_string_option(key, optionValues[key].as<string>());
+    			}catch(boost::bad_any_cast const& e){
+    				try{
+    				   _popts->set_int_option(key, optionValues[key].as<uint>());
+    				}catch(boost::bad_any_cast const& e){
+    				    continue;
+    				}
+    			}
+    		}
+    	}
+    };
     upd_worker_cnt();
 
     // If we reached this point the sm is configured correctly
@@ -905,8 +890,7 @@ int ShoreEnv::start_sm()
 
     // setting the fake io disk latency - after we mount
     // (let the volume be formatted and mounted without any fake io latency)
-    envVar* ev = envVar::instance();
-    int enableFakeIO = ev->getVarInt("shore-fakeiodelay-enable",0);
+    int enableFakeIO = optionValues["sm_fakeiodelay-enable"].as<int>();
     TRACE( TRACE_DEBUG, "Is fake I/O delay enabled: (%d)\n", enableFakeIO);
     if (enableFakeIO) {
         _pssm->enable_fake_disk_latency(_vid);
@@ -914,7 +898,7 @@ int ShoreEnv::start_sm()
     else {
         _pssm->disable_fake_disk_latency(_vid);
     }
-    int ioLatency = ev->getVarInt("shore-fakeiodelay",0);
+    int ioLatency = optionValues["sm_fakeiodelay"].as<uint>();
     TRACE( TRACE_DEBUG, "I/O delay latency set: (%d)\n", ioLatency);
     W_COERCE(_pssm->set_fake_disk_latency(_vid,ioLatency));
 
@@ -1015,12 +999,11 @@ void ShoreEnv::set_active_cpu_count(const unsigned actcpucnt)
 int ShoreEnv::_set_sys_params()
 {
     // procmonitor returns 0 if it cannot find the number of processors
-    if (_max_cpu_count==0) {
-        _max_cpu_count = atoi(_sys_opts[SHORE_SYS_OPTIONS[0][0]].c_str());
-    }
+
+	_max_cpu_count = optionValues["sys-maxcpucount"].as<uint>();
 
     // Set active CPU info
-    uint tmp_active_cpu_count = atoi(_sys_opts[SHORE_SYS_OPTIONS[1][0]].c_str());
+    uint tmp_active_cpu_count = optionValues["sys-activecpucount"].as<uint>();
     if (tmp_active_cpu_count>_max_cpu_count) {
         _active_cpu_count = _max_cpu_count;
     }
@@ -1029,7 +1012,7 @@ int ShoreEnv::_set_sys_params()
     }
     print_cpus();
 
-    _activation_delay = atoi(_sys_opts[SHORE_SYS_OPTIONS[4][0]].c_str());
+    _activation_delay = optionValues["activation_delay"].as<uint>();
     return (0);
 }
 
@@ -1041,41 +1024,6 @@ void ShoreEnv::print_cpus() const
 }
 
 
-/******************************************************************
- *
- *  @fn:    readconfig
- *
- *  @brief: Reads configuration file
- *
- ******************************************************************/
-
-void ShoreEnv::readconfig()
-{
-    string conf_file;
-    envVar* ev = envVar::instance();
-    conf_file = ev->getConfFile();
-
-    TRACE( TRACE_ALWAYS, "Reading config file (%s)\n", conf_file.c_str());
-
-    string tmp;
-    int i=0;
-
-    // Parse SYSTEM parameters
-    TRACE( TRACE_DEBUG, "Reading SYS options\n");
-    for (i=0; i<SHORE_NUM_SYS_OPTIONS; i++) {
-        tmp = ev->getVar(SHORE_SYS_OPTIONS[i][0],SHORE_SYS_OPTIONS[i][1]);
-        _sys_opts[SHORE_SYS_OPTIONS[i][0]] = tmp;
-    }
-
-    // Parse SYS-SM (database-independent) parameters
-    TRACE( TRACE_DEBUG, "Reading SYS-SM options\n");
-    for (i=0; i<SHORE_NUM_SYS_SM_OPTIONS; i++) {
-        tmp = ev->getVar(SHORE_SYS_SM_OPTIONS[i][1],SHORE_SYS_SM_OPTIONS[i][2]);
-        _sm_opts[SHORE_SYS_SM_OPTIONS[i][0]] = tmp;
-    }
-
-    //ev->printVars();
-}
 
 
 
@@ -1113,17 +1061,31 @@ int ShoreEnv::restart()
 int ShoreEnv::conf()
 {
     TRACE( TRACE_DEBUG, "ShoreEnv configuration\n");
-
     // Print storage manager options
-    map<string,string>::iterator iter;
-    TRACE( TRACE_DEBUG, "** SYS options\n");
-    for ( iter = _sys_opts.begin(); iter != _sys_opts.end(); iter++)
-        cout << "(" << iter->first << ") (" << iter->second << ")" << endl;
-
-    TRACE( TRACE_DEBUG, "** SM options\n");
-    for ( iter = _sm_opts.begin(); iter != _sm_opts.end(); iter++)
-        cout << "(" << iter->first << ") (" << iter->second << ")" << endl;
-
+    BOOST_FOREACH(const po::variables_map::value_type& pair, optionValues){
+    		const std::string& key = pair.first;
+    		try{
+    		    cout<< "[" << key << "] = "<< optionValues[key].as<int>()<<endl;
+    		}catch(boost::bad_any_cast const& e){
+        		try{
+            	    cout<< "[" << key << "] = "<< optionValues[key].as<bool>()<<endl;
+        		}catch(boost::bad_any_cast const& e){
+            		try{
+            		    cout<< "[" << key << "] = "<< optionValues[key].as<string>()<<endl;
+            		}catch(boost::bad_any_cast const& e){
+            			try{
+            			            		    cout<< "[" << key << "] = "<< optionValues[key].as<unsigned>()<<endl;
+            			            		}catch(boost::bad_any_cast const& e){
+            			            			try{
+            			            			            		    cout<< "[" << key << "] = "<< optionValues[key].as<uint>()<<endl;
+            			            			            		}catch(boost::bad_any_cast const& e){
+            			            			            			continue;
+            			            			            		}
+            			            		}
+            		}
+        		}
+    		}
+    };
     return (0);
 }
 
@@ -1146,9 +1108,9 @@ int ShoreEnv::disable_fake_disk_latency()
                e.err_num());
         return (1);
     }
-    envVar* ev = envVar::instance();
-    ev->setVarInt("shore-fakeiodelay-enable",0);
-    ev->setVarInt("shore-fakeiodelay",0);
+    boost::any zero = 0;
+    optionValues.at("sm_fakeiodelay-enable").value().swap(zero);
+    optionValues.at("sm_fakeiodelay").value().swap(zero);
     return (0);
 }
 
@@ -1170,9 +1132,10 @@ int ShoreEnv::enable_fake_disk_latency(const int adelay)
                e.err_num());
         return (3);
     }
-    envVar* ev = envVar::instance();
-    ev->setVarInt("shore-fakeiodelay-enable",1);
-    ev->setVarInt("shore-fakeiodelay",adelay);
+    boost::any anydelay  = adelay;
+    boost::any zero = 0;
+    optionValues.at("sm_fakeiodelay-enable").value().swap(zero);
+    optionValues.at("sm_fakeiodelay").value().swap(anydelay);
     return (0);
 }
 

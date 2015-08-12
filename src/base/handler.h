@@ -1,7 +1,6 @@
 #ifndef HANDLER_H
 #define HANDLER_H
 
-#include "zapps-config.h"
 
 #include "logrec.h"
 

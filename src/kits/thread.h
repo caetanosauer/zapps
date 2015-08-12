@@ -42,9 +42,6 @@
 #include "util/randgen.h"
 
 
-DEFINE_EXCEPTION(ThreadException);
-
-
 #ifdef __spacrv9
 // Macro that tries to bind a thread to a specific CPU
 #define TRY_TO_BIND(cpu,boundflag)                                      \
@@ -94,7 +91,7 @@ T* thread_join(pthread_t tid)
     } u;
 
     if(pthread_join(tid, &u.p))
-        THROW(ThreadException);
+        throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
 
     return u.v;
 }
@@ -309,6 +306,8 @@ struct thread_local {
     void set(T* val) {
 	int result = pthread_setspecific(_key, val);
 	THROW_IF(ThreadException, result);
+	if(result)
+		throw ThreadException(__FILE__, __LINE__, __PRETTY_FUNCTION__, "");
     }
 
 

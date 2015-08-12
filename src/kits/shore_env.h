@@ -39,9 +39,11 @@
 #include "skewer.h"
 #include "reqs.h"
 #include "table_desc.h"
-
+#include <boost/program_options.hpp>
 
 using std::map;
+
+namespace po = boost::program_options;
 
 
 /******** Constants ********/
@@ -50,37 +52,6 @@ const int SHORE_NUM_OF_RETRIES       = 3;
 
 #define SHORE_TABLE_DATA_DIR  "databases"
 #define SHORE_CONF_FILE       "shore.conf"
-
-const string CONFIG_PARAM       = "db-config";
-const string CONFIG_PARAM_VALUE = "invalid";
-
-// SHORE_SYS_OPTIONS:
-// Database-independent options
-const string SHORE_SYS_OPTIONS[][2] = {
-    { "sys-maxcpucount", "0" },
-    { "sys-activecpucount", "0" },
-    { "shore-fakeiodelay", "0" },
-    { "shore-fakeiodelay-enable", "0" },
-    { "activation_delay", "0" }
-};
-
-const int    SHORE_NUM_SYS_OPTIONS  = 5;
-
-
-// SHORE_SYS_SM_OPTIONS:
-// Those options are appended as parameters when starting Shore
-// Those are the database-independent
-const string SHORE_SYS_SM_OPTIONS[][3]  = {
-    { "-sm_errlog", "shore-errlog", "shoremt.err.log" },
-    { "-sm_num_page_writers", "shore-pagecleaners", "16" },
-    { "-sm_chkpt_flush_interval", "shore-chkpt_flush_interval", "-1" },
-    { "-sm_backgroundflush", "shore-backgroundflush", "yes" },
-    { "-sm_log_page_flushes", "shore-log_page_flushes", "yes" },
-    { "-sm_preventive_chkpt", "shore-preventive_chkpt", "yes" }
-};
-
-const int    SHORE_NUM_SYS_SM_OPTIONS   = 6;
-
 
 
 /******************************************************************
@@ -437,11 +408,6 @@ protected:
     // Configuration variables
     guard<sm_options> _popts;
 
-    // TODO: get rid of this stuff!
-    ParamMap      _sys_opts;  // db-instance-independent options
-    ParamMap      _sm_opts;   // db-instance-specific options that are passed to Shore
-    ParamMap      _dev_opts;  // db-instance-specific options
-
     // Processor info
     uint _max_cpu_count;    // hard limit
     uint _active_cpu_count; // soft limit
@@ -518,19 +484,24 @@ protected:
     int  close_sm();
 
     // load balancing settings
+
+
+
     volatile bool _bAlarmSet;
     tatas_lock _alarm_lock;
     int _start_imbalance;
     skew_type_t _skew_type;
 
+
+
+    po::variables_map optionValues;
 public:
 
-    ShoreEnv();
+    ShoreEnv(po::variables_map& vm);
     virtual ~ShoreEnv();
 
-
     sm_options& get_opts() { return *_popts; }
-
+    po::variables_map& get_optionValues(){ return optionValues; };
     // DB INTERFACE
 
     virtual int conf();
@@ -699,6 +670,7 @@ public:
 
     inline uint get_rec_to_access() { return *&_rec_to_acc; }
 
+    void set_rec_to_access(uint rec_to_acc){ _rec_to_acc =  rec_to_acc; }
 
     // Run one transaction
     virtual w_rc_t run_one_xct(Request* prequest)=0;

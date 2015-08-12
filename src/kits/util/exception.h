@@ -70,8 +70,7 @@
    } while (false)
 
 
-// optional printf-like message allowed here
-class QPipeException : public std::exception
+class ZappsException : public std::exception
 {
 
 private:
@@ -79,30 +78,49 @@ private:
   std::string _message;
 
 public:
-
-  QPipeException(const char* filename, int line_num, const char* function_name,
-                 std::string const &m)
+  ZappsException(const char* filename, int line_num, const char* function_name,
+                   std::string const &m) : exception()
   {
-      std::stringstream ss;
+	  std::stringstream ss;
       ss << filename << ":" << line_num
-          << "(" << function_name << "): "
-          << m;
+            << "(" << function_name << "): "
+            << m;
       _message = ss.str();
   }
-
-  virtual const char* what() const throw() {
-    return _message.data();
+  virtual const char* what() const throw()
+  {
+      return _message.data();
   }
-
-  virtual ~QPipeException() throw() { }
 };
 
+class QPipeException : public ZappsException
+{
+public:
+  QPipeException(const char* filename, int line_num, const char* function_name,
+                 std::string const &m) : ZappsException(filename, line_num, function_name, m)
+  {
+
+  }
+};
+
+
+
+
+class ThreadException : public ZappsException {
+public:
+	ThreadException(const char* filename, int line_num, const char* function_name,
+			std::string const &m) : ZappsException(filename, line_num, function_name, m)
+	{
+	}
+};
+
+
 #define DEFINE_EXCEPTION(Name) \
-    class Name : public QPipeException { \
+    class Name : public ZappsException { \
     public: \
         Name(const char* filename, int line_num, const char* function_name, \
              const char* m) \
-            : QPipeException(filename, line_num, function_name, m) \
+            : ZappsException(filename, line_num, function_name, m) \
             { \
             } \
     }

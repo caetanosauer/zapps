@@ -1,7 +1,6 @@
 #ifndef ITERATOR_H
 #define ITERATOR_H
 
-#include "zapps-config.h"
 
 #include "sm_base.h"
 #include "generic_page.h"
