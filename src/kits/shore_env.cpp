@@ -837,10 +837,11 @@ int ShoreEnv::start_sm()
     // format and mount the database...
 
     assert (_pssm);
-    assert (!_device.empty());
-    assert (_quota>0);
 
     if (_clobber) {
+        assert (!_device.empty());
+        assert (_quota>0);
+
         // if didn't clobber then the db is already loaded
         CRITICAL_SECTION(cs, _load_mutex);
 
@@ -871,8 +872,6 @@ int ShoreEnv::start_sm()
         // if didn't clobber then the db is already loaded
         CRITICAL_SECTION(cs, _load_mutex);
 
-        TRACE( TRACE_DEBUG, "Using device (%s)\n", _device.c_str());
-
         // CS: No need to mount since mounted devices are restored during
         // log analysis, i.e., list of mounted devices is kept in the persistent
         // system state. Mount here is only necessary if we explicitly dismount
@@ -882,7 +881,7 @@ int ShoreEnv::start_sm()
         vol_t* vol = ss_m::vol->get(_vid);
         w_assert0(vol);
         w_assert0(vol->is_alloc_store(1));
-        w_assert0(strcmp(vol->devname(), _device.c_str()) == 0);
+        // w_assert0(strcmp(vol->devname(), _device.c_str()) == 0);
 
         // "speculate" that the database is loaded
         _loaded = true;

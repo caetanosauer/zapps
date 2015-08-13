@@ -141,13 +141,12 @@ void RestoreCmd::run()
     // Meanwhile, the thread running the benchmark will accumulate
     // errors, which should be ok (see trx_worker_t::_serve_action).
 
-    // This will call doWork()
-    if (opt_num_trxs > 0 || opt_duration > 0) {
-        runBenchmark();
-    }
-    else {
+    if (opt_num_trxs == 0 && opt_duration == 0) {
         cerr << "WARNING: no transactions to run during restore!" << endl;
     }
+
+    // This will call doWork()
+    runBenchmark();
 
     if (t) {
         t->join();

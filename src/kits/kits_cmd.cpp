@@ -26,7 +26,7 @@ void KitsCommand::setupOptions()
         // ("config,c", po::value<string>(&opt_conffile)->required(),
         //     "Path to configuration file")
         ("dbfile,d", po::value<string>(&opt_dbfile)->default_value("db"),
-            "Path to database file (non-empty)")
+            "Path to database file (required only for loading)")
         ("backup", po::value<string>(&opt_backup)->default_value(""),
             "Path on which to store backup file")
         ("logdir,l", po::value<string>(&logdir)->default_value("log"),
@@ -121,6 +121,12 @@ private:
 void KitsCommand::run()
 {
     init();
+
+    if (!opt_backup.empty()) {
+        ensureEmptyPath(opt_backup);
+        ensureParentPathExists(opt_backup);
+    }
+
     if (opt_load) {
         shoreEnv->load();
     }
@@ -130,9 +136,9 @@ void KitsCommand::run()
     }
 
     if (!opt_backup.empty()) {
-        ensureEmptyPath(opt_backup);
         vid_t vid(1);
         vol_t* vol = smlevel_0::vol->get(vid);
+        w_assert1(vol);
 
         if (!opt_eager) {
             archiveLog();
@@ -185,38 +191,41 @@ void KitsCommand::runBenchmarkSpec()
     _g_mon->cntr_reset();
 #endif
 
-    // set measurement state to measure - start counting everything
-    TRACE(TRACE_ALWAYS, "begin measurement\n");
-    stopwatch_t timer;
-
     if (opt_queried_sf <= 0) {
         opt_queried_sf = shoreEnv->get_sf();
     }
 
-    // 1. create client threads
-    mtype = opt_duration > 0 ? MT_TIME_DUR : MT_NUM_OF_TRXS;
-    int trxsPerThread = opt_num_trxs / opt_num_threads;
-    for (int i = 0; i < opt_num_threads; i++) {
-        // create & fork testing threads
-        if (opt_spread) {
-            wh_id = (i%(int)opt_queried_sf)+1;
+    stopwatch_t timer;
+
+    if (opt_num_trxs > 0 || opt_duration > 0) {
+        // set measurement state to measure - start counting everything
+        TRACE(TRACE_ALWAYS, "begin measurement\n");
+
+        // 1. create client threads
+        mtype = opt_duration > 0 ? MT_TIME_DUR : MT_NUM_OF_TRXS;
+        int trxsPerThread = opt_num_trxs / opt_num_threads;
+        for (int i = 0; i < opt_num_threads; i++) {
+            // create & fork testing threads
+            if (opt_spread) {
+                wh_id = (i%(int)opt_queried_sf)+1;
+            }
+
+            Client* client = new Client(
+                    "client-" + std::to_string(i), i,
+                    (Environment*) shoreEnv,
+                    mtype, opt_select_trx,
+                    trxsPerThread,
+                    current_prs_id /* cpu id -- see below */,
+                    wh_id, opt_queried_sf);
+            w_assert0(client);
+            clients.push_back(client);
+
+            // CS: 1st arg is binding type, which I don't know what it is for
+            // It seems like it is a way to specify what the next CPU id is.
+            // If BT_NONE is given, it simply returns -1
+            // TODO: this is required to implement opt_spread -- take a look!
+            // current_prs_id = next_cpu(BT_NONE, current_prs_id);
         }
-
-        Client* client = new Client(
-                "client-" + std::to_string(i), i,
-                (Environment*) shoreEnv,
-                mtype, opt_select_trx,
-                trxsPerThread,
-                current_prs_id /* cpu id -- see below */,
-                wh_id, opt_queried_sf);
-        w_assert0(client);
-        clients.push_back(client);
-
-        // CS: 1st arg is binding type, which I don't know what it is for
-        // It seems like it is a way to specify what the next CPU id is.
-        // If BT_NONE is given, it simply returns -1
-        // TODO: this is required to implement opt_spread -- take a look!
-        // current_prs_id = next_cpu(BT_NONE, current_prs_id);
     }
 
     doWork();
@@ -231,12 +240,13 @@ void KitsCommand::runBenchmarkSpec()
     unsigned long miochs = 0;
     double usage = 0;
 #endif
-    joinClients();
     TRACE(TRACE_ALWAYS, "end measurement\n");
     shoreEnv->print_throughput(opt_queried_sf, opt_spread, opt_num_threads, delay,
             miochs, usage);
 
-
+    if (opt_num_trxs > 0 || opt_duration > 0) {
+        joinClients();
+    }
 }
 
 void KitsCommand::forkClients()
@@ -290,19 +300,24 @@ void KitsCommand::initShoreEnv()
 
     shoreEnv->init();
 
+    shoreEnv->set_clobber(opt_load);
     if (opt_load) {
+        if (opt_dbfile.empty()) {
+            throw runtime_error("Option dbfile cannot be empty!");
+        }
+
         // delete existing logs and db files
         ensureEmptyPath(logdir);
         if (!archdir.empty()) {
             ensureEmptyPath(archdir);
         }
         ensureEmptyPath(opt_dbfile);
-    }
+        ensureParentPathExists(opt_dbfile);
 
-    shoreEnv->set_clobber(opt_load);
-    shoreEnv->set_device(opt_dbfile);
-    // SM expects quota in KB
-    shoreEnv->set_quota(opt_quota * 1024);
+        shoreEnv->set_device(opt_dbfile);
+        // SM expects quota in KB
+        shoreEnv->set_quota(opt_quota * 1024);
+    }
 
     shoreEnv->start();
 }
@@ -319,6 +334,18 @@ void KitsCommand::mkdirs(string path)
             throw runtime_error("Provided path is not a directory!");
         }
     }
+}
+
+/**
+ * Given path should be a file name (e.g., DB file or backup).
+ * Ensures that the directory containing the file exists, to avoid
+ * OS failures in the SM when creating the file.
+ */
+void KitsCommand::ensureParentPathExists(string path)
+{
+    fs::path fspath(path);
+    fspath.remove_filename();
+    mkdirs(fspath.string());
 }
 
 /**
@@ -360,10 +387,6 @@ void KitsCommand::loadOptions(sm_options& options)
         options.set_int_option("sm_archiver_workspace_size",
                 opt_archWorkspace * 1048576);
         mkdirs(archdir);
-    }
-
-    if (opt_dbfile.empty()) {
-        throw runtime_error("Option dbfile cannot be empty!");
     }
 
     // ticker always turned on

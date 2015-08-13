@@ -62,6 +62,7 @@ protected:
     // Filesystem functions
     void mkdirs(string);
     void ensureEmptyPath(string);
+    void ensureParentPathExists(string);
 
     void archiveLog();
 
