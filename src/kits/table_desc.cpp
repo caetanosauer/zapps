@@ -121,7 +121,7 @@ w_rc_t table_desc_t::create_physical_index(ss_m* db, index_desc_t* index)
     W_DO(db->create_assoc(get_catalog_stid(), kstr,
                 vec_t(&stid, sizeof(stid_t))));
 
-//    // Print info
+    // Print info
     TRACE( TRACE_STATISTICS, "%s %d (%s) (%s) (%s)\n",
            index->name().c_str(), stid.store,
            (index->is_latchless() ? "no latch" : "latch"),

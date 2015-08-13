@@ -180,7 +180,7 @@ w_rc_t base_client_t::run_xcts(int xct_type, int num_xct)
         assert (0); // UNSUPPORTED MEASUREMENT TYPE
         break;
     }
-    TRACE( TRACE_TRX_FLOW, "Exiting...\n");
+    // TRACE( TRACE_TRX_FLOW, "Exiting...\n");
 
     return (RCOK);
 }

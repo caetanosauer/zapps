@@ -99,7 +99,7 @@ w_rc_t baseline_tpcc_client_t::submit_one(int xct_type, int xctid)
     bool bWake = false;
     if (condex* c = _cp->take_one()) {
         atrt.set_notify(c);
-        TRACE( TRACE_TRX_FLOW, "Sleeping\n");
+        // TRACE( TRACE_TRX_FLOW, "Sleeping\n");
         bWake = true;
     }
 
