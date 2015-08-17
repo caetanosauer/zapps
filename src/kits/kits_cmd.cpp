@@ -343,9 +343,14 @@ void KitsCommand::mkdirs(string path)
  */
 void KitsCommand::ensureParentPathExists(string path)
 {
+
     fs::path fspath(path);
     fspath.remove_filename();
-    mkdirs(fspath.string());
+    string parent = fspath.string();
+    // can happen if relative path is used
+    if (parent.empty()) { return; }
+
+    mkdirs(parent);
 }
 
 /**
