@@ -52,6 +52,13 @@ void Command::init()
     REGISTER_COMMAND("restore", RestoreCmd);
 }
 
+void Command::setupCommonOptions()
+{
+    options.add_options()
+        ("help,h", "Displays help information regarding a specific command")
+        ("config,c", po::value<string>()->implicit_value("zapps.conf"),
+         "Specify path to a config file");
+}
 
 void Command::showCommands()
 {
@@ -59,9 +66,9 @@ void Command::showCommands()
         << endl << "Commands:" << endl;
     ConstructorMap::iterator it;
     for (it = constructorMap.begin(); it != constructorMap.end(); it++) {
+        // Options common to all commands
         Command* cmd = (it->second)();
-         cmd->options.add_options()
-             ("help,h", "Displays help information regarding a specific command");
+        cmd->setupCommonOptions();
         cmd->setupOptions();
         cerr << it->first << endl << cmd->options << endl << endl;
     }
@@ -74,22 +81,23 @@ Command* Command::parse(int argc, char ** argv)
         std::transform(cmdStr.begin(), cmdStr.end(), cmdStr.begin(), ::tolower);
         if (constructorMap.find(cmdStr) != constructorMap.end()) {
             Command* cmd = constructorMap[cmdStr]();
-            cmd->options.add_options()
-                ("help,h", "Displays help information regarding a specific command");
+            cmd->setupCommonOptions();
             cmd->setCommandString(cmdStr);
             cmd->setupOptions();
+
             po::variables_map vm;
             po::store(po::parse_command_line(argc,argv,cmd->getOptions()), vm);
-            if(vm.count("config-file")){
-                string pathToFile = vm["config-file"].as<string>();
+            if (vm.count("config") > 0) {
+                string pathToFile = vm["config"].as<string>();
                 std::ifstream file;
                 file.open(pathToFile.c_str());
-                po::store(po::parse_config_file(file,cmd->getOptions(),true), vm);
+                po::store(po::parse_config_file(file,cmd->getOptions(), true), vm);
             }
-            if(vm.count("help")){
+            if (vm.count("help") > 0) {
                 cmd->helpOption();
                 return NULL;
             }
+
             po::notify(vm);
             cmd->setOptionValues(vm);
             return cmd;
@@ -104,10 +112,10 @@ void Command::setupSMOptions()
 {
     boost::program_options::options_description smoptions("Storage Manager Options");
     smoptions.add_options()
-     ("db-config-design", po::value<string>()->default_value("normal"),
+    ("db-config-design", po::value<string>()->default_value("normal"),
        "")
     ("physical-hacks-enable", po::value<int>()->default_value(0),
-        "Enables physical hacks, such as padding of records to improve performance of certain benchmarks")
+        "Enables physical hacks, such as padding of records")
     ("db-worker-sli", po::value<bool>()->default_value(0),
         "Speculative Lock inheritance")
     ("db-loaders", po::value<int>()->default_value(10),
@@ -126,8 +134,6 @@ void Command::setupSMOptions()
         "Specify the number of workers executing transactions")
     ("dir-trace", po::value<string>()->default_value("RAT"),
         "")
-    ("config-file, cf", po::value<string>()->implicit_value("shore.conf"),
-        "Specify a path to a config-file")
     /** System related options **/
     ("sys-maxcpucount", po::value<uint>()->default_value(0),
         "Maximum CPU Count of a system")

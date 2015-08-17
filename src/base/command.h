@@ -29,7 +29,10 @@ protected:
 
     string commandString;
 
-    //Setup Options that can be used in every command instance i.e. are independent of executed benchmark or test -> Mostly shore config options
+    /// Options common to all commands (e.g., help and config)
+    void setupCommonOptions();
+
+    /// Options passed down to the storage manager
     void setupSMOptions();
 
     void helpOption();
