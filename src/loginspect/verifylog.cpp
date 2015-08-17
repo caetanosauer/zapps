@@ -41,10 +41,10 @@ void VerifyHandler::newFile(const char* fname)
 void VerifyHandler::invoke(logrec_t& r)
 {
     lsn_t lsn = r.lsn_ck();
-    lpid_t pid = r.construct_pid();
+    lpid_t pid = r.pid();
     assert(r.valid_header());
-    assert(pid.page >= lastPID.page);
-    if (pid.page == lastPID.page) {
+    assert(pid >= lastPID);
+    if (pid == lastPID) {
         assert(lsn > lastLSN);
     }
     assert(merge || lsn >= minLSN);

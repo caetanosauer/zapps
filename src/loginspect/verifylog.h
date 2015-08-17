@@ -9,10 +9,6 @@ class VerifyLog : public LogScannerCommand
 public:
     void setupOptions();
     void run();
-private:
-    bool merge;
-    string archdir;
-    string logdir;
 };
 
 class VerifyHandler : public Handler {

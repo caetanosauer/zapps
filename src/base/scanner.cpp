@@ -235,6 +235,10 @@ void LogArchiveScanner::run()
             runEnd = PARSE_LSN(runFiles[i].c_str(), true);
         }
 
+        if (openFileCallback) {
+            openFileCallback(runFiles[i].c_str());
+        }
+
         LogArchiver::ArchiveScanner::RunScanner* rs =
             new LogArchiver::ArchiveScanner::RunScanner(
                     runBegin,

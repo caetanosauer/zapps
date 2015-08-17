@@ -15,6 +15,7 @@
 #include "agglog.h"
 #include "logcat.h"
 #include "verifylog.h"
+#include "logstats.h"
 #include "experiments/restore_cmd.h"
 
 /*
@@ -47,6 +48,7 @@ void Command::init()
     REGISTER_COMMAND("verifylog", VerifyLog);
     //REGISTER_COMMAND("dbstats", DBStats);
     REGISTER_COMMAND("agglog", AggLog);
+    REGISTER_COMMAND("logstats", LogStats);
     //REGISTER_COMMAND("mrestore", MergeRestore);
     REGISTER_COMMAND("kits", KitsCommand);
     REGISTER_COMMAND("restore", RestoreCmd);

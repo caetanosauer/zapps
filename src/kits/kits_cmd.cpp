@@ -145,6 +145,7 @@ void KitsCommand::run()
         }
 
         W_COERCE(vol->take_backup(opt_backup));
+        // add call to sx_add_backup
     }
 
     finish();
