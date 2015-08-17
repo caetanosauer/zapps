@@ -8,12 +8,6 @@ public:
     void usage();
     void run();
     void setupOptions();
-
-private:
-    bool isArchive;
-    bool merge;
-    string filename;
-    size_t number;
 };
 
 #endif

@@ -55,6 +55,9 @@ protected:
     BaseScanner* getLogArchiveScanner();
 
     string logdir;
+    bool isArchive;
+    bool merge;
+    string filename;
 
 private:
     BaseScanner* scanner;

@@ -5,24 +5,12 @@
 
 void VerifyLog::setupOptions()
 {
-    // dont use options from LogScannerCommand because logdir is optional
-    options.add_options()
-        ("logdir,l", po::value<string>(&logdir)->default_value(""),
-            "Directory containing log to be scanned")
-        ("archdir,a", po::value<string>(&archdir)->default_value(""),
-            "Directory in which to store the log archive")
-        ("merge,m", po::bool_switch(&merge)->default_value(false),
-            "Verify merged output of log archive")
-    ;
+    LogScannerCommand::setupOptions();
 }
 
 void VerifyLog::run()
 {
-    if (merge) {
-        throw runtime_error("Merge scan not supported yet");
-    }
-
-    BaseScanner* s = merge ? getMergeScanner() : getScanner();
+    BaseScanner* s = getScanner();
     VerifyHandler* h = new VerifyHandler(merge);
     if (!merge) {
         s->openFileCallback = std::bind(&VerifyHandler::newFile, h,

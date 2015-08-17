@@ -262,17 +262,20 @@ size_t LogScannerCommand::BLOCK_SIZE = 1024 * 1024;
 BaseScanner* LogScannerCommand::getScanner(
         bitset<logrec_t::t_max_logrec>* filter)
 {
-    return new BlockScanner(logdir.c_str(), BLOCK_SIZE, filter);
-}
+    BaseScanner* s;
+    if (isArchive) {
+        if (merge) s = new MergeScanner(logdir);
+        else s = new LogArchiveScanner(logdir);
+    }
+    else {
+        s = new BlockScanner(logdir.c_str(), BLOCK_SIZE, filter);
+    }
 
-BaseScanner* LogScannerCommand::getLogArchiveScanner()
-{
-    return new LogArchiveScanner(logdir);
-}
+    if (!filename.empty()) {
+        s->setRestrictFile(logdir + "/" + filename);
+    }
 
-BaseScanner* LogScannerCommand::getMergeScanner()
-{
-    return new MergeScanner(logdir);
+    return s;
 }
 
 void LogScannerCommand::setupOptions()
@@ -281,8 +284,16 @@ void LogScannerCommand::setupOptions()
     logscanner.add_options()
         ("logdir,l", po::value<string>(&logdir)->required(),
          "Directory containing log to be scanned")
-        ("n", po::value<size_t>(&limit)->default_value(0),
-         "Number of log records to scan")
+        ("file,f", po::value<string>(&filename)->default_value(""),
+            "Scan only a specific file inside the given directory")
+        ("archive,a", po::value<bool>(&isArchive)->default_value(false)
+         ->implicit_value(true),
+            "Scan log archive files isntead of normal recovery log")
+        ("merge,m", po::value<bool>(&merge)->default_value(false)
+         ->implicit_value(true),
+            "Merge archiver input so that global sort order is produced")
+        ("limit,n", po::value<size_t>(&limit)->default_value(0),
+             "Number of log records to scan")
         ;
     options.add(logscanner);
 }
