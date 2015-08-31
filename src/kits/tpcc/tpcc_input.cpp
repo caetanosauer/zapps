@@ -254,7 +254,7 @@ new_order_input_t create_new_order_input(int sf, int specificWH)
     if (noin._rbk == 1) {
         // generate an input that it will cause a rollback
         noin.items[noin._ol_cnt-1]._ol_i_id = -1;
-        TRACE( TRACE_TRX_FLOW, "Bad input...\n");
+        // TRACE( TRACE_TRX_FLOW, "Bad input...\n");
     }
 #endif
 

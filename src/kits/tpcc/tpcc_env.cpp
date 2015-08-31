@@ -138,6 +138,9 @@ void ShoreTPCCEnv::table_builder_t::work()
     int cid_array[ORDERS_PER_DIST];
     gen_cid_array(cid_array);
 
+    // CS TODO: break this loop into a batch size, so that log and buffer
+    // pool space can be reclaimed.
+
     //int last_wh = 1;
     for(int i=0 ; i < _count; i++) {
         /*

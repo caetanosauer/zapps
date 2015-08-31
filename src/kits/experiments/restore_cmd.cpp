@@ -119,11 +119,6 @@ void RestoreCmd::run()
         W_COERCE(vol->take_backup(opt_backup));
     }
 
-    // print load stats and reset them
-    cout << "BEGIN LOAD STATS" << endl;
-    shoreEnv->gatherstats_sm();
-    cout << "END LOAD STATS" << endl;
-
     // STEP 2 - spawn failure thread and run benchmark
     FailureThread* t = NULL;
     if (!opt_offline) {
@@ -140,10 +135,6 @@ void RestoreCmd::run()
     // back. If instant restart is on, then REDO will invoke restore.
     // Meanwhile, the thread running the benchmark will accumulate
     // errors, which should be ok (see trx_worker_t::_serve_action).
-
-    if (opt_num_trxs == 0 && opt_duration == 0) {
-        cerr << "WARNING: no transactions to run during restore!" << endl;
-    }
 
     // This will call doWork()
     runBenchmark();

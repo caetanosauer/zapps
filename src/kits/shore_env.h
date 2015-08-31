@@ -105,7 +105,7 @@ const int SHORE_NUM_OF_RETRIES       = 3;
             if (e.err_num() != smlevel_0::eDEADLOCK)                    \
                 _inc_##trxlid##_failed();                               \
             else _inc_##trxlid##_dld();                                 \
-            TRACE( TRACE_TRX_FLOW, "Xct (%d) aborted [0x%x]\n", xct_id, e.err_num()); \
+            /*TRACE( TRACE_TRX_FLOW, "Xct (%d) aborted [0x%x]\n", xct_id, e.err_num());*/ \
             w_rc_t e2 = _pssm->abort_xct();                             \
             if(e2.is_error()) TRACE( TRACE_ALWAYS, "Xct (%d) abort failed [0x%x]\n", xct_id, e2.err_num()); \
             prequest->notify_client();                                  \
@@ -132,7 +132,7 @@ const int SHORE_NUM_OF_RETRIES       = 3;
             if (e.err_num() != eDEADLOCK)                    \
                 _inc_##trxlid##_failed();                               \
             else _inc_##trxlid##_dld();                                 \
-            TRACE( TRACE_TRX_FLOW, "Xct (%d) aborted [0x%x]\n", xct_id, e.err_num()); \
+            /*TRACE( TRACE_TRX_FLOW, "Xct (%d) aborted [0x%x]\n", xct_id, e.err_num());*/ \
             w_rc_t e2 = _pssm->abort_xct();                             \
             if(e2.is_error()) TRACE( TRACE_ALWAYS, "Xct (%d) abort failed [0x%x]\n", xct_id, e2.err_num()); \
             prequest->notify_client();                                  \
