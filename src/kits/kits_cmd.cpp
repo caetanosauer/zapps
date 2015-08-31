@@ -126,7 +126,6 @@ void KitsCommand::run()
     init();
 
     if (!opt_backup.empty()) {
-        ensureEmptyPath(opt_backup);
         ensureParentPathExists(opt_backup);
     }
 
@@ -139,6 +138,9 @@ void KitsCommand::run()
     }
 
     if (!opt_backup.empty()) {
+        // Make sure all workers are done
+        shoreEnv->stop();
+
         vid_t vid(1);
         vol_t* vol = smlevel_0::vol->get(vid);
         w_assert1(vol);
@@ -234,6 +236,10 @@ void KitsCommand::runBenchmarkSpec()
 
     doWork();
 
+    if (opt_num_trxs > 0 || opt_duration > 0) {
+        joinClients();
+    }
+
     double delay = timer.time();
     //xct_stats stats = shell_get_xct_stats();
 #ifdef HAVE_CPUMON
@@ -247,10 +253,6 @@ void KitsCommand::runBenchmarkSpec()
     TRACE(TRACE_ALWAYS, "end measurement\n");
     shoreEnv->print_throughput(opt_queried_sf, opt_spread, opt_num_threads, delay,
             miochs, usage);
-
-    if (opt_num_trxs > 0 || opt_duration > 0) {
-        joinClients();
-    }
 }
 
 void KitsCommand::forkClients()
@@ -315,7 +317,6 @@ void KitsCommand::initShoreEnv()
         if (!archdir.empty()) {
             ensureEmptyPath(archdir);
         }
-        ensureEmptyPath(opt_dbfile);
         ensureParentPathExists(opt_dbfile);
 
         shoreEnv->set_device(opt_dbfile);
@@ -358,8 +359,8 @@ void KitsCommand::ensureParentPathExists(string path)
 }
 
 /**
- * If called on directory, remove all its contents, leavin an empty directory
- * behind. Otherwise, simply delete the file.
+ * If called on directory, remove all its contents, leaving an empty directory
+ * behind.
  */
 void KitsCommand::ensureEmptyPath(string path)
 {
@@ -370,13 +371,13 @@ void KitsCommand::ensureEmptyPath(string path)
 
     if (!fs::is_empty(fspath)) {
         if (fs::is_directory(fspath)) {
-            fs::remove_all(fspath);
-            fs::create_directory(fspath);
+            // delete all contents
+            fs::directory_iterator end, it(fspath);
+            while (it != end) {
+                fs::remove_all(it->path());
+                it++;
+            }
             w_assert1(fs::is_empty(fspath));
-        }
-        else {
-            fs::remove(path);
-            w_assert1(!fs::exists(fspath));
         }
     }
 }
