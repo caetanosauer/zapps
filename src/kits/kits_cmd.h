@@ -24,6 +24,7 @@ protected:
     string opt_dbfile;
     string opt_backup;
 
+    bool opt_sharpBackup;
     bool opt_load;
     string opt_benchmark;
     string opt_conffile;

@@ -29,6 +29,9 @@ void KitsCommand::setupOptions()
             "Path to database file (required only for loading)")
         ("backup", po::value<string>(&opt_backup)->default_value(""),
             "Path on which to store backup file")
+        ("sharpBackup", po::value<bool>(&opt_sharpBackup)
+            ->default_value(false)->implicit_value(true),
+            "Whether to flush log archive prior to taking a backup")
         ("logdir,l", po::value<string>(&logdir)->default_value("log"),
             "Directory containing log to be scanned")
         ("archdir,a", po::value<string>(&archdir)->default_value("archive"),
@@ -144,7 +147,7 @@ void KitsCommand::run()
             archiveLog();
         }
 
-        W_COERCE(vol->take_backup(opt_backup));
+        W_COERCE(vol->take_backup(opt_backup, opt_sharpBackup));
         // add call to sx_add_backup
     }
 
