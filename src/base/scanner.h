@@ -82,29 +82,4 @@ private:
     string archdir;
 };
 
-/*
- * Scans all pages in the database one store at a time
- */
-class PageScanner : public basethread_t {
-public:
-    PageScanner(string devicePath, bool inclSys = true, bool scanStores = true)
-        : devicePath(devicePath), includeSystemPages(inclSys),
-        scanStores(scanStores) {}
-    virtual ~PageScanner() {};
-
-    virtual void run();
-    void addPageHandler(PageHandler* h) { pageHandlers.push_back(h); }
-    void addStoreHandler(StoreHandler* h) { storeHandlers.push_back(h); }
-protected:
-    virtual void handlePage(const lpid_t&);
-    virtual void handleStore(const stid_t&);
-    virtual void finalize();
-private:
-    string devicePath;
-    bool includeSystemPages;
-    bool scanStores;
-    vector<PageHandler*> pageHandlers;
-    vector<StoreHandler*> storeHandlers;
-};
-
 #endif

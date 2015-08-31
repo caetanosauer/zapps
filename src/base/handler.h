@@ -23,7 +23,7 @@ public:
 class PageHandler {
 public:
     virtual void finalize() {};
-    virtual void handle(const lpid_t& pid) = 0;
+    virtual void handle(const generic_page& page) = 0;
 };
 
 class StoreHandler {
