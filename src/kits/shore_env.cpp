@@ -116,7 +116,7 @@ ShoreEnv::ShoreEnv(po::variables_map& vm)
       _bUseFlusher(false)
       // _logger(NULL)
 {
-	optionValues = vm;
+    optionValues = vm;
     _popts = new sm_options();
     _vid = vid_t(1);
 
@@ -126,14 +126,14 @@ ShoreEnv::ShoreEnv(po::variables_map& vm)
 
 
     string physical = optionValues["db-config-design"].as<string>();
-    if(physical.compare("normal")==0){
-    	set_pd(PD_NORMAL);
+    if(physical.compare("normal")==0) {
+        set_pd(PD_NORMAL);
     }
-	if(optionValues["physical-hacks-enable"].as<int>()){
-		add_pd(PD_PADDED);
-	}
-	setSLIEnabled(optionValues["db-worker-sli"].as<bool>());
-	set_rec_to_access(optionValues["records-to-access"].as<uint>());
+    if(optionValues["physical-hacks-enable"].as<int>()) {
+        add_pd(PD_PADDED);
+    }
+    setSLIEnabled(optionValues["db-worker-sli"].as<bool>());
+    set_rec_to_access(optionValues["records-to-access"].as<uint>());
 }
 
 
@@ -201,8 +201,8 @@ w_rc_t ShoreEnv::load()
     TRACE( TRACE_ALWAYS, "Loading finished in (%d) secs...\n", (tstop - tstart));
 
     // if (_chkpt_freq > 0) {
-    // 	chk->set_active(false);
-    // 	chk->join();
+    //     chk->set_active(false);
+    //     chk->join();
     // }
 
     _loaded = true;
@@ -280,8 +280,8 @@ void ShoreEnv::print_sf() const
 // {
 //     rc_t rc = _logger->insert(kind);
 //     if (rc.is_error()) {
-//     	TRACE( TRACE_ALWAYS, "!! Error inserting kits log record: %s\n",
-//     			w_error_t::error_string(rc.err_num()));
+//         TRACE( TRACE_ALWAYS, "!! Error inserting kits log record: %s\n",
+//                 w_error_t::error_string(rc.err_num()));
 //     }
 // }
 
@@ -376,22 +376,22 @@ void ShoreEnv::set_skew(int area, int load, int start_imbalance, int skew_type)
     if (skew_type <= 0)
         skew_type = URand(1,10);
     if(skew_type < 6) {
-	// 1. Keep the initial skew (no changes)
-	_skew_type = SKEW_NORMAL;
-	TRACE( TRACE_ALWAYS, "SKEW_NORMAL\n");
+    // 1. Keep the initial skew (no changes)
+    _skew_type = SKEW_NORMAL;
+    TRACE( TRACE_ALWAYS, "SKEW_NORMAL\n");
     } else if(skew_type < 9) {
-	// 2. Change the area of the initial skew after some random duration
-	_skew_type = SKEW_DYNAMIC;
-	TRACE( TRACE_ALWAYS, "SKEW_DYNAMIC\n");
+    // 2. Change the area of the initial skew after some random duration
+    _skew_type = SKEW_DYNAMIC;
+    TRACE( TRACE_ALWAYS, "SKEW_DYNAMIC\n");
     } else if(skew_type < 11) {
-	// 3. Change the initial skew randomly after some random duration
-	// (a) The new skew can be like the old one but in another spot
-	// (b) The skew can be omitted for sometime and
-	// (c) The percentages might be changed
-	_skew_type = SKEW_CHAOTIC;
-	TRACE( TRACE_ALWAYS, "SKEW_CHAOTIC\n");
+    // 3. Change the initial skew randomly after some random duration
+    // (a) The new skew can be like the old one but in another spot
+    // (b) The skew can be omitted for sometime and
+    // (c) The percentages might be changed
+    _skew_type = SKEW_CHAOTIC;
+    TRACE( TRACE_ALWAYS, "SKEW_CHAOTIC\n");
     } else {
-	assert(0); // More cases can be added as wanted
+    assert(0); // More cases can be added as wanted
     }
 }
 
@@ -406,8 +406,8 @@ void ShoreEnv::start_load_imbalance()
 {
     // @note: pin: can change these boundaries depending on preference
     if(_skew_type == SKEW_DYNAMIC || _skew_type == SKEW_CHAOTIC) {
-	_start_imbalance = URand(10,30);
-	_bAlarmSet = false;
+    _start_imbalance = URand(10,30);
+    _bAlarmSet = false;
     }
 }
 
@@ -525,11 +525,11 @@ int ShoreEnv::start()
     }
 
     if (!_clobber) {
-	// Cache fids at the kits side
-	W_COERCE(db()->begin_xct());
-	W_COERCE(load_and_register_fids());
-	W_COERCE(db()->commit_xct());
-	// Call the (virtual) post-initialization function
+    // Cache fids at the kits side
+    W_COERCE(db()->begin_xct());
+    W_COERCE(load_and_register_fids());
+    W_COERCE(db()->commit_xct());
+    // Call the (virtual) post-initialization function
         if (int rval = post_init()) {
             TRACE( TRACE_ALWAYS, "Error in Shore post-init\n");
             return (rval);
@@ -855,10 +855,10 @@ int ShoreEnv::start_sm()
         TRACE( TRACE_DEBUG, "Formatting a new device (%s) with a (%d) kB quota\n",
                _device.c_str(), _quota);
 
-	// create and mount device
-	// http://www.cs.wisc.edu/shore/1.0/man/device.ssm.html
+    // create and mount device
+    // http://www.cs.wisc.edu/shore/1.0/man/device.ssm.html
         ss_m::smksize_t smquota = _quota;
-	W_COERCE(_pssm->create_vol(_device.c_str(), smquota, _vid));
+    W_COERCE(_pssm->create_vol(_device.c_str(), smquota, _vid));
         TRACE( TRACE_DEBUG, "Formatting device completed...\n");
 
         // mount it...
@@ -1006,7 +1006,7 @@ int ShoreEnv::_set_sys_params()
 {
     // procmonitor returns 0 if it cannot find the number of processors
 
-	_max_cpu_count = optionValues["sys-maxcpucount"].as<uint>();
+    _max_cpu_count = optionValues["sys-maxcpucount"].as<uint>();
 
     // Set active CPU info
     uint tmp_active_cpu_count = optionValues["sys-activecpucount"].as<uint>();
