@@ -775,28 +775,35 @@ void ShoreEnv::gatherstats_sm()
 int ShoreEnv::configure_sm()
 {
     TRACE( TRACE_DEBUG, "Configuring Shore...\n");
-    BOOST_FOREACH(const po::variables_map::value_type& pair, optionValues){
-    	const std::string& key = pair.first;
-//    	if(!boost::starts_with(key,"sm"))
-//    		continue;
-    	try{
-    		_popts->set_int_option(key.substr(3,5), optionValues[key].as<int>());
-    	}catch(boost::bad_any_cast const& e) {
-    		try{
-    			_popts->set_bool_option(key, optionValues[key].as<bool>());
-    		}catch(boost::bad_any_cast const& e){
-    			try{
-    				_popts->set_string_option(key, optionValues[key].as<string>());
-    			}catch(boost::bad_any_cast const& e){
-    				try{
-    				   _popts->set_int_option(key, optionValues[key].as<uint>());
-    				}catch(boost::bad_any_cast const& e){
-    				    continue;
-    				}
-    			}
-    		}
-    	}
+
+    BOOST_FOREACH(const po::variables_map::value_type& pair, optionValues)
+    {
+        const std::string& key = pair.first;
+        try {
+            _popts->set_int_option(key, optionValues[key].as<int>());
+        }
+        catch(boost::bad_any_cast const& e) {
+            try {
+                _popts->set_bool_option(key, optionValues[key].as<bool>());
+            }
+            catch(boost::bad_any_cast const& e) {
+                try {
+                    _popts->set_string_option(key, optionValues[key].as<string>());
+                }
+                catch(boost::bad_any_cast const& e) {
+                    try {
+                        _popts->set_int_option(key, optionValues[key].as<uint>());
+                    }
+                    catch(boost::bad_any_cast const& e) {
+                        cerr << "Could not process option " << key
+                            << " .. skippking." << endl;
+                        continue;
+                    }
+                }
+            }
+        }
     };
+
     upd_worker_cnt();
 
     // If we reached this point the sm is configured correctly
@@ -1061,29 +1068,35 @@ int ShoreEnv::conf()
 {
     TRACE( TRACE_DEBUG, "ShoreEnv configuration\n");
     // Print storage manager options
-    BOOST_FOREACH(const po::variables_map::value_type& pair, optionValues){
-    		const std::string& key = pair.first;
-    		try{
-    		    cout<< "[" << key << "] = "<< optionValues[key].as<int>()<<endl;
-    		}catch(boost::bad_any_cast const& e){
-        		try{
-            	    cout<< "[" << key << "] = "<< optionValues[key].as<bool>()<<endl;
-        		}catch(boost::bad_any_cast const& e){
-            		try{
-            		    cout<< "[" << key << "] = "<< optionValues[key].as<string>()<<endl;
-            		}catch(boost::bad_any_cast const& e){
-            			try{
-            			            		    cout<< "[" << key << "] = "<< optionValues[key].as<unsigned>()<<endl;
-            			            		}catch(boost::bad_any_cast const& e){
-            			            			try{
-            			            			            		    cout<< "[" << key << "] = "<< optionValues[key].as<uint>()<<endl;
-            			            			            		}catch(boost::bad_any_cast const& e){
-            			            			            			continue;
-            			            			            		}
-            			            		}
-            		}
-        		}
-    		}
+    BOOST_FOREACH(const po::variables_map::value_type& pair, optionValues)
+    {
+        const std::string& key = pair.first;
+        try {
+            cout<< "[" << key << "] = "<< optionValues[key].as<int>()<<endl;
+        }
+        catch(boost::bad_any_cast const& e) {
+            try {
+                cout<< "[" << key << "] = "<< optionValues[key].as<bool>()<<endl;
+            }
+            catch (boost::bad_any_cast const& e) {
+                try {
+                    cout<< "[" << key << "] = "<< optionValues[key].as<string>()<<endl;
+                }
+                catch (boost::bad_any_cast const& e) {
+                    try {
+                        cout<< "[" << key << "] = "<< optionValues[key].as<unsigned>()<<endl;
+                    }
+                    catch (boost::bad_any_cast const& e) {
+                        try {
+                            cout<< "[" << key << "] = "<< optionValues[key].as<uint>()<<endl;
+                        }
+                        catch (boost::bad_any_cast const& e) {
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
     };
     return (0);
 }
