@@ -44,7 +44,7 @@ void LogStats::run()
 
         // TODO assuming default block size
         LogArchiver::ArchiveDirectory dir(logdir,
-                LogArchiver::DFT_BLOCK_SIZE, true /* index */);
+                LogArchiver::DFT_BLOCK_SIZE);
 
         if (filename.empty()) {
             dir.listFiles(&files);
@@ -56,9 +56,10 @@ void LogStats::run()
         // buffer for log archive blocks
         char buffer[LogArchiver::DFT_BLOCK_SIZE];
         int fd = -1;
-        fileoff_t fpos = 0;
+        size_t fpos = 0;
         size_t currRun = 0;
         size_t blockCount = 0;
+        size_t indexBlockCount = 0;
         size_t bpos = 0;
         size_t blockEnd = 0;
         logrec_t* lr = NULL;
@@ -74,7 +75,8 @@ void LogStats::run()
             fpos = 0;
             currBlock = 0;
 
-            W_COERCE(dir.getIndex()->getBlockCounts(fd, NULL, &blockCount));
+            W_COERCE(dir.getIndex()->getBlockCounts(fd, &indexBlockCount,
+                        &blockCount));
 
             while(currBlock < blockCount) {
                 dir.readBlock(fd, buffer, fpos);
@@ -106,6 +108,11 @@ void LogStats::run()
             W_COERCE(me()->close(fd));
             currRun++;
         }
+
+        cout << "INDEX INFO" << endl;
+
+        LogArchiver::ArchiveIndex * archIndex = dir.getIndex();
+        archIndex->dumpIndex(cout);
     }
 }
 

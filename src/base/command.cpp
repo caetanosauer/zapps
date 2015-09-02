@@ -208,6 +208,8 @@ void Command::setupSMOptions()
         "Workspace size archiver")
     ("sm_archiver_block_size", po::value<int>(),
         "Archiver Block size")
+    ("sm_archiver_bucket_size", po::value<int>(),
+        "Archiver bucket size")
     ("sm_merge_factor", po::value<int>(),
         "Merging factor")
     ("sm_archiving_blocksize", po::value<int>(),
