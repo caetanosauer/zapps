@@ -46,10 +46,12 @@ void BaseScanner::finalize()
     }
 }
 
-BlockScanner::BlockScanner(const char* logdir, size_t blockSize,
+BlockScanner::BlockScanner(const po::variables_map& options,
         bitset<logrec_t::t_max_logrec>* filter)
-    : logdir(logdir), blockSize(blockSize), pnum(-1)
+    : BaseScanner(options), pnum(-1)
 {
+    logdir = options["logdir"].as<string>().c_str();
+    blockSize = options["sm_archiver_block_size"].as<int>();
     logScanner = new LogScanner(blockSize);
     currentBlock = new char[blockSize];
 
@@ -194,9 +196,10 @@ BlockScanner::~BlockScanner()
 }
 
 
-LogArchiveScanner::LogArchiveScanner(string archdir)
-    : archdir(archdir), runBegin(lsn_t::null), runEnd(lsn_t::null)
+LogArchiveScanner::LogArchiveScanner(const po::variables_map& options)
+    : BaseScanner(options), runBegin(lsn_t::null), runEnd(lsn_t::null)
 {
+    archdir = options["logdir"].as<string>();
 }
 
 bool runCompare (string a, string b)
@@ -208,9 +211,9 @@ bool runCompare (string a, string b)
 
 void LogArchiveScanner::run()
 {
+    size_t blockSize = options["sm_archiver_block_size"].as<int>();
     LogArchiver::ArchiveDirectory* directory = new
-        // CS TODO -- fix block size bug (Issue #9)
-        LogArchiver::ArchiveDirectory(archdir, 1024 * 1024);
+        LogArchiver::ArchiveDirectory(archdir, blockSize);
 
     std::vector<std::string> runFiles;
 
@@ -273,15 +276,19 @@ void LogArchiveScanner::run()
     BaseScanner::finalize();
 }
 
-MergeScanner::MergeScanner(string archdir)
-    : archdir(archdir)
+MergeScanner::MergeScanner(const po::variables_map& options)
+    : BaseScanner(options)
 {
+    archdir = options["logdir"].as<string>();
 }
 
 void MergeScanner::run()
 {
+    size_t blockSize = options["sm_archiver_block_size"].as<int>();
+    size_t bucketSize = options["sm_archiver_bucket_size"].as<int>();
+
     LogArchiver::ArchiveDirectory* directory = new
-        LogArchiver::ArchiveDirectory(archdir, 1024 * 1024);
+        LogArchiver::ArchiveDirectory(archdir, blockSize, bucketSize);
     LogArchiver::ArchiveScanner logScan(directory);
 
     LogArchiver::ArchiveScanner::RunMerger* merger =

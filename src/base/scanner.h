@@ -11,10 +11,14 @@
 
 #include <bitset>
 #include <functional>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
 
 class BaseScanner : public basethread_t {
 public:
-    BaseScanner() : restrictFile("")
+    BaseScanner(const po::variables_map& options)
+        : options(options), restrictFile("")
     {}
 
     virtual ~BaseScanner()
@@ -24,6 +28,7 @@ public:
 protected:
     virtual void handle(logrec_t* lr);
     virtual void finalize();
+    po::variables_map options;
 
 public: // TODO make protected and add register methods
     std::vector<Handler*> any_handlers;
@@ -36,12 +41,9 @@ protected:
     string restrictFile;
 };
 
-class ShoreScanner : public BaseScanner {
-};
-
 class BlockScanner : public BaseScanner {
 public:
-    BlockScanner(const char* logdir, size_t blockSize,
+    BlockScanner(const po::variables_map& options,
             bitset<logrec_t::t_max_logrec>* filter = NULL);
     virtual ~BlockScanner();
 
@@ -59,7 +61,7 @@ private:
 
 class LogArchiveScanner : public BaseScanner {
 public:
-    LogArchiveScanner(string archdir);
+    LogArchiveScanner(const po::variables_map& options);
     virtual ~LogArchiveScanner() {};
 
     virtual void run();
@@ -74,7 +76,7 @@ private:
 
 class MergeScanner : public BaseScanner {
 public:
-    MergeScanner(string archdir);
+    MergeScanner(const po::variables_map& options);
     virtual ~MergeScanner() {};
 
     virtual void run();

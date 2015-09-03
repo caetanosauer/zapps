@@ -206,9 +206,9 @@ void Command::setupSMOptions()
         "Number of buffer pages to write")
     ("sm_archiver_workspace_size", po::value<int>(),
         "Workspace size archiver")
-    ("sm_archiver_block_size", po::value<int>(),
+    ("sm_archiver_block_size", po::value<int>()->default_value(1024*1024),
         "Archiver Block size")
-    ("sm_archiver_bucket_size", po::value<int>(),
+    ("sm_archiver_bucket_size", po::value<int>()->default_value(128),
         "Archiver bucket size")
     ("sm_merge_factor", po::value<int>(),
         "Merging factor")
@@ -270,11 +270,11 @@ BaseScanner* LogScannerCommand::getScanner(
 {
     BaseScanner* s;
     if (isArchive) {
-        if (merge) s = new MergeScanner(logdir);
-        else s = new LogArchiveScanner(logdir);
+        if (merge) s = new MergeScanner(optionValues);
+        else s = new LogArchiveScanner(optionValues);
     }
     else {
-        s = new BlockScanner(logdir.c_str(), BLOCK_SIZE, filter);
+        s = new BlockScanner(optionValues, filter);
     }
 
     if (!filename.empty()) {
@@ -286,6 +286,7 @@ BaseScanner* LogScannerCommand::getScanner(
 
 void LogScannerCommand::setupOptions()
 {
+    setupSMOptions();
     po::options_description logscanner("Log Scanner Options");
     logscanner.add_options()
         ("logdir,l", po::value<string>(&logdir)->required(),
