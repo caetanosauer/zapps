@@ -645,7 +645,6 @@ public:
     int checkpoint();
 
     void activate_archiver();
-    void activate_merger();
 
     string sysname() { return (_sysname); }
 

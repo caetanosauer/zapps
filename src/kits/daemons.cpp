@@ -169,9 +169,6 @@ void checkpointer_t::work()
              */
             if (ticker >= act_delay) {
                 _env->activate_archiver();
-                if (ticker >= act_delay * 2) {
-                    _env->activate_merger();
-                }
             }
             if (!_active) return;
         }

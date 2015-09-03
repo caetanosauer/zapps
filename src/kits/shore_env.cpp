@@ -946,13 +946,6 @@ void ShoreEnv::activate_archiver()
     }
 }
 
-void ShoreEnv::activate_merger()
-{
-    if (_enable_merger) {
-        _pssm->activate_merger();
-    }
-}
-
 /******************************************************************
  *
  *  @fn:    get_trx_{att,com}()
