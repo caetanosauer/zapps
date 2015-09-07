@@ -80,6 +80,7 @@ void RestoreCmd::loadOptions(sm_options& options)
 
     if (opt_offline) {
         opt_singlePass = true;
+        opt_onDemand = false;
     }
     options.set_int_option("sm_restore_segsize", opt_segmentSize);
     options.set_bool_option("sm_restore_instant", opt_instant);
@@ -162,7 +163,8 @@ void RestoreCmd::doWork()
         vol->mark_failed(opt_evict);
     }
     else {
-        // Wait for failure thread to mark device failed
+        // Start benchmark and wait for failure thread to mark device failed
+        forkClients();
         sleep(opt_failDelay);
         while (!hasFailed) {
             sleep(1);
@@ -170,9 +172,19 @@ void RestoreCmd::doWork()
         }
     }
 
-    // Now wait for device to be restored -- check every 5 seconds
+    // Now wait for device to be restored -- check every 1 second
     while (vol->is_failed()) {
-        sleep(5);
+        sleep(1);
         vol->check_restore_finished();
+    }
+
+    // In online restore, wait for duration only after restore is complete
+    if (!opt_offline && (opt_num_trxs > 0 || opt_duration > 0)) {
+        if (mtype == MT_TIME_DUR) {
+            int remaining = opt_duration;
+            while (remaining > 0) {
+                remaining = ::sleep(remaining);
+            }
+        }
     }
 }
