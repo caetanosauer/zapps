@@ -1346,23 +1346,21 @@ w_rc_t ShoreTPCCEnv::xct_order_status(const int xct_id,
 
 	vector<int>  c_id_list;
 	int  id = 0;
-	int  count = 0;
 	bool eof;
 
 	W_DO(c_iter->next(eof, *prcust));
 	while (!eof) {
 	    // push the retrieved customer id to the vector
-	    ++count;
 	    prcust->get_value(0, id);
 	    c_id_list.push_back(id);
 	    // TRACE( TRACE_TRX_FLOW, "App: %d ORDST:cust-iter-next\n", xct_id);
 	    W_DO(c_iter->next(eof, *prcust));
 	}
-	assert (count);
+        w_assert1(c_id_list.size() > 0);
 
 	// find the customer id in the middle of the list
         // CS TODO: shouldn't we pick randomly from this list?
-	pstin._c_id = c_id_list[(count+1)/2-1];
+	pstin._c_id = c_id_list[(c_id_list.size()+1)/2-1];
     }
     assert (pstin._c_id>0);
 
