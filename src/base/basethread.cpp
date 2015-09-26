@@ -5,6 +5,7 @@
 #include <restart.h>
 #include <vol.h>
 #include <btree.h>
+#include <bf_tree.h>
 
 #include <log_lsn_tracker.h>
 #include <log_core.h>
