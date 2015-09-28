@@ -1,5 +1,8 @@
 #include "dbinspect.h"
 
+#include "bf_fixed.h"
+#include "alloc_cache.h"
+
 void DBInspect::setupOptions()
 {
     po::options_description opt("DBInspect Options");
@@ -12,22 +15,43 @@ void DBInspect::setupOptions()
 
 void DBInspect::run()
 {
-    ifstream in(file, std::ifstream::binary);
-    // vid_t vid = vol->vid();
+    // Build alloc_cache to get allocation status of pages
+    int fd;
+    int flags = smthread_t::OPEN_RDONLY;
+    W_COERCE(me()->open(file.c_str(), flags, 0744, fd));
 
+    filestat_t fs;
+    W_COERCE(me()->fstat(fd, fs));
+    uint64_t fsize = fs.st_size;
+    shpid_t max_pid = fsize / sizeof(generic_page);
+
+    bf_fixed_m bf_fixed(NULL, fd, max_pid);
+    cout << "Max pid = " << max_pid << endl;
+    bf_fixed.init();
+    alloc_cache_t alloc(&bf_fixed);
+    alloc.load_by_scan(max_pid);
+
+    // Iterate and print info about pages
+    ifstream in(file, std::ifstream::binary);
     generic_page page;
 
     // Volume header page can be just printed out
     in.seekg(0);
     in.read((char*) &page, sizeof(generic_page));
-    cout << page << endl;
+    cout << (char*) &page << endl;
 
     shpid_t p = 1;
     while (in) {
         in.seekg(p * sizeof(generic_page));
         in.read((char*) &page, sizeof(generic_page));
-        cout << "Page " << p
+        if (!in) { break; }
+
+        cout << "Page=" << p
+            << " PID=" << page.pid
             << " LSN=" << page.lsn
+            << " Checksum="
+            << (page.checksum == page.calculate_checksum() ? "OK" : "WRONG")
+            << " Alloc=" << (alloc.is_allocated_page(p) ? "YES" : "NO")
             << endl;
         p++;
     }
