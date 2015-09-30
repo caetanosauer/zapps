@@ -74,10 +74,8 @@ public:
 
         W_DO(btcursor->next());
 
-        if (btcursor->eof()) {
-            eof = true;
-            return RCOK;
-        }
+        eof = btcursor->eof();
+        if (eof) { return RCOK; }
 
         // Load key
         btcursor->key().serialize_as_nonkeystr(tuple._rep_key->_dest);
@@ -118,10 +116,8 @@ public:
 
         W_DO(btcursor->next());
 
-        if (btcursor->eof()) {
-            eof = true;
-            return RCOK;
-        }
+        eof = btcursor->eof();
+        if (eof) { return RCOK; }
 
         bool loaded = false;
 
