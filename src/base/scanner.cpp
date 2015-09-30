@@ -292,7 +292,7 @@ void MergeScanner::run()
     LogArchiver::ArchiveScanner logScan(directory);
 
     LogArchiver::ArchiveScanner::RunMerger* merger =
-        logScan.open(lpid_t::null, lpid_t::null, lsn_t::null);
+        logScan.open(lpid_t::null, lsn_t::null);
 
     logrec_t* lr;
 
