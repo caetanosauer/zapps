@@ -24,6 +24,11 @@ public:
 void LogStats::setupOptions()
 {
     LogScannerCommand::setupOptions();
+    options.add_options()
+        ("index,i", po::value<bool>(&indexOnly)->default_value(false)
+         ->implicit_value(true),
+         "Show only information about log archive index (works with -a only)")
+        ;
 }
 
 void LogStats::run()
@@ -69,44 +74,46 @@ void LogStats::run()
 
         int flags = smthread_t::OPEN_RDONLY;
 
-        for (size_t i = 0; i < files.size(); i++) {
-            W_COERCE(me()->open((logdir + "/" + files[i]).c_str(),
-                        flags, 0744, fd));
-            fpos = 0;
-            currBlock = 0;
+        if (!indexOnly) {
+            for (size_t i = 0; i < files.size(); i++) {
+                W_COERCE(me()->open((logdir + "/" + files[i]).c_str(),
+                            flags, 0744, fd));
+                fpos = 0;
+                currBlock = 0;
 
-            W_COERCE(dir.getIndex()->getBlockCounts(fd, &indexBlockCount,
-                        &blockCount));
+                W_COERCE(dir.getIndex()->getBlockCounts(fd, &indexBlockCount,
+                            &blockCount));
 
-            while(currBlock < blockCount) {
-                dir.readBlock(fd, buffer, fpos);
-                if (fpos == 0) { break; }
+                while(currBlock < blockCount) {
+                    dir.readBlock(fd, buffer, fpos);
+                    if (fpos == 0) { break; }
 
-                bpos = sizeof(LogArchiver::BlockAssembly::BlockHeader);
-                blockEnd = LogArchiver::BlockAssembly::getEndOfBlock(buffer);
-                lastPID = lpid_t::null;
-                pidCount = 0;
+                    bpos = sizeof(LogArchiver::BlockAssembly::BlockHeader);
+                    blockEnd = LogArchiver::BlockAssembly::getEndOfBlock(buffer);
+                    lastPID = lpid_t::null;
+                    pidCount = 0;
 
-                while (bpos < blockEnd) {
-                    lr = (logrec_t*) (buffer + bpos);
-                    w_assert1(lr->valid_header(lr->lsn_ck()));
+                    while (bpos < blockEnd) {
+                        lr = (logrec_t*) (buffer + bpos);
+                        w_assert1(lr->valid_header(lr->lsn_ck()));
 
-                    if (lr->pid() != lastPID) {
-                        pidCount++;
-                        lastPID = lr->pid();
+                        if (lr->pid() != lastPID) {
+                            pidCount++;
+                            lastPID = lr->pid();
+                        }
+
+                        bpos += lr->length();
                     }
 
-                    bpos += lr->length();
+                    cout << "run=" << currRun << " block=" << currBlock
+                        << " pids=" << pidCount << endl;
+
+                    currBlock++;
                 }
 
-                cout << "run=" << currRun << " block=" << currBlock
-                    << " pids=" << pidCount << endl;
-
-                currBlock++;
+                W_COERCE(me()->close(fd));
+                currRun++;
             }
-
-            W_COERCE(me()->close(fd));
-            currRun++;
         }
 
         cout << "INDEX INFO" << endl;

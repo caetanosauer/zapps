@@ -8,6 +8,9 @@ public:
     void usage();
     void run();
     void setupOptions();
+
+protected:
+    bool indexOnly;
 };
 
 #endif
