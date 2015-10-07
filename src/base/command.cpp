@@ -234,6 +234,12 @@ void Command::setupSMOptions()
         "Enable/Disable instant restore")
     ("sm_restore_reuse_buffer", po::value<bool>(),
         "Enable/Disable reusage of buffer")
+    ("sm_restore_multiple_segments", po::value<int>(),
+        "Number of segments to attempt restore at once")
+    ("sm_restore_min_read_size", po::value<int>(),
+        "Attempt to read at least this many bytes when scanning log archive")
+    ("sm_restore_max_read_size", po::value<int>(),
+        "Attempt to read at most this many bytes when scanning log archive")
     ("sm_bufferpool_swizzle", po::value<bool>(),
         "Enable/Disable bufferpool swizzle")
     ("sm_archiver_eager", po::value<bool>(),
