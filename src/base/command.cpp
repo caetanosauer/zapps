@@ -16,6 +16,7 @@
 #include "logcat.h"
 #include "verifylog.h"
 #include "logstats.h"
+#include "logpagestats.h"
 #include "dbinspect.h"
 #include "experiments/restore_cmd.h"
 
@@ -50,6 +51,7 @@ void Command::init()
     //REGISTER_COMMAND("dbstats", DBStats);
     REGISTER_COMMAND("agglog", AggLog);
     REGISTER_COMMAND("logstats", LogStats);
+    REGISTER_COMMAND("logpagestats", LogPageStats);
     REGISTER_COMMAND("dbinspect", DBInspect);
     //REGISTER_COMMAND("mrestore", MergeRestore);
     REGISTER_COMMAND("kits", KitsCommand);
