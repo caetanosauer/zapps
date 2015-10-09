@@ -12,6 +12,7 @@
 
 #include "kits_cmd.h"
 #include "genarchive.h"
+#include "mergeruns.h"
 #include "agglog.h"
 #include "logcat.h"
 #include "verifylog.h"
@@ -47,13 +48,13 @@ void Command::init()
     //REGISTER_COMMAND("dirtypagestats", dirtypagestats);
     //REGISTER_COMMAND("logreplay", LogReplay);
     REGISTER_COMMAND("genarchive", GenArchive);
+    REGISTER_COMMAND("mergeruns", MergeRuns);
     REGISTER_COMMAND("verifylog", VerifyLog);
     //REGISTER_COMMAND("dbstats", DBStats);
     REGISTER_COMMAND("agglog", AggLog);
     REGISTER_COMMAND("logstats", LogStats);
     REGISTER_COMMAND("logpagestats", LogPageStats);
     REGISTER_COMMAND("dbinspect", DBInspect);
-    //REGISTER_COMMAND("mrestore", MergeRestore);
     REGISTER_COMMAND("kits", KitsCommand);
     REGISTER_COMMAND("restore", RestoreCmd);
 }
