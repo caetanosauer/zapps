@@ -52,7 +52,7 @@ void LogStats::run()
                 LogArchiver::DFT_BLOCK_SIZE);
 
         if (filename.empty()) {
-            dir.listFiles(&files);
+            dir.listFiles(files);
         }
         else {
             files.push_back(filename);
@@ -74,6 +74,7 @@ void LogStats::run()
 
         int flags = smthread_t::OPEN_RDONLY;
 
+#if 0 // CS TODO: does not work with new archive contiguous format
         if (!indexOnly) {
             for (size_t i = 0; i < files.size(); i++) {
                 W_COERCE(me()->open((logdir + "/" + files[i]).c_str(),
@@ -115,6 +116,7 @@ void LogStats::run()
                 currRun++;
             }
         }
+#endif
 
         cout << "INDEX INFO" << endl;
 

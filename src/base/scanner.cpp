@@ -218,7 +218,7 @@ void LogArchiveScanner::run()
     std::vector<std::string> runFiles;
 
     if (restrictFile.empty()) {
-        directory->listFiles(&runFiles);
+        directory->listFiles(runFiles);
         std::sort(runFiles.begin(), runFiles.end(), runCompare);
     }
     else {
@@ -299,7 +299,7 @@ void MergeScanner::run()
     lsn_t prevLSN = lsn_t::null;
     lpid_t prevPid = lpid_t::null;
 
-    while (merger->next(lr)) {
+    while (merger && merger->next(lr)) {
         w_assert1(lr->pid() >= prevPid);
         w_assert1(lr->pid() != prevPid ||
                 lr->page_prev_lsn() == lsn_t::null ||
