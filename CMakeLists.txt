@@ -100,14 +100,6 @@ add_library(libcommon STATIC IMPORTED)
 set_target_properties(libcommon PROPERTIES
     IMPORTED_LOCATION ${SM_BINARY_DIR}/src/common/libcommon.a)
 
-add_library(libfc STATIC IMPORTED)
-set_target_properties(libfc PROPERTIES
-    IMPORTED_LOCATION ${SM_BINARY_DIR}/src/fc/libfc.a)
-
-add_library(libsthread STATIC IMPORTED)
-set_target_properties(libsthread PROPERTIES
-    IMPORTED_LOCATION ${SM_BINARY_DIR}/src/sthread/libsthread.a)
-
 #############################################################
 # Sub-directories
 #############################################################

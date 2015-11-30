@@ -6,16 +6,13 @@ INCLUDE_DIRECTORIES (
   ${SM_SOURCE_DIR}/config
   ${SM_SOURCE_DIR}/src/sm
   ${SM_SOURCE_DIR}/src/common
-  ${SM_SOURCE_DIR}/src/sthread
-  ${SM_SOURCE_DIR}/src/fc
-  ${SM_SOURCE_DIR}/src/Lintel
 )
 # to look for generated headers
 INCLUDE_DIRECTORIES (
   ${CMAKE_BINARY_DIR}/config
   ${SM_BINARY_DIR}/config
   ${SM_BINARY_DIR}/src/sm
-  ${SM_BINARY_DIR}/src/sthread
+  ${SM_BINARY_DIR}/src/common
 )
 
 add_subdirectory(base)
@@ -33,9 +30,7 @@ set(zapps_LIBS
     loginspect
     # Zero/Shore libraries
     libsm
-    libsthread
     libcommon
-    libfc
     # third-party dependencies
     pthread
     boost_program_options
