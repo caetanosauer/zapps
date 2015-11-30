@@ -22,6 +22,9 @@ public:
         w_assert0(vol);
         vol->mark_failed(evict);
 
+        // disable eager archiving
+        smlevel_0::logArchiver->setEager(false);
+
         *flag = true;
         lintel::atomic_thread_fence(lintel::memory_order_release);
     }
@@ -112,21 +115,8 @@ void RestoreCmd::run()
     vid_t vid(1);
     vol_t* vol = smlevel_0::vol->get(vid);
 
-    if (!opt_eager) {
-        archiveLog();
-    }
-
     if (!opt_backup.empty()) {
         W_COERCE(vol->take_backup(opt_backup));
-    }
-
-    // STEP 2 - spawn failure thread and run benchmark
-    FailureThread* t = NULL;
-    if (!opt_offline) {
-        hasFailed = false;
-        t = new FailureThread(vid, opt_failDelay, opt_evict,
-                &hasFailed);
-        t->fork();
     }
 
     // TODO if crash is on, move runBenchmark into a separate thread
@@ -140,17 +130,21 @@ void RestoreCmd::run()
     // This will call doWork()
     runBenchmark();
 
-    if (t) {
-        t->join();
-        delete t;
-    }
-
     finish();
 }
 
 void RestoreCmd::doWork()
 {
     vid_t vid(1);
+
+    FailureThread* t = NULL;
+    if (!opt_offline) {
+        hasFailed = false;
+        t = new FailureThread(vid, opt_failDelay, opt_evict,
+                &hasFailed);
+        t->fork();
+    }
+
     vol_t* vol = smlevel_0::vol->get(vid);
     w_assert0(vol);
 
@@ -186,5 +180,10 @@ void RestoreCmd::doWork()
                 remaining = ::sleep(remaining);
             }
         }
+    }
+
+    if (t) {
+        t->join();
+        delete t;
     }
 }

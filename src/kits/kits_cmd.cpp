@@ -132,6 +132,8 @@ void KitsCommand::run()
         shoreEnv->load();
     }
 
+    cout << "Loading finished!" << endl;
+
     if (opt_num_trxs > 0 || opt_duration > 0) {
         runBenchmark();
     }
@@ -148,8 +150,10 @@ void KitsCommand::run()
             archiveLog();
         }
 
+        cout << "Taking backup ... ";
         W_COERCE(vol->take_backup(opt_backup, opt_sharpBackup));
         // add call to sx_add_backup
+        cout << "done!" << endl;
     }
 
     finish();
@@ -185,10 +189,6 @@ void KitsCommand::runBenchmark()
 template<class Client, class Environment>
 void KitsCommand::runBenchmarkSpec()
 {
-    // reset starting cpu and wh id
-    int current_prs_id = -1;
-    int wh_id = 0;
-
     shoreEnv->reset_stats();
 
     // reset monitor stats
@@ -200,37 +200,31 @@ void KitsCommand::runBenchmarkSpec()
         opt_queried_sf = shoreEnv->get_sf();
     }
 
+    if (opt_warmup > 0) {
+        TRACE(TRACE_ALWAYS, "warming up buffer\n");
+        WarmupThread t;
+        t.fork();
+        t.join();
+
+        // run transactions for the given number of seconds
+        createClients<Client, Environment>();
+        forkClients();
+
+        int remaining = opt_warmup;
+        while (remaining > 0) {
+            remaining = ::sleep(remaining);
+        }
+
+        joinClients();
+        // sleep some more to get a gap in the log ticks
+        ::sleep(5);
+    }
+
     stopwatch_t timer;
 
     if (opt_num_trxs > 0 || opt_duration > 0) {
-        // set measurement state to measure - start counting everything
         TRACE(TRACE_ALWAYS, "begin measurement\n");
-
-        // 1. create client threads
-        mtype = opt_duration > 0 ? MT_TIME_DUR : MT_NUM_OF_TRXS;
-        int trxsPerThread = opt_num_trxs / opt_num_threads;
-        for (int i = 0; i < opt_num_threads; i++) {
-            // create & fork testing threads
-            if (opt_spread) {
-                wh_id = (i%(int)opt_queried_sf)+1;
-            }
-
-            Client* client = new Client(
-                    "client-" + std::to_string(i), i,
-                    (Environment*) shoreEnv,
-                    mtype, opt_select_trx,
-                    trxsPerThread,
-                    current_prs_id /* cpu id -- see below */,
-                    wh_id, opt_queried_sf);
-            w_assert0(client);
-            clients.push_back(client);
-
-            // CS: 1st arg is binding type, which I don't know what it is for
-            // It seems like it is a way to specify what the next CPU id is.
-            // If BT_NONE is given, it simply returns -1
-            // TODO: this is required to implement opt_spread -- take a look!
-            // current_prs_id = next_cpu(BT_NONE, current_prs_id);
-        }
+        createClients<Client, Environment>();
     }
 
     doWork();
@@ -252,6 +246,38 @@ void KitsCommand::runBenchmarkSpec()
     TRACE(TRACE_ALWAYS, "end measurement\n");
     shoreEnv->print_throughput(opt_queried_sf, opt_spread, opt_num_threads, delay,
             miochs, usage);
+}
+
+template<class Client, class Environment>
+void KitsCommand::createClients()
+{
+    // reset starting cpu and wh id
+    int current_prs_id = -1;
+    int wh_id = 0;
+
+    mtype = opt_duration > 0 ? MT_TIME_DUR : MT_NUM_OF_TRXS;
+    int trxsPerThread = opt_num_trxs / opt_num_threads;
+    for (int i = 0; i < opt_num_threads; i++) {
+        // create & fork testing threads
+        if (opt_spread) {
+            wh_id = (i%(int)opt_queried_sf)+1;
+        }
+
+        // CS: 1st arg is binding type, which I don't know what it is for It
+        // seems like it is a way to specify what the next CPU id is.  If
+        // BT_NONE is given, it simply returns -1 TODO: this is required to
+        // implement opt_spread -- take a look!  current_prs_id =
+        // next_cpu(BT_NONE, current_prs_id);
+        Client* client = new Client(
+                "client-" + std::to_string(i), i,
+                (Environment*) shoreEnv,
+                mtype, opt_select_trx,
+                trxsPerThread,
+                current_prs_id /* cpu id -- see below */,
+                wh_id, opt_queried_sf);
+        w_assert0(client);
+        clients.push_back(client);
+    }
 }
 
 void KitsCommand::forkClients()
@@ -276,6 +302,7 @@ void KitsCommand::joinClients()
             delete (clients[i]);
         }
         clientsForked = false;
+        clients.clear();
     }
 }
 

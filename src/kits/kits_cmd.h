@@ -53,6 +53,7 @@ protected:
     void runBenchmark();
 
     virtual void doWork();
+    template <class Client, class Environment> void createClients();
     void forkClients();
     void joinClients();
 

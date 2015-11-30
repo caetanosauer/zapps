@@ -6,7 +6,9 @@
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 
+// CS TODO: LA metadata -- should be serialized on run files
 const size_t BLOCK_SIZE = 1048576;
+const size_t BUCKET_SIZE = 128;
 
 void MergeRuns::setupOptions()
 {
@@ -31,7 +33,7 @@ void MergeRuns::run()
     }
 
     LogArchiver::ArchiveDirectory* in =
-        new LogArchiver::ArchiveDirectory(indir, BLOCK_SIZE);
+        new LogArchiver::ArchiveDirectory(indir, BLOCK_SIZE, BUCKET_SIZE);
 
     LogArchiver::ArchiveDirectory* out = in;
     if (!outdir.empty() && outdir != indir) {
@@ -46,7 +48,7 @@ void MergeRuns::run()
             }
         }
 
-        out = new LogArchiver::ArchiveDirectory(outdir, BLOCK_SIZE);
+        out = new LogArchiver::ArchiveDirectory(outdir, BLOCK_SIZE, BUCKET_SIZE);
     }
 
     LogArchiver::MergerDaemon merge(in, out);

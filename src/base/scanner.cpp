@@ -284,6 +284,7 @@ MergeScanner::MergeScanner(const po::variables_map& options)
 
 void MergeScanner::run()
 {
+    // CS TODO blockSize not used anymore
     size_t blockSize = options["sm_archiver_block_size"].as<int>();
     size_t bucketSize = options["sm_archiver_bucket_size"].as<int>();
 
@@ -292,7 +293,7 @@ void MergeScanner::run()
     LogArchiver::ArchiveScanner logScan(directory);
 
     LogArchiver::ArchiveScanner::RunMerger* merger =
-        logScan.open(lpid_t::null, lpid_t::null, lsn_t::null);
+        logScan.open(lpid_t::null, lpid_t::null, lsn_t::null, blockSize);
 
     logrec_t* lr;
 
