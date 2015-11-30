@@ -16,6 +16,7 @@
 #include "agglog.h"
 #include "logcat.h"
 #include "verifylog.h"
+#include "truncatelog.h"
 #include "logstats.h"
 #include "logpagestats.h"
 #include "dbinspect.h"
@@ -50,6 +51,7 @@ void Command::init()
     REGISTER_COMMAND("genarchive", GenArchive);
     REGISTER_COMMAND("mergeruns", MergeRuns);
     REGISTER_COMMAND("verifylog", VerifyLog);
+    REGISTER_COMMAND("truncatelog", TruncateLog);
     //REGISTER_COMMAND("dbstats", DBStats);
     REGISTER_COMMAND("agglog", AggLog);
     REGISTER_COMMAND("logstats", LogStats);
