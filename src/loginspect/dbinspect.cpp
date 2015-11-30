@@ -1,6 +1,5 @@
 #include "dbinspect.h"
 
-#include "bf_fixed.h"
 #include "alloc_cache.h"
 
 void DBInspect::setupOptions()
@@ -23,13 +22,14 @@ void DBInspect::run()
     filestat_t fs;
     W_COERCE(me()->fstat(fd, fs));
     uint64_t fsize = fs.st_size;
-    shpid_t max_pid = fsize / sizeof(generic_page);
+    PageID max_pid = fsize / sizeof(generic_page);
 
-    bf_fixed_m bf_fixed(NULL, fd, max_pid);
-    cout << "Max pid = " << max_pid << endl;
-    bf_fixed.init();
-    alloc_cache_t alloc(&bf_fixed);
-    alloc.load_by_scan(max_pid);
+    // CS TODO: update for new alloc cache
+    // bf_fixed_m bf_fixed(NULL, fd, max_pid);
+    // cout << "Max pid = " << max_pid << endl;
+    // bf_fixed.init();
+    // alloc_cache_t alloc(&bf_fixed);
+    // alloc.load_by_scan(max_pid);
 
     // Iterate and print info about pages
     ifstream in(file, std::ifstream::binary);
@@ -40,7 +40,7 @@ void DBInspect::run()
     in.read((char*) &page, sizeof(generic_page));
     cout << (char*) &page << endl;
 
-    shpid_t p = 1;
+    PageID p = 1;
     while (in) {
         in.seekg(p * sizeof(generic_page));
         in.read((char*) &page, sizeof(generic_page));
@@ -51,7 +51,7 @@ void DBInspect::run()
             << " LSN=" << page.lsn
             << " Checksum="
             << (page.checksum == page.calculate_checksum() ? "OK" : "WRONG")
-            << " Alloc=" << (alloc.is_allocated_page(p) ? "YES" : "NO")
+            // << " Alloc=" << (alloc.is_allocated_page(p) ? "YES" : "NO")
             << endl;
         p++;
     }

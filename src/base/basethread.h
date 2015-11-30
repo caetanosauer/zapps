@@ -30,17 +30,13 @@ public:
     static void start_io();
     static void print_stats();
 
-    void queue_for_mount(string path);
-
 protected:
-    static void mount_device(string path);
     void begin_xct();
     void commit_xct();
     virtual void before_run();
     virtual void after_run();
 
 private:
-    queue<string> to_mount;
     pthread_mutex_t running_mutex;
     xct_t* current_xct;
 

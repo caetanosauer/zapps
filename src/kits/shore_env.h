@@ -388,7 +388,6 @@ protected:
     // CS: parameters removed from envVar/shore.conf/SHORE_*_OPTIONS
     bool _clobber;
     string _device;
-    int _quota;
 
     // Status variables
     bool            _initialized;
@@ -401,8 +400,7 @@ protected:
 
     // Device and volume. There is a single volume per device.
     // The whole environment resides in a single volume.
-    vid_t            _vid;     // device id
-    stid_t             _root_iid;  // root id of the volume
+    StoreID             _root_iid;  // root id of the volume
     pthread_mutex_t    _vol_mutex; // volume mutex
 
     // Configuration variables
@@ -450,7 +448,7 @@ protected:
     string          _sysname;
 
     // physical design characteristics
-    uint4_t _pd;
+    uint32_t _pd;
     bool _enable_hacks;
 
 
@@ -536,7 +534,6 @@ public:
 
     // inline access methods
     inline ss_m* db() { return(_pssm); }
-    inline vid_t vid() { return(_vid); }
 
     bool is_initialized();
     bool is_loaded();
@@ -571,7 +568,6 @@ public:
 
     void set_clobber(bool c) { _clobber = c; }
     void set_device(string d) { _device = d; }
-    void set_quota(int q) { _quota = q; }
     void set_loaders(int l) { _loaders_to_use = l; }
 
     // --- scaling and querying factor --- //
@@ -585,9 +581,9 @@ public:
     // void log_insert(kits_logger_t::logrec_kind_t);
 
     // Set physical design characteristics
-    uint4_t get_pd() const;
-    uint4_t set_pd(const physical_design_t& apd);
-    uint4_t add_pd(const physical_design_t& apd);
+    uint32_t get_pd() const;
+    uint32_t set_pd(const physical_design_t& apd);
+    uint32_t add_pd(const physical_design_t& apd);
     bool check_hacks_enabled();
     bool is_hacks_enabled() const;
     virtual w_rc_t update_partitioning() { return (RCOK); }

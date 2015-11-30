@@ -68,7 +68,7 @@ void LogStats::run()
         size_t bpos = 0;
         size_t blockEnd = 0;
         logrec_t* lr = NULL;
-        lpid_t lastPID = lpid_t::null;
+        PageID lastPID = 0;
         size_t currBlock = 0;
         size_t pidCount = 0;
 

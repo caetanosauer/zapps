@@ -23,7 +23,7 @@ private:
     lsn_t minLSN;
     lsn_t maxLSN;
     lsn_t lastLSN;
-    lpid_t lastPID;
+    PageID lastPID;
     long count;
     bool merge;
 };;

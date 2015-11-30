@@ -112,7 +112,7 @@ generic_page* PageIterator::next()
     assert(bpos < blockSize);
 
     generic_page* ps = (generic_page*) (buf + bpos);
-    prevPageNo = ps->pid.page;
+    prevPageNo = ps->pid;
 
     bpos += PAGE_SIZE;
     bool eof = bpos > bytesRead;

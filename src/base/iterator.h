@@ -40,7 +40,7 @@ private:
     int blocksRead;
     char* buf;
     generic_page currentPage;
-    shpid_t prevPageNo;
+    PageID prevPageNo;
     AsyncRingBuffer* asyncBuf;
 
     void openOutput();

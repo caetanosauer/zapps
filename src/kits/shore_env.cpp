@@ -118,7 +118,6 @@ ShoreEnv::ShoreEnv(po::variables_map& vm)
 {
     optionValues = vm;
     _popts = new sm_options();
-    _vid = vid_t(1);
 
     pthread_mutex_init(&_scaling_mutex, NULL);
     pthread_mutex_init(&_queried_mutex, NULL);
@@ -292,19 +291,19 @@ void ShoreEnv::print_sf() const
 
  ********************************************************************/
 
-uint4_t ShoreEnv::get_pd() const
+uint32_t ShoreEnv::get_pd() const
 {
     return (_pd);
 }
 
-uint4_t ShoreEnv::set_pd(const physical_design_t& apd)
+uint32_t ShoreEnv::set_pd(const physical_design_t& apd)
 {
     _pd = apd;
     TRACE( TRACE_ALWAYS, "DB set to (%x)\n", _pd);
     return (_pd);
 }
 
-uint4_t ShoreEnv::add_pd(const physical_design_t& apd)
+uint32_t ShoreEnv::add_pd(const physical_design_t& apd)
 {
     _pd |= apd;
     TRACE( TRACE_ALWAYS, "DB set to (%x)\n", _pd);
@@ -709,7 +708,7 @@ int ShoreEnv::close_sm()
 
 
     // Disabling fake io delay, if any
-    _pssm->disable_fake_disk_latency(_vid);
+    // _pssm->disable_fake_disk_latency(_vid);
 
     // check if any active xcts
     int activexcts = ss_m::num_active_xcts();
@@ -848,29 +847,15 @@ int ShoreEnv::start_sm()
 
     if (_clobber) {
         assert (!_device.empty());
-        assert (_quota>0);
 
         // if didn't clobber then the db is already loaded
         CRITICAL_SECTION(cs, _load_mutex);
 
-        TRACE( TRACE_DEBUG, "Formatting a new device (%s) with a (%d) kB quota\n",
-               _device.c_str(), _quota);
-
-    // create and mount device
-    // http://www.cs.wisc.edu/shore/1.0/man/device.ssm.html
-        ss_m::smksize_t smquota = _quota;
-    W_COERCE(_pssm->create_vol(_device.c_str(), smquota, _vid));
-        TRACE( TRACE_DEBUG, "Formatting device completed...\n");
-
-        // mount it...
-        W_COERCE(_pssm->mount_vol(_device.c_str(), _vid));
-        TRACE( TRACE_DEBUG, "Mounting (new) device completed...\n");
-
         // create catalog index (must be on stid 1)
-        stid_t cat_stid;
+        StoreID cat_stid;
         W_COERCE(_pssm->begin_xct());
-        W_COERCE(_pssm->create_index(_vid, cat_stid));
-        w_assert0(cat_stid == stid_t(_vid, 1));
+        W_COERCE(_pssm->create_index(cat_stid));
+        w_assert0(cat_stid == 1);
         W_COERCE(_pssm->commit_xct());
 
         // set that the database is not loaded
@@ -886,7 +871,7 @@ int ShoreEnv::start_sm()
         // after loading, which is not the case.
 
         // Make sure that catalog index (stid 1) exists
-        vol_t* vol = ss_m::vol->get(_vid);
+        vol_t* vol = ss_m::vol;
         w_assert0(vol);
         w_assert0(vol->is_alloc_store(1));
         // w_assert0(strcmp(vol->devname(), _device.c_str()) == 0);
@@ -895,19 +880,20 @@ int ShoreEnv::start_sm()
         _loaded = true;
     }
 
+    // CS TODO: latency is set on vol_t directly
     // setting the fake io disk latency - after we mount
     // (let the volume be formatted and mounted without any fake io latency)
-    int enableFakeIO = optionValues["sm_fakeiodelay-enable"].as<int>();
-    TRACE( TRACE_DEBUG, "Is fake I/O delay enabled: (%d)\n", enableFakeIO);
-    if (enableFakeIO) {
-        _pssm->enable_fake_disk_latency(_vid);
-    }
-    else {
-        _pssm->disable_fake_disk_latency(_vid);
-    }
-    int ioLatency = optionValues["sm_fakeiodelay"].as<uint>();
-    TRACE( TRACE_DEBUG, "I/O delay latency set: (%d)\n", ioLatency);
-    W_COERCE(_pssm->set_fake_disk_latency(_vid,ioLatency));
+    // int enableFakeIO = optionValues["sm_fakeiodelay-enable"].as<int>();
+    // TRACE( TRACE_DEBUG, "Is fake I/O delay enabled: (%d)\n", enableFakeIO);
+    // if (enableFakeIO) {
+    //     _pssm->enable_fake_disk_latency(_vid);
+    // }
+    // else {
+    //     _pssm->disable_fake_disk_latency(_vid);
+    // }
+    // int ioLatency = optionValues["sm_fakeiodelay"].as<uint>();
+    // TRACE( TRACE_DEBUG, "I/O delay latency set: (%d)\n", ioLatency);
+    // W_COERCE(_pssm->set_fake_disk_latency(_vid,ioLatency));
 
     // Using the physical ID interface
 
@@ -1094,66 +1080,6 @@ int ShoreEnv::conf()
     };
     return (0);
 }
-
-
-
-/******************************************************************
- *
- *  @fn:    {enable,disable}_fake_disk_latency
- *
- *  @brief: Enables/disables the fake IO disk latency
- *
- ******************************************************************/
-
-int ShoreEnv::disable_fake_disk_latency()
-{
-    // Disabling fake io delay, if any
-    w_rc_t e = _pssm->disable_fake_disk_latency(_vid);
-    if (e.is_error()) {
-        TRACE( TRACE_ALWAYS, "Problem in disabling fake IO delay [0x%x]\n",
-               e.err_num());
-        return (1);
-    }
-    boost::any zero = 0;
-    optionValues.at("sm_fakeiodelay-enable").value().swap(zero);
-    optionValues.at("sm_fakeiodelay").value().swap(zero);
-    return (0);
-}
-
-int ShoreEnv::enable_fake_disk_latency(const int adelay)
-{
-    if (!adelay>0) return (1);
-
-    // Enabling fake io delay
-    w_rc_t e = _pssm->set_fake_disk_latency(_vid,adelay);
-    if (e.is_error()) {
-        TRACE( TRACE_ALWAYS, "Problem in setting fake IO delay [0x%x]\n",
-               e.err_num());
-        return (2);
-    }
-
-    e = _pssm->enable_fake_disk_latency(_vid);
-    if (e.is_error()) {
-        TRACE( TRACE_ALWAYS, "Problem in enabling fake IO delay [0x%x]\n",
-               e.err_num());
-        return (3);
-    }
-    boost::any anydelay  = adelay;
-    boost::any zero = 0;
-    optionValues.at("sm_fakeiodelay-enable").value().swap(zero);
-    optionValues.at("sm_fakeiodelay").value().swap(anydelay);
-    return (0);
-}
-
-
-
-/******************************************************************
- *
- *  @fn:    dump()
- *
- *  @brief: Dumps the data
- *
- ******************************************************************/
 
 int ShoreEnv::dump()
 {

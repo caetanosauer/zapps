@@ -36,7 +36,6 @@ protected:
     int opt_queried_sf;
     unsigned opt_logsize;
     unsigned opt_logbufsize;
-    unsigned opt_quota;
     bool opt_eager;
     bool opt_truncateLog;
     unsigned opt_archWorkspace;

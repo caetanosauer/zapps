@@ -149,6 +149,8 @@ void Command::setupSMOptions()
     ("sys-activecpucount", po::value<uint>()->default_value(0),
         "Active CPU Count of a system")
     /**SM Options**/
+    ("sm_dbfile", po::value<string>()->default_value("db"),
+        "Path to the file on which to store database pages")
     ("sm_fakeiodelay-enable", po::value<int>()->default_value(0),
         "Enables a artificial delay whenever there is a I/O operation")
     ("sm_fakeiodelay", po::value<uint>()->default_value(0),

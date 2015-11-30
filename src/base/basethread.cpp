@@ -28,27 +28,11 @@ basethread_t::~basethread_t()
 void basethread_t::before_run()
 {
     DO_PTHREAD(pthread_mutex_lock(&running_mutex));
-    while (!to_mount.empty()) {
-        mount_device(to_mount.front().c_str());
-        to_mount.pop();
-    }
 }
 
 void basethread_t::after_run()
 {
     DO_PTHREAD(pthread_mutex_unlock(&running_mutex));
-}
-
-void basethread_t::queue_for_mount(string path)
-{
-    if (pthread_mutex_trylock(&running_mutex) == 0)
-    {
-        to_mount.push(path);
-        DO_PTHREAD(pthread_mutex_unlock(&running_mutex));
-    }
-    else {
-        throw runtime_error("Cannot mount device while thread is running");
-    }
 }
 
 void basethread_t::start_base()
@@ -74,6 +58,7 @@ void basethread_t::start_io()
         cerr << "Initializing volume manager ... ";
         smlevel_0::vol = new vol_m(_options);
         cerr << "OK" << endl;
+        smlevel_0::vol = new vol_t(_options);
     }
 }
 
@@ -125,7 +110,7 @@ void basethread_t::start_other()
         cerr << "OK" << endl;
 
         cerr << "Initializing checkpoint manager ... ";
-        smlevel_0::chkpt = new chkpt_m();
+        smlevel_0::chkpt = new chkpt_m(false);
         cerr << "OK" << endl;
 
         cerr << "Initializing b-tree manager ... ";
@@ -146,18 +131,6 @@ void basethread_t::print_stats()
     sm_stats_info_t stats;
     ss_m::gather_stats(stats);
     cout << stats << flushl;
-}
-
-void basethread_t::mount_device(string path)
-{
-    vol_m* vol = smlevel_0::vol;
-    assert(vol);
-
-    size_t npages = 1024;
-
-    vid_t vid;
-    W_COERCE(vol->sx_format(path.c_str(), npages, vid, true));
-    W_COERCE(vol->sx_mount(path.c_str()));
 }
 
 /*

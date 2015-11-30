@@ -104,12 +104,12 @@ void index_desc_t::print_desc(ostream& os)
     os << endl;
 }
 
-w_rc_t index_desc_t::load_stid(ss_m* db, stid_t cat_stid)
+w_rc_t index_desc_t::load_stid(ss_m* db, StoreID cat_stid)
 {
-    smsize_t size = sizeof(stid_t);
+    smsize_t size = sizeof(StoreID);
     w_keystr_t kstr;
     kstr.construct_regularkey(_name.c_str(), _name.length());
-    stid_t stid;
+    StoreID stid;
     bool found;
     W_DO(db->find_assoc(cat_stid, kstr, &stid, size, found));
 

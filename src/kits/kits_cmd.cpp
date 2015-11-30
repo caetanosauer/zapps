@@ -62,9 +62,6 @@ void KitsCommand::setupOptions()
         ("logbufsize", po::value<unsigned>(&opt_logbufsize)
             ->default_value(80),
             "Size of log buffer (in MB) (default 80)")
-        ("quota", po::value<unsigned>(&opt_quota)
-            ->default_value(12000),
-            "Maximum size of device (in MB) (default 12GB)")
         ("eager", po::value<bool>(&opt_eager)->default_value(true)
             ->implicit_value(true),
             "Run log archiving in eager mode")
@@ -142,8 +139,7 @@ void KitsCommand::run()
         // Make sure all workers are done
         shoreEnv->stop();
 
-        vid_t vid(1);
-        vol_t* vol = smlevel_0::vol->get(vid);
+        vol_t* vol = smlevel_0::vol;
         w_assert1(vol);
 
         if (!opt_eager) {
@@ -346,8 +342,6 @@ void KitsCommand::initShoreEnv()
         ensureParentPathExists(opt_dbfile);
 
         shoreEnv->set_device(opt_dbfile);
-        // SM expects quota in KB
-        shoreEnv->set_quota(opt_quota * 1024);
     }
 
     shoreEnv->start();
@@ -410,6 +404,8 @@ void KitsCommand::ensureEmptyPath(string path)
 
 void KitsCommand::loadOptions(sm_options& options)
 {
+    options.set_string_option("sm_dbfile", opt_dbfile);
+    options.set_bool_option("sm_truncate", opt_load);
     options.set_string_option("sm_logdir", logdir);
     mkdirs(logdir);
 

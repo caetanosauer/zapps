@@ -59,7 +59,7 @@ namespace tpcb {
  */
 
 
-branch_t::branch_t(const uint4_t& pd)
+branch_t::branch_t(const uint32_t& pd)
 #ifdef CFG_HACK
     : table_desc_t("BRANCH", 3, pd)
 #else
@@ -82,7 +82,7 @@ branch_t::branch_t(const uint4_t& pd)
 
 
 
-teller_t::teller_t(const uint4_t& pd)
+teller_t::teller_t(const uint32_t& pd)
 #ifdef CFG_HACK
     : table_desc_t("TELLER", 4, pd)
 #else
@@ -105,7 +105,7 @@ teller_t::teller_t(const uint4_t& pd)
 
 
 
-account_t::account_t(const uint4_t& pd)
+account_t::account_t(const uint32_t& pd)
 #ifdef CFG_HACK
     : table_desc_t("ACCOUNT", 4, pd)
 #else
@@ -135,7 +135,7 @@ account_t::account_t(const uint4_t& pd)
 }
 
 
-history_t::history_t(const uint4_t& pd)
+history_t::history_t(const uint32_t& pd)
 #ifdef CFG_HACK
     : table_desc_t("HISTORY", 6, pd)
 #else

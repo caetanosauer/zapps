@@ -75,7 +75,7 @@ w_rc_t table_man_t<T>::index_probe(ss_m* db,
                                 index_desc_t* pindex,
                                 table_row_t*  ptuple,
                                 lock_mode_t   /* lock_mode */,
-                                const lpid_t& /* root */)
+                                const PageID& /* root */)
 {
     assert (_ptable);
     assert (pindex);
@@ -165,7 +165,7 @@ template<class T>
 w_rc_t table_man_t<T>::add_tuple(ss_m* db,
                               table_row_t* ptuple,
                               const lock_mode_t /* lock_mode */,
-                              const lpid_t& /* primary_root */)
+                              const PageID& /* primary_root */)
 {
     assert (_ptable);
     assert (ptuple);
@@ -227,7 +227,7 @@ w_rc_t table_man_t<T>::add_index_entry(ss_m* db,
 				    const char* idx_name,
 				    table_row_t* ptuple,
 				    const lock_mode_t /* lock_mode */,
-				    const lpid_t& /* primary_root */)
+				    const PageID& /* primary_root */)
 {
     assert (_ptable);
     assert (ptuple);
@@ -279,7 +279,7 @@ template<class T>
 w_rc_t table_man_t<T>::delete_tuple(ss_m* db,
                                  table_row_t* ptuple,
                                  const lock_mode_t /* lock_mode */,
-                                 const lpid_t& /* primary_root */)
+                                 const PageID& /* primary_root */)
 {
     assert (_ptable);
     assert (ptuple);
@@ -339,7 +339,7 @@ w_rc_t table_man_t<T>::delete_index_entry(ss_m* db,
 				       const char* idx_name,
 				       table_row_t* ptuple,
 				       const lock_mode_t /* lock_mode */,
-				       const lpid_t& /* primary_root */)
+				       const PageID& /* primary_root */)
 {
     assert (_ptable);
     assert (ptuple);

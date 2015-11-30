@@ -34,10 +34,9 @@
 
 #include "w_key.h"
 
-table_desc_t::table_desc_t(const char* name, int fieldcnt, uint32_t pd,
-        vid_t vid)
+table_desc_t::table_desc_t(const char* name, int fieldcnt, uint32_t pd)
     : _name(name), _field_count(fieldcnt), _pd(pd), _db(NULL), _primary_idx(NULL),
-    _maxsize(0), _vid(vid)
+    _maxsize(0)
 {
     assert (fieldcnt>0);
 
@@ -109,9 +108,9 @@ w_rc_t table_desc_t::create_physical_table(ss_m* db)
 w_rc_t table_desc_t::create_physical_index(ss_m* db, index_desc_t* index)
 {
     // Create all the indexes of the table
-    stid_t stid = stid_t::null;
+    StoreID stid = 0;
 
-    W_DO(db->create_index(_vid, stid));
+    W_DO(db->create_index(stid));
     w_assert0(index);
     index->set_stid(stid);
 
@@ -119,11 +118,11 @@ w_rc_t table_desc_t::create_physical_index(ss_m* db, index_desc_t* index)
     w_keystr_t kstr;
     kstr.construct_regularkey(index->name().c_str(), index->name().length());
     W_DO(db->create_assoc(get_catalog_stid(), kstr,
-                vec_t(&stid, sizeof(stid_t))));
+                vec_t(&stid, sizeof(StoreID))));
 
     // Print info
     TRACE( TRACE_STATISTICS, "%s %d (%s) (%s) (%s)\n",
-           index->name().c_str(), stid.store,
+           index->name().c_str(), stid,
            (index->is_latchless() ? "no latch" : "latch"),
            (index->is_relaxed() ? "relaxed" : "no relaxed"),
            (index->is_unique() ? "unique" : "no unique"));
@@ -206,7 +205,7 @@ bool table_desc_t::create_primary_idx_desc(const unsigned* fields,
 
 // Returns the stid of the primary index. If no primary index exists it
 // returns the stid of the table
-stid_t table_desc_t::get_primary_stid()
+StoreID table_desc_t::get_primary_stid()
 {
     w_assert0(_primary_idx);
     return _primary_idx->stid();
@@ -215,7 +214,7 @@ stid_t table_desc_t::get_primary_stid()
 w_rc_t table_desc_t::load_stids()
 {
     w_assert0(_db);
-    stid_t cat_stid = get_catalog_stid();
+    StoreID cat_stid = get_catalog_stid();
     W_DO(_primary_idx->load_stid(_db, cat_stid));
     for (size_t i = 0; i < _indexes.size(); i++) {
         W_DO(_indexes[i]->load_stid(_db, cat_stid));

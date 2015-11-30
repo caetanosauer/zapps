@@ -26,7 +26,7 @@ void VerifyLog::run()
 
 VerifyHandler::VerifyHandler(bool merge)
     : minLSN(lsn_t::null), maxLSN(lsn_t::null), lastLSN(lsn_t::null),
-    lastPID(lpid_t::null), count(0), merge(merge)
+    lastPID(0), count(0), merge(merge)
 {
 }
 
@@ -35,13 +35,13 @@ void VerifyHandler::newFile(const char* fname)
     minLSN = LogArchiver::ArchiveDirectory::parseLSN(fname, false);
     maxLSN = LogArchiver::ArchiveDirectory::parseLSN(fname, true);
     lastLSN = lsn_t::null;
-    lastPID = lpid_t::null;
+    lastPID = 0;
 }
 
 void VerifyHandler::invoke(logrec_t& r)
 {
     lsn_t lsn = r.lsn_ck();
-    lpid_t pid = r.pid();
+    PageID pid = r.pid();
     assert(r.valid_header());
     assert(pid >= lastPID);
     if (pid == lastPID) {

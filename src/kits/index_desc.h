@@ -66,7 +66,7 @@ class index_desc_t
 private:
     table_desc_t*   _table;
 
-    stid_t _stid;
+    StoreID _stid;
     string _name;
 
     unsigned*       _key;                      /* index of fields in the base table */
@@ -104,12 +104,12 @@ public:
     table_desc_t* table() const { return _table; }
 
 
-    bool          is_fid_valid() const { return (_stid != stid_t::null); }
+    bool          is_fid_valid() const { return (_stid != 0); }
 
-    stid_t& stid() { return _stid; }
-    void set_stid(stid_t const &stid) { _stid = stid; }
+    StoreID& stid() { return _stid; }
+    void set_stid(StoreID const &stid) { _stid = stid; }
 
-    w_rc_t load_stid(ss_m* db, stid_t cat_stid);
+    w_rc_t load_stid(ss_m* db, StoreID cat_stid);
 
     /* ---------------------- */
     /* --- access methods --- */

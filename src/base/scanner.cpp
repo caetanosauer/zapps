@@ -246,14 +246,14 @@ void LogArchiveScanner::run()
             new LogArchiver::ArchiveScanner::RunScanner(
                     runBegin,
                     runEnd,
-                    lpid_t::null, // first PID
-                    lpid_t::null, // last PID
+                    0, // first PID
+                    0, // last PID
                     0,            // file offset
                     directory
             );
 
         lsn_t prevLSN = lsn_t::null;
-        lpid_t prevPid = lpid_t::null;
+        PageID prevPid = 0;
 
         logrec_t* lr;
         while (rs->next(lr)) {
@@ -293,12 +293,12 @@ void MergeScanner::run()
     LogArchiver::ArchiveScanner logScan(directory);
 
     LogArchiver::ArchiveScanner::RunMerger* merger =
-        logScan.open(lpid_t::null, lpid_t::null, lsn_t::null, blockSize);
+        logScan.open(0, 0, lsn_t::null, blockSize);
 
     logrec_t* lr;
 
     lsn_t prevLSN = lsn_t::null;
-    lpid_t prevPid = lpid_t::null;
+    PageID prevPid = 0;
 
     while (merger && merger->next(lr)) {
         w_assert1(lr->pid() >= prevPid);

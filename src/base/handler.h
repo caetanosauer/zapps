@@ -29,7 +29,7 @@ public:
 class StoreHandler {
 public:
     virtual void finalize() {};
-    virtual void handle(const stid_t&) = 0;
+    virtual void handle(const StoreID&) = 0;
 };
 
 #endif

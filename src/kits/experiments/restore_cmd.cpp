@@ -6,9 +6,9 @@
 class FailureThread : public smthread_t
 {
 public:
-    FailureThread(vid_t vid, unsigned delay, bool evict, bool* flag)
+    FailureThread(unsigned delay, bool evict, bool* flag)
         : smthread_t(t_regular, "FailureThread"),
-        vid(vid), delay(delay), evict(evict), flag(flag)
+        delay(delay), evict(evict), flag(flag)
     {
     }
 
@@ -18,7 +18,7 @@ public:
     {
         ::sleep(delay);
 
-        vol_t* vol = smlevel_0::vol->get(vid);
+        vol_t* vol = smlevel_0::vol;
         w_assert0(vol);
         vol->mark_failed(evict);
 
@@ -30,7 +30,6 @@ public:
     }
 
 private:
-    vid_t vid;
     unsigned delay;
     bool evict;
     bool* flag;
@@ -112,11 +111,19 @@ void RestoreCmd::run()
         shoreEnv->load();
     }
 
-    vid_t vid(1);
-    vol_t* vol = smlevel_0::vol->get(vid);
+    vol_t* vol = smlevel_0::vol;
 
     if (!opt_backup.empty()) {
         W_COERCE(vol->take_backup(opt_backup));
+    }
+
+    // STEP 2 - spawn failure thread and run benchmark
+    FailureThread* t = NULL;
+    if (!opt_offline) {
+        hasFailed = false;
+        t = new FailureThread(opt_failDelay, opt_evict,
+                &hasFailed);
+        t->fork();
     }
 
     // TODO if crash is on, move runBenchmark into a separate thread
@@ -135,17 +142,7 @@ void RestoreCmd::run()
 
 void RestoreCmd::doWork()
 {
-    vid_t vid(1);
-
-    FailureThread* t = NULL;
-    if (!opt_offline) {
-        hasFailed = false;
-        t = new FailureThread(vid, opt_failDelay, opt_evict,
-                &hasFailed);
-        t->fork();
-    }
-
-    vol_t* vol = smlevel_0::vol->get(vid);
+    vol_t* vol = smlevel_0::vol;
     w_assert0(vol);
 
     if (opt_offline) {

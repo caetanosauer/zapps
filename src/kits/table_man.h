@@ -164,13 +164,13 @@ public:
                        index_desc_t* pidx,
                        table_row_t*  ptuple,
                        const lock_mode_t lock_mode = okvl_mode::S,     /* One of: N, S, X */
-                       const lpid_t& root = lpid_t::null);   /* Start of the search */
+                       const PageID& root = 0);   /* Start of the search */
 
     // probe idx in X (& LATCH_EX) mode
     inline w_rc_t   index_probe_forupdate(ss_m* db,
                                           index_desc_t* pidx,
                                           table_row_t*  ptuple,
-                                          const lpid_t& root = lpid_t::null)
+                                          const PageID& root = 0)
     {
         return (index_probe(db, pidx, ptuple, okvl_mode::X, root));
     }
@@ -179,7 +179,7 @@ public:
     inline w_rc_t   index_probe_nl(ss_m* db,
                                    index_desc_t* pidx,
                                    table_row_t*  ptuple,
-                                   const lpid_t& root = lpid_t::null)
+                                   const PageID& root = 0)
     {
         return (index_probe(db, pidx, ptuple, okvl_mode::N, root));
     }
@@ -188,7 +188,7 @@ public:
     inline w_rc_t   index_probe_primary(ss_m* db,
                                         table_row_t* ptuple,
                                         lock_mode_t  lock_mode = okvl_mode::S,
-                                        const lpid_t& root = lpid_t::null)
+                                        const PageID& root = 0)
     {
         assert (_ptable && _ptable->primary_idx());
         return (index_probe(db, _ptable->primary_idx(), ptuple, lock_mode, root));
@@ -199,7 +199,7 @@ public:
                                         const char*  idx_name,
                                         table_row_t* ptuple,
                                         lock_mode_t  lock_mode = okvl_mode::S,
-                                        const lpid_t& root = lpid_t::null)
+                                        const PageID& root = 0)
     {
         index_desc_t* pindex = _ptable->find_index(idx_name);
         return (index_probe(db, pindex, ptuple, lock_mode, root));
@@ -209,7 +209,7 @@ public:
     inline w_rc_t   index_probe_forupdate_by_name(ss_m* db,
                                                   const char* idx_name,
                                                   table_row_t* ptuple,
-                                                  const lpid_t& root = lpid_t::null)
+                                                  const PageID& root = 0)
     {
 	index_desc_t* pindex = _ptable->find_index(idx_name);
         w_assert0(pindex);
@@ -220,7 +220,7 @@ public:
     inline w_rc_t   index_probe_nl_by_name(ss_m* db,
                                            const char* idx_name,
                                            table_row_t* ptuple,
-                                           const lpid_t& root = lpid_t::null)
+                                           const PageID& root = 0)
     {
 	index_desc_t* pindex = _ptable->find_index(idx_name);
 	return (index_probe_nl(db, pindex, ptuple, root));
@@ -234,24 +234,24 @@ public:
     w_rc_t    add_tuple(ss_m* db,
                         table_row_t*  ptuple,
                         const lock_mode_t   lock_mode = okvl_mode::X,
-                        const lpid_t& primary_root = lpid_t::null);
+                        const PageID& primary_root = 0);
 
     w_rc_t    add_index_entry(ss_m* db,
 			      const char* idx_name,
 			      table_row_t* ptuple,
 			      const lock_mode_t lock_mode = okvl_mode::X,
-			      const lpid_t& primary_root = lpid_t::null);
+			      const PageID& primary_root = 0);
 
     w_rc_t    delete_tuple(ss_m* db,
                            table_row_t* ptuple,
                            const lock_mode_t lock_mode = okvl_mode::X,
-                           const lpid_t& primary_root = lpid_t::null);
+                           const PageID& primary_root = 0);
 
     w_rc_t    delete_index_entry(ss_m* db,
 				 const char* idx_name,
 				 table_row_t* ptuple,
 				 const lock_mode_t lock_mode = okvl_mode::X,
-				 const lpid_t& primary_root = lpid_t::null);
+				 const PageID& primary_root = 0);
 
     w_rc_t    update_tuple(ss_m* db,
                            table_row_t* ptuple,

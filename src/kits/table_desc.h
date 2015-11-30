@@ -150,16 +150,13 @@ protected:
 
     unsigned _maxsize;            // max tuple size for this table, shortcut
 
-    vid_t _vid;
-
 public:
 
     /* ------------------- */
     /* --- Constructor --- */
     /* ------------------- */
 
-    table_desc_t(const char* name, int fieldcnt, uint32_t pd,
-            vid_t vid = vid_t(1));
+    table_desc_t(const char* name, int fieldcnt, uint32_t pd);
     virtual ~table_desc_t();
 
 
@@ -171,10 +168,10 @@ public:
 
     w_rc_t create_physical_index(ss_m* db, index_desc_t* index);
 
-    stid_t get_catalog_stid()
+    StoreID get_catalog_stid()
     {
         // using fixed stid=1 for catalog (enforced when creating)
-        return stid_t(_vid, 1);
+        return 1;
     }
 
     w_rc_t load_stids();
@@ -225,7 +222,7 @@ public:
     int index_count() { return _indexes.size(); }
 
     index_desc_t* primary_idx() { return (_primary_idx); }
-    stid_t get_primary_stid();
+    StoreID get_primary_stid();
 
     /* sets primary index, the index itself should be already set to
      * primary and unique */

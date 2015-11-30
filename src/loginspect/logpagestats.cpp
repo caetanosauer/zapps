@@ -5,15 +5,15 @@ public:
     size_t pageCount;
     size_t logrecs;
     size_t volume;
-    lpid_t currentPage;
+    PageID currentPage;
 
     LogPageStatsHandler() : pageCount(0), logrecs(0), volume(0),
-        currentPage(lpid_t::null)
+        currentPage(0)
     {}
 
     virtual void invoke(logrec_t& r)
     {
-        lpid_t pid = r.pid();
+        PageID pid = r.pid();
         if (pid != currentPage) {
             dumpCurrent();
 
