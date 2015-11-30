@@ -61,8 +61,10 @@ void basethread_t::start_base()
 void basethread_t::start_buffer()
 {
     if (!smlevel_0::bf) {
+        cerr << "Initializing buffer manager ... ";
         smlevel_0::bf = new bf_tree_m(_options);
         assert(smlevel_0::bf);
+        cerr << "OK" << endl;
     }
 }
 
@@ -71,6 +73,7 @@ void basethread_t::start_io()
     if (!smlevel_0::vol) {
         cerr << "Initializing volume manager ... ";
         smlevel_0::vol = new vol_m(_options);
+        cerr << "OK" << endl;
     }
 }
 
@@ -80,7 +83,7 @@ void basethread_t::start_log(string logdir)
         // instantiate log manager
         log_m* log;
         cerr << "Initializing log manager ... " << flush;
-        _options.set_string_option("sm_logidr", logdir);
+        _options.set_string_option("sm_logdir", logdir);
         log = new log_core(_options);
         smlevel_0::log = log;
         cerr << "OK" << endl;
