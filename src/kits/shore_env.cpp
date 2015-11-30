@@ -784,6 +784,7 @@ int ShoreEnv::configure_sm()
         }
         catch(boost::bad_any_cast const& e) {
             try {
+                cerr << "Set option " << key << " to " << optionValues[key].as<bool>() << endl;
                 _popts->set_bool_option(key, optionValues[key].as<bool>());
             }
             catch(boost::bad_any_cast const& e) {

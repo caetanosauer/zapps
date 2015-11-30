@@ -177,6 +177,10 @@ void Command::setupSMOptions()
         "Enable restart")
     ("sm_restore_segsize", po::value<int>(),
         "Segment size restore")
+    ("sm_restore_prefetcher_window", po::value<int>(),
+        "Segment size restore")
+    ("sm_backup_prefetcher_segments", po::value<int>(),
+        "Segment size restore")
     ("sm_rawlock_gc_interval_ms", po::value<int>(),
         "Garbage Collection Interval in ms")
     ("sm_rawlock_lockpool_segsize", po::value<int>(),
@@ -221,6 +225,8 @@ void Command::setupSMOptions()
         "Enable/Disable reformat log")
     ("sm_logging", po::value<bool>(),
         "Enable/Disable logging")
+    ("sm_shutdown_clean", po::value<bool>(),
+        "Force buffer before shutting down SM")
     ("sm_archiving", po::value<bool>(),
         "Enable/Disable archiving")
     ("sm_async_merging", po::value<bool>(),
@@ -243,6 +249,8 @@ void Command::setupSMOptions()
         "Attempt to read at least this many bytes when scanning log archive")
     ("sm_restore_max_read_size", po::value<int>(),
         "Attempt to read at most this many bytes when scanning log archive")
+    ("sm_restore_preemptive", po::value<bool>(),
+        "Use preemptive scheduling during restore")
     ("sm_bufferpool_swizzle", po::value<bool>(),
         "Enable/Disable bufferpool swizzle")
     ("sm_archiver_eager", po::value<bool>(),

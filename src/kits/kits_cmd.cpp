@@ -68,9 +68,6 @@ void KitsCommand::setupOptions()
         ("eager", po::value<bool>(&opt_eager)->default_value(true)
             ->implicit_value(true),
             "Run log archiving in eager mode")
-        ("cleanShutdown", po::value<bool>(&opt_cleanShutdown)->default_value(true)
-            ->implicit_value(true),
-            "Shutdown SM cleanly when done (flush pages and take checkpoint)")
         ("truncateLog", po::value<bool>(&opt_truncateLog)->default_value(false)
             ->implicit_value(true),
             "Truncate log until last checkpoint after loading")
@@ -81,6 +78,8 @@ void KitsCommand::setupOptions()
             ->implicit_value(true),
             "Activate skew on transaction inputs (currently only 80:20 skew \
             is supported, i.e., 80% of access to 20% of data")
+        ("warmup", po::value<unsigned>(&opt_warmup)->default_value(0),
+            "Warmup buffer before running for duration or number of trxs")
     ;
     options.add(kits);
     setupSMOptions();
@@ -408,7 +407,6 @@ void KitsCommand::loadOptions(sm_options& options)
     }
     options.set_int_option("sm_bufpoolsize", opt_bufsize * 1024);
 
-    options.set_bool_option("sm_shutdown_clean", opt_cleanShutdown);
     options.set_bool_option("sm_truncate_log", opt_truncateLog);
 }
 

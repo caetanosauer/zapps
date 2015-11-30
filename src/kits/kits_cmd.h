@@ -38,11 +38,11 @@ protected:
     unsigned opt_logbufsize;
     unsigned opt_quota;
     bool opt_eager;
-    bool opt_cleanShutdown;
     bool opt_truncateLog;
     unsigned opt_archWorkspace;
     bool opt_skew;
     bool opt_spread;
+    unsigned opt_warmup;
 
     MeasurementType mtype;
 
