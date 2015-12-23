@@ -227,7 +227,7 @@ void Command::setupSMOptions()
         "Archiving block size")
     ("sm_reformat_log", po::value<bool>(),
         "Enable/Disable reformat log")
-    ("sm_logging", po::value<bool>(),
+    ("sm_logging", po::value<bool>()->default_value(true),
         "Enable/Disable logging")
     ("sm_shutdown_clean", po::value<bool>(),
         "Force buffer before shutting down SM")

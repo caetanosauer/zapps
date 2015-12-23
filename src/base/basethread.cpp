@@ -52,16 +52,6 @@ void basethread_t::start_buffer()
     }
 }
 
-void basethread_t::start_io()
-{
-    if (!smlevel_0::vol) {
-        cerr << "Initializing volume manager ... ";
-        smlevel_0::vol = new vol_m(_options);
-        cerr << "OK" << endl;
-        smlevel_0::vol = new vol_t(_options);
-    }
-}
-
 void basethread_t::start_log(string logdir)
 {
     if (!smlevel_0::log) {
@@ -69,6 +59,7 @@ void basethread_t::start_log(string logdir)
         log_m* log;
         cerr << "Initializing log manager ... " << flush;
         _options.set_string_option("sm_logdir", logdir);
+        _options.set_int_option("sm_logsize", 10000 * 1024);
         log = new log_core(_options);
         smlevel_0::log = log;
         cerr << "OK" << endl;
@@ -110,7 +101,7 @@ void basethread_t::start_other()
         cerr << "OK" << endl;
 
         cerr << "Initializing checkpoint manager ... ";
-        smlevel_0::chkpt = new chkpt_m(false);
+        smlevel_0::chkpt = new chkpt_m();
         cerr << "OK" << endl;
 
         cerr << "Initializing b-tree manager ... ";

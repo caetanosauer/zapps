@@ -12,8 +12,8 @@ void GenArchive::setupOptions()
             "Directory containing the log to be archived")
         ("archdir,a", po::value<string>(&archdir)->required(),
             "Directory where the archive runs will be stored (must exist)")
-        ("maxLogSize,m", po::value<long>(&maxLogSize)->default_value(m),
-            "max_logsize parameter of Shore-MT (default should be fine)")
+        // ("maxLogSize,m", po::value<long>(&maxLogSize)->default_value(m),
+        //     "max_logsize parameter of Shore-MT (default should be fine)")
     ;
 }
 
@@ -34,28 +34,36 @@ void GenArchive::run()
      * and if it already exists, check if there are any files in it
      */
 
-    const size_t blockSize = 8192;
-    const size_t workspaceSize = 3 * blockSize;
+    const size_t blockSize = 1048576;
+    const size_t workspaceSize = 300 * blockSize;
 
     start_base();
-    start_io();
     start_log(logdir);
     start_archiver(archdir, workspaceSize, blockSize);
 
     lsn_t durableLSN = smlevel_0::log->durable_lsn();
     cerr << "Activating log archiver until LSN " << durableLSN << endl;
 
-    smlevel_0::logArchiver->fork();
+    LogArchiver* la = smlevel_0::logArchiver;
+    la->fork();
 
-    // wait for all log to be archived
-    smlevel_0::logArchiver->activate(durableLSN, true /* wait */);
+    // wait for log record to be consumed
+    while (la->getNextConsumedLSN() < durableLSN) {
+        la->activate(durableLSN, true);
+        ::usleep(10000); // 10ms
+    }
 
-    // by sending another activation signal with blocking,
-    // we wait for logarchiver to consume up to durableLSN
-    smlevel_0::logArchiver->activate(durableLSN, true);
+    // Time to wait until requesting a log archive flush (msec). If we're
+    // lucky, log is archiving very fast and a flush request is not needed.
+    int waitBeforeFlush = 100;
+    ::usleep(waitBeforeFlush * 1000);
 
-    smlevel_0::logArchiver->shutdown();
-    smlevel_0::logArchiver->join();
+    if (la->getDirectory()->getLastLSN() < durableLSN) {
+        la->requestFlushSync(durableLSN);
+    }
+
+    la->shutdown();
+    la->join();
 
     smlevel_0::operating_mode = smlevel_0::t_in_redo;
     smlevel_0::logging_enabled = false;

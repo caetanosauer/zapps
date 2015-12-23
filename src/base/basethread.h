@@ -27,7 +27,6 @@ public:
     static void start_archiver(string archdir, size_t wsize, size_t bsize);
     static void start_merger(string archdir);
     static void start_other();
-    static void start_io();
     static void print_stats();
 
 protected:

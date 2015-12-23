@@ -15,10 +15,8 @@ void BaseScanner::handle(logrec_t* lr)
     size_t i;
     for (i=0; i < any_handlers.size(); i++)
         any_handlers.at(i)->invoke(r);
-    if (!r.null_pid()){
-        for (i=0; i < pid_handlers.size(); i++)
-            pid_handlers.at(i)->invoke(r);
-    }
+    for (i=0; i < pid_handlers.size(); i++)
+        pid_handlers.at(i)->invoke(r);
     if (r.is_single_sys_xct() || r.tid() != tid_t::null){
         for (i=0; i < transaction_handlers.size(); i++)
             transaction_handlers.at(i)->invoke(r);
